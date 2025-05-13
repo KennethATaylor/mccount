@@ -126,6 +126,29 @@ mcc_sci_ci <- function(
       cli::cli_alert_info("Running bootstrap with {n_cores} cores in parallel.")
       parallel_type <- if (.Platform$OS.type == "windows") "snow" else
         "multicore"
+
+      # Make sure all required packages are loaded on each core
+      if (parallel_type == "snow") {
+        # For snow clusters, we need to export variables and ensure packages are loaded
+        parallel_cluster <- parallel::makeCluster(n_cores)
+
+        # Export required objects to the cluster
+        parallel::clusterExport(
+          parallel_cluster,
+          c("original_mcc", "unique_ids", "mcc_sci"),
+          envir = environment()
+        )
+
+        # Load required packages on each node
+        parallel::clusterEvalQ(parallel_cluster, {
+          library(data.table)
+          library(dplyr)
+          library(zoo)
+        })
+
+        # Make sure to stop the cluster when the function exits
+        on.exit(parallel::stopCluster(parallel_cluster), add = TRUE)
+      }
     }
   }
 
@@ -167,10 +190,21 @@ mcc_sci_ci <- function(
     run_with_progress()
   }
 
-  # Define bootstrap function
+  # Define bootstrap function that is completely self-contained
   boot_stat <- function(data, indices) {
-    # Use data.table for efficiency
-    require(data.table)
+    # Capture required variables from the parent environment
+    if (!exists("original_mcc"))
+      original_mcc <- get("original_mcc", envir = .GlobalEnv)
+    if (!exists("unique_ids"))
+      unique_ids <- get("unique_ids", envir = .GlobalEnv)
+
+    # Load required packages if not already loaded
+    if (!requireNamespace("data.table", quietly = TRUE)) {
+      library(data.table)
+    }
+    if (!requireNamespace("zoo", quietly = TRUE)) {
+      library(zoo)
+    }
 
     # Sample unique IDs with replacement
     sampled_ids <- unique_ids[indices]
@@ -186,9 +220,8 @@ mcc_sci_ci <- function(
       original_id = sampled_ids,
       new_id = seq_along(sampled_ids)
     )
-    id_map_dt <- data.table::as.data.table(id_map)
 
-    # Replace IDs using a loop (safer than vectorized approach for now)
+    # Replace IDs using a loop
     for (i in seq_along(unique(sampled_ids))) {
       original <- unique(sampled_ids)[i]
       new_id <- i
@@ -209,22 +242,23 @@ mcc_sci_ci <- function(
         result_dt <- data.table::data.table(time = original_mcc$time)
         boot_mcc_dt <- data.table::as.data.table(boot_mcc)
 
-        # Use proper data.table merge syntax (not data.frame merge syntax)
+        # Use proper data.table merge syntax
         result <- merge(result_dt, boot_mcc_dt, by = "time", all.x = TRUE)
         result <- result[order(result$time), ]
 
-        # Fill NA values
+        # Initialize SumCIs column with zeros for NA values at the beginning
         if ("SumCIs" %in% names(result)) {
-          result$SumCIs <- zoo::na.locf(result$SumCIs)
+          # Carry forward last observation
+          result[, SumCIs := zoo::na.locf(SumCIs)]
         } else {
           # If no SumCIs column exists, return all zeros
-          result$SumCIs <- 0
+          result[, SumCIs := 0]
         }
 
         return(result$SumCIs)
       },
       error = function(e) {
-        cli::cli_alert_warning("Bootstrap error: {e$message}")
+        # Return NAs if something went wrong
         return(rep(NA, nrow(original_mcc)))
       }
     )
@@ -235,13 +269,35 @@ mcc_sci_ci <- function(
     cli::cli_alert_info(
       "Starting {n_boot} bootstrap iterations in parallel mode..."
     )
-    boot_results <- boot::boot(
-      data = data,
-      statistic = boot_stat,
-      R = n_boot,
-      parallel = parallel_type,
-      ncpus = n_cores
-    )
+
+    # Start timer for parallel bootstrap
+    tictoc::tic("Parallel bootstrap timer")
+
+    if (.Platform$OS.type == "windows") {
+      # On Windows, use the snow cluster we prepared earlier
+      boot_results <- boot::boot(
+        data = data,
+        statistic = boot_stat,
+        R = n_boot,
+        parallel = "snow",
+        ncpus = n_cores,
+        cl = parallel_cluster # Use the cluster we created
+      )
+    } else {
+      # On Unix-like systems, use multicore
+      boot_results <- boot::boot(
+        data = data,
+        statistic = boot_stat,
+        R = n_boot,
+        parallel = "multicore",
+        ncpus = n_cores
+      )
+    }
+
+    # Stop timer and report elapsed time
+    bs_time <- tictoc::toc(quiet = TRUE)$callback_msg
+    cli::cli_alert_info("{bs_time}")
+
     cli::cli_alert_success("Completed parallel bootstrap.")
   } else {
     # Use cli progress bar in sequential mode
@@ -254,15 +310,6 @@ mcc_sci_ci <- function(
 
   # Process bootstrap results
   cli::cli_alert_info("Processing bootstrap results...")
-
-  # Debug information about bootstrap results
-  na_count <- sum(is.na(boot_results$t))
-  total_values <- prod(dim(boot_results$t))
-  na_percent <- round(na_count / total_values * 100, 1)
-
-  cli::cli_alert_info(
-    "Bootstrap matrix has {na_count}/{total_values} NA values ({na_percent}%)"
-  )
 
   # Determine which CI types to compute
   ci_types_to_compute <- if (ci_type == "all") {
