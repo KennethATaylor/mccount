@@ -1,5 +1,5 @@
 Package: mccount
-Title: What the Package Does (One Line, Title Case)
+Title: Estimate Recurrent Event Burden with Competing Risks
 Version: 0.0.0.9000
 Authors@R: 
     person("Kenneth A.", "Taylor", , "kenneth.taylor.dpt@gmail.com", role = c("aut", "cre"),
@@ -17,6 +17,8 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 Imports: 
     cli,
+    data.table,
     glue,
     lifecycle,
-    rlang
+    rlang,
+    zoo
