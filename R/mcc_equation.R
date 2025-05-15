@@ -1,21 +1,56 @@
 #' Calculate Mean Cumulative Count using the equation method
 #'
-#' @param id Vector of participant IDs
-#' @param time Vector of follow-up times
-#' @param cause Vector of event indicators (1=event of interest, 2=competing risk, 0=censoring)
+#' @param data A data.frame or tibble containing the required variables
+#' @param id_var Name of the column containing participant IDs (as string or symbol)
+#' @param time_var Name of the column containing follow-up times (as string or symbol)
+#' @param cause_var Name of the column containing event indicators (as string or symbol)
+#'                 (1=event of interest, 2=competing risk, 0=censoring)
 #'
 #' @return A tibble with columns for time and MCC (Mean Cumulative Count)
 #' @export
-mcc_equation <- function(id, time, cause) {
-  # Input validation
-  if (length(id) != length(time) || length(id) != length(cause)) {
-    cli::cli_abort(
-      "{.arg id}, {.arg time}, and {.arg cause} must have the same length"
-    )
+mcc_equation <- function(data, id_var, time_var, cause_var) {
+  # Convert inputs to symbols for tidy evaluation
+  id_var <- rlang::ensym(id_var)
+  time_var <- rlang::ensym(time_var)
+  cause_var <- rlang::ensym(cause_var)
+
+  # Input validation for data type
+  if (!inherits(data, "data.frame")) {
+    cli::cli_abort("{.arg data} must be a data.frame or tibble")
   }
 
-  # Create initial data frame and sort
-  data_orig <- tibble::tibble(id = id, time = time, cause = cause)
+  # Input validation for column existence
+  if (
+    !all(
+      c(
+        rlang::as_name(id_var),
+        rlang::as_name(time_var),
+        rlang::as_name(cause_var)
+      ) %in%
+        names(data)
+    )
+  ) {
+    cli::cli_abort("All specified variables must be columns in {.arg data}")
+  }
+
+  # Validate that cause_var only contains values 0, 1, or 2
+  cause_values <- unique(data[[rlang::as_name(cause_var)]])
+  invalid_values <- setdiff(cause_values, c(0, 1, 2))
+
+  if (length(invalid_values) > 0) {
+    cli::cli_abort(c(
+      "{.arg cause_var} must only contain values 0, 1, or 2",
+      "x" = "Found invalid values: {invalid_values}"
+    ))
+  }
+
+  # Create initial data frame with consistent column names
+  data_orig <- data |>
+    dplyr::select(
+      id = !!id_var,
+      time = !!time_var,
+      cause = !!cause_var
+    )
 
   # Sort data (if time is the same for 0/1 or 0/2 of the same person, make 0 last)
   data_sorted <- data_orig |>
@@ -36,7 +71,7 @@ mcc_equation <- function(id, time, cause) {
   }
 
   # Total number of unique participants
-  n_total <- dplyr::n_distinct(id)
+  n_total <- dplyr::n_distinct(data_sorted$id)
 
   # Count events by time and cause
   freq_cause <- data_sorted |>

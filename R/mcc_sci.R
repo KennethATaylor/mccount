@@ -1,19 +1,68 @@
 #' Calculate Mean Cumulative Count using the Sum of Cumulative Incidence method
 #'
-#' @param id Vector of participant IDs
-#' @param time Vector of follow-up or event times. Must be strictly greater than tstart for left-truncation
-#' @param tstart Vector with start times of follow-up (default: 0, for no left truncation)
-#' @param cause Vector of event indicators (1=event of interest, 2=competing risk, 0=censoring)
+#' @param data A data.frame or tibble containing the required variables
+#' @param id_var Name of the column containing participant IDs (as string or symbol)
+#' @param time_var Name of the column containing follow-up or event times (as string or symbol)
+#' @param cause_var Name of the column containing event indicators (as string or symbol)
+#'                 (1=event of interest, 2=competing risk, 0=censoring)
+#' @param tstart_var Name of the column containing start times of follow-up (as string or symbol, optional).
+#'                  If NULL (default), a constant value of 0 is used for all observations.
 #'
 #' @return A tibble with columns for time and MCC (expressed as SumCIs)
 #'
 #' @export
-mcc_sci <- function(id, time, cause, tstart = 0) {
-  # Input validation
-  if (length(id) != length(time) || length(id) != length(cause)) {
-    cli::cli_abort(
-      "{.arg id}, {.arg time}, and {.arg cause} must have the same length"
-    )
+mcc_sci <- function(data, id_var, time_var, cause_var, tstart_var = NULL) {
+  # Convert inputs to symbols for tidy evaluation
+  id_var <- rlang::ensym(id_var)
+  time_var <- rlang::ensym(time_var)
+  cause_var <- rlang::ensym(cause_var)
+
+  # Input validation for data type
+  if (!inherits(data, "data.frame")) {
+    cli::cli_abort("{.arg data} must be a data.frame or tibble")
+  }
+
+  # Input validation for column existence
+  required_vars <- c(
+    rlang::as_name(id_var),
+    rlang::as_name(time_var),
+    rlang::as_name(cause_var)
+  )
+  if (!all(required_vars %in% names(data))) {
+    missing_vars <- setdiff(required_vars, names(data))
+    cli::cli_abort(c(
+      "Missing required variables in {.arg data}:",
+      "x" = "Missing: {missing_vars}"
+    ))
+  }
+
+  # Handle tstart_var - either extract from data or use default value 0
+  if (!is.null(tstart_var)) {
+    tstart_var <- rlang::ensym(tstart_var)
+    if (!rlang::as_name(tstart_var) %in% names(data)) {
+      cli::cli_abort(
+        "{.arg tstart_var} column '{rlang::as_name(tstart_var)}' not found in {.arg data}"
+      )
+    }
+    tstart <- data[[rlang::as_name(tstart_var)]]
+  } else {
+    tstart <- 0
+  }
+
+  # Extract vectors from data
+  id <- data[[rlang::as_name(id_var)]]
+  time <- data[[rlang::as_name(time_var)]]
+  cause <- data[[rlang::as_name(cause_var)]]
+
+  # Validate that cause_var only contains values 0, 1, or 2
+  cause_values <- unique(cause)
+  invalid_values <- setdiff(cause_values, c(0, 1, 2))
+
+  if (length(invalid_values) > 0) {
+    cli::cli_abort(c(
+      "{.arg cause_var} must only contain values 0, 1, or 2",
+      "x" = "Found invalid values: {invalid_values}"
+    ))
   }
 
   # Validate time and tstart value pairs
@@ -23,7 +72,7 @@ mcc_sci <- function(id, time, cause, tstart = 0) {
 
     cli::cli_abort(c(
       "Found {length(problematic_indices)} case{?s} where event time is not greater than start time.",
-      "i" = "First  indices with issues: {sample_issues}",
+      "i" = "First indices with issues: {sample_issues}",
       "i" = "Ensure all event times are strictly greater than start times."
     ))
   }
@@ -33,7 +82,7 @@ mcc_sci <- function(id, time, cause, tstart = 0) {
     max_time <- max(time, na.rm = TRUE)
     cli::cli_warn(
       c(
-        "{.arg cause} variable includes {.vals {unique(cause)}} only",
+        "{.arg cause_var} variable includes {.vals {unique(cause)}} only",
         "i" = "Setting sum of cumulative incidence to {.val {as.numeric(0)}} at maximum time point {.val {max_time}}"
       ),
       wrap = TRUE
