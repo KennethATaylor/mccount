@@ -7,98 +7,94 @@
 #'                 (1=event of interest, 2=competing risk, 0=censoring)
 #' @param tstart_var Name of the column containing start times of follow-up (as string or symbol, optional).
 #'                  If NULL (default), a constant value of 0 is used for all observations.
+#' @param adjust_times Whether to automatically adjust times for simultaneous events (default: TRUE)
+#' @param time_precision Precision used for adjusting simultaneous events (default: 1e-6)
 #'
-#' @return A tibble with columns for time and MCC (expressed as SumCIs)
+#' @return A list containing:
+#'   \item{mcc_final}{A tibble with columns for time and MCC (expressed as SumCIs)}
+#'   \item{sci_table}{A tibble with cumulative incidence for each event number and their sum}
+#'   \item{all_cis}{A list of cumulative incidence data for each event number}
+#'   \item{mcc_base}{A tibble with calculation details for the MCC}
+#'   \item{original_data}{A tibble with the original input data}
+#'   \item{adjusted_data}{A tibble with adjusted data (if time adjustment was applied)}
 #'
-#' @export
-mcc_sci <- function(data, id_var, time_var, cause_var, tstart_var = NULL) {
+#' @keywords internal
+mcc_sci <- function(
+  data,
+  id_var,
+  time_var,
+  cause_var,
+  tstart_var = NULL,
+  adjust_times = TRUE,
+  time_precision = 1e-6
+) {
   # Convert inputs to symbols for tidy evaluation
   id_var <- rlang::ensym(id_var)
   time_var <- rlang::ensym(time_var)
   cause_var <- rlang::ensym(cause_var)
-
-  # Input validation for data type
-  if (!inherits(data, "data.frame")) {
-    cli::cli_abort("{.arg data} must be a data.frame or tibble")
-  }
-
-  # Input validation for column existence
-  required_vars <- c(
-    rlang::as_name(id_var),
-    rlang::as_name(time_var),
-    rlang::as_name(cause_var)
-  )
-  if (!all(required_vars %in% names(data))) {
-    missing_vars <- setdiff(required_vars, names(data))
-    cli::cli_abort(c(
-      "Missing required variables in {.arg data}:",
-      "x" = "Missing: {missing_vars}"
-    ))
-  }
-
-  # Handle tstart_var - either extract from data or use default value 0
   if (!is.null(tstart_var)) {
     tstart_var <- rlang::ensym(tstart_var)
-    if (!rlang::as_name(tstart_var) %in% names(data)) {
-      cli::cli_abort(
-        "{.arg tstart_var} column '{rlang::as_name(tstart_var)}' not found in {.arg data}"
-      )
-    }
-    tstart <- data[[rlang::as_name(tstart_var)]]
-  } else {
-    tstart <- 0
   }
 
-  # Extract vectors from data
-  id <- data[[rlang::as_name(id_var)]]
-  time <- data[[rlang::as_name(time_var)]]
-  cause <- data[[rlang::as_name(cause_var)]]
+  # Validate data type
+  validate_data_type(data)
 
-  # Validate that cause_var only contains values 0, 1, or 2
-  cause_values <- unique(cause)
-  invalid_values <- setdiff(cause_values, c(0, 1, 2))
+  # Validate column existence
+  validate_column_existence(data, id_var, time_var, cause_var, tstart_var)
 
-  if (length(invalid_values) > 0) {
-    cli::cli_abort(c(
-      "{.arg cause_var} must only contain values 0, 1, or 2",
-      "x" = "Found invalid values: {invalid_values}"
-    ))
+  # Validate cause values
+  validate_cause_values(data, cause_var)
+
+  # Additional validation for time vs. tstart value pairs
+  if (!is.null(tstart_var)) {
+    validate_time_tstart(data, time_var, tstart_var)
   }
 
-  # Validate time and tstart value pairs
-  if (any(time <= tstart, na.rm = TRUE)) {
-    problematic_indices <- which(time <= tstart)
-    sample_issues <- head(problematic_indices, 5)
-
-    cli::cli_abort(c(
-      "Found {length(problematic_indices)} case{?s} where event time is not greater than start time.",
-      "i" = "First indices with issues: {sample_issues}",
-      "i" = "Ensure all event times are strictly greater than start times."
-    ))
-  }
+  # Standardize the data
+  data_std <- standardize_data(data, id_var, time_var, cause_var, tstart_var)
 
   # If no events of interest, return default value
-  if (sum(cause == 1) == 0) {
-    max_time <- max(time, na.rm = TRUE)
+  if (sum(data_std$cause == 1) == 0) {
+    max_time <- max(data_std$time, na.rm = TRUE)
     cli::cli_warn(
       c(
-        "{.arg cause_var} variable includes {.vals {unique(cause)}} only",
+        "{.arg cause_var} variable includes {.vals {unique(data_std$cause)}} only",
         "i" = "Setting sum of cumulative incidence to {.val {as.numeric(0)}} at maximum time point {.val {max_time}}"
       ),
       wrap = TRUE
     )
 
-    return(
-      tibble::tibble(
-        time = max_time,
-        SumCIs = 0
-      )
+    # Create empty results
+    result_list <- list(
+      mcc_final = tibble::tibble(time = max_time, SumCIs = 0),
+      sci_table = tibble::tibble(time = max_time, SumCIs = 0),
+      original_data = data_std
     )
+
+    return(result_list)
   }
 
+  # Handle simultaneous events
+  sim_events_result <- handle_simultaneous_events(
+    data_std,
+    adjust_times,
+    time_precision
+  )
+  adjusted_data <- sim_events_result$data
+  times_were_adjusted <- sim_events_result$times_were_adjusted
+
+  # Use adjusted_data if adjustments were made, otherwise use original
+  data_to_use <- if (times_were_adjusted) adjusted_data else data_std
+
+  # Extract vectors for calculation - more efficient for numerical operations
+  id <- data_to_use$id
+  time <- data_to_use$time
+  cause <- data_to_use$cause
+  tstart <- data_to_use$tstart
+
   # Handle tstart as a vector if it's a single value
-  if (length(tstart) == 1) {
-    tstart <- rep(tstart, length(time))
+  if (length(unique(tstart)) == 1) {
+    tstart <- rep(tstart[1], length(time))
   }
 
   # Adjust for identical time and tstart values
@@ -166,6 +162,9 @@ mcc_sci <- function(data, id_var, time_var, cause_var, tstart_var = NULL) {
     data_mcc <- dplyr::bind_rows(data_mcc, ci_data_ith)
   }
 
+  # Store all cumulative incidence results
+  all_cis <- list()
+
   # Calculate cumulative incidence for each recurrence level
   mcc_base <- NULL
 
@@ -205,6 +204,9 @@ mcc_sci <- function(data, id_var, time_var, cause_var, tstart_var = NULL) {
         )
       }
 
+      # Store in all_cis list
+      all_cis[[j]] <- cm1 |> dplyr::rename(time = Time, ci = cm)
+
       # Calculate incremental changes and add recurrence indicator
       cm1 <- cm1 |>
         dplyr::mutate(
@@ -213,11 +215,14 @@ mcc_sci <- function(data, id_var, time_var, cause_var, tstart_var = NULL) {
         )
 
       mcc_base <- dplyr::bind_rows(mcc_base, cm1)
+    } else {
+      all_cis[[j]] <- tibble::tibble(time = numeric(0), ci = numeric(0))
     }
   }
 
-  # Remove duplicates and sort by event dates
+  # Process results to create final outputs
   if (!is.null(mcc_base)) {
+    # Remove duplicates and sort by event dates
     nodup_mcc_base <- mcc_base |>
       dplyr::distinct(cm, cumI, .keep_all = TRUE)
 
@@ -237,7 +242,64 @@ mcc_sci <- function(data, id_var, time_var, cause_var, tstart_var = NULL) {
       dplyr::summarize(SumCIs = max(MCC), .groups = "drop") |>
       dplyr::rename(time = Time)
 
-    return(mcc_final)
+    # Create SCItable
+    # Get all unique time points from the data used in calculation
+    all_times <- sort(unique(time))
+    all_times <- all_times[all_times > 0] # Remove time 0 if present
+
+    # Create a table with all time points
+    sci_table <- tibble::tibble(time = all_times)
+
+    # Fill in CI values for each event number
+    for (j in 1:max_events) {
+      ci_col <- paste0("CI", j)
+      sci_table[[ci_col]] <- 0 # Initialize with zeros
+
+      if (length(all_cis[[j]]$time) > 0) {
+        ci_data <- all_cis[[j]]
+        ci_data <- ci_data |> dplyr::filter(time > 0) # Remove time 0
+
+        if (nrow(ci_data) > 0) {
+          # For each time point in sci_table, find the corresponding CI value
+          for (i in 1:nrow(sci_table)) {
+            t <- sci_table$time[i]
+            # Find the maximum CI value at or before this time
+            ci_before <- ci_data |>
+              dplyr::filter(time <= t) |>
+              dplyr::pull(ci)
+
+            if (length(ci_before) > 0) {
+              sci_table[[ci_col]][i] <- max(ci_before)
+            }
+          }
+        }
+      }
+    }
+
+    # Calculate SumCIs as the sum of all CI columns
+    ci_cols <- grep("^CI", names(sci_table))
+    sci_table <- sci_table |>
+      dplyr::mutate(
+        SumCIs = rowSums(dplyr::across(dplyr::all_of(names(sci_table)[
+          ci_cols
+        ])))
+      )
+
+    # Prepare the return list
+    result_list <- list(
+      mcc_final = mcc_final,
+      sci_table = sci_table,
+      all_cis = all_cis,
+      mcc_base = mcc_base |> dplyr::rename(time = Time),
+      original_data = data_std
+    )
+
+    # Only include adjusted_data if times were actually adjusted
+    if (times_were_adjusted) {
+      result_list$adjusted_data <- adjusted_data
+    }
+
+    return(result_list)
   } else {
     max_time <- max(time, na.rm = TRUE)
     cli::cli_warn(
@@ -249,11 +311,18 @@ mcc_sci <- function(data, id_var, time_var, cause_var, tstart_var = NULL) {
       wrap = TRUE
     )
 
-    return(
-      tibble::tibble(
-        time = max_time,
-        SumCIs = 0
-      )
+    # Create empty results
+    result_list <- list(
+      mcc_final = tibble::tibble(time = max_time, SumCIs = 0),
+      sci_table = tibble::tibble(time = max_time, SumCIs = 0),
+      original_data = data_std
     )
+
+    # Only include adjusted_data if times were adjusted
+    if (times_were_adjusted) {
+      result_list$adjusted_data <- adjusted_data
+    }
+
+    return(result_list)
   }
 }
