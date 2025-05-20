@@ -13,44 +13,48 @@ knitr::opts_chunk$set(
 )
 ```
 
-# mccount
+# mccount <img src="man/figures/logo.png" align="right" height="120"/>
 
 <!-- badges: start -->
-[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
-[![CRAN status](https://www.r-pkg.org/badges/version/mccount)](https://CRAN.R-project.org/package=mccount)
+
+[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental) [![CRAN status](https://www.r-pkg.org/badges/version/mccount)](https://CRAN.R-project.org/package=mccount)
+
 <!-- badges: end -->
 
-The goal of mccount is to ...
+## Overview
+
+`mccount` provides tools to estimate the mean cumulative count (MCC) of recurrent events in the presence of competing risks. Unlike traditional cumulative incidence methods that only consider the first occurrence of an event, MCC accounts for multiple occurrences of the same event type per individual, providing a more informative measure of the total burden of recurrent events in a population.
+
+`mccount` provides an interface to estimate the MCC using either the Dong-Yasui estimator of the MCC or the sum of cumulative incidences, based on the work of Dong, *et al*.[^1]
+
+[^1]: Dong H, Robison LL, Leisenring WM, Martin LJ, Armstrong GT, Yasui Y. Estimating the burden of recurrent events in the presence of competing risks: the method of mean cumulative count. *Am J Epidemiol*. 2015 Apr 1;181(7):532-40. doi: [10.1093/aje/kwu289](https://doi.org/10.1093/aje/kwu289)
 
 ## Installation
 
-You can install the development version of mccount like so:
+You can install the development version of `mccount` like so:
 
 ``` r
-# FILL THIS IN! HOW CAN PEOPLE INSTALL YOUR DEV PACKAGE?
+# install.packages("pak")
+pak::pkg_install("KennethATaylor/mccount")
 ```
 
-## Example
+## Why Mean Cumulative Count?
 
-This is a basic example which shows you how to solve a common problem:
+In the context of clinical and epidemiological studies, subjects may experience multiple recurrent events over a given follow-up period. Traditional methods like Kaplan-Meier or cumulative incidence only account for the *first* occurrence of an event and ignore subsequent recurrent events, which can lead to underestimation of the true disease burden.
 
-```{r example}
-library(mccount)
-## basic example code
+The MCC:
+
+-   Summarizes all events that occur in the population by a given time
+-   Accounts for competing risks that may terminate follow-up
+-   Provides a more complete picture of the recurrent event burden
+-   Is interpretable as the expected number of events per subject by a specific time point
+
+## Citation
+
+If you use `mccount` in your research, please cite the package in addition to the original methodology paper.[^2]
+
+[^2]: Dong H, Robison LL, Leisenring WM, Martin LJ, Armstrong GT, Yasui Y. Estimating the burden of recurrent events in the presence of competing risks: the method of mean cumulative count. *Am J Epidemiol*. 2015 Apr 1;181(7):532-40. doi: [10.1093/aje/kwu289](https://doi.org/10.1093/aje/kwu289)
+
+```{r citation, eval=FALSE}
+citation("mccount")
 ```
-
-What is special about using `README.Rmd` instead of just `README.md`? You can include R chunks like so:
-
-```{r cars}
-summary(cars)
-```
-
-You'll still need to render `README.Rmd` regularly, to keep `README.md` up-to-date. `devtools::build_readme()` is handy for this.
-
-You can also embed plots, for example:
-
-```{r pressure, echo = FALSE}
-plot(pressure)
-```
-
-In that case, don't forget to commit and push the resulting figure files, so they display on GitHub and CRAN.
