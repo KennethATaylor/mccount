@@ -13,7 +13,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-# mccount <img src="man/figures/logo.png" align="right" height="120"/>
+# mccount <img src="man/figures/logo.svg" alt="Hexagonal logo for the R package &apos;mccount&apos; featuring a cartoon vampire resembling the Count from Sesame Street, styled as a hip-hop MC with a snapback hat labeled &apos;mccount&apos;, gold chain with a Sigma pendant, monocle, and microphone, set against a red brick background." align="right" height="139"/>
 
 <!-- badges: start -->
 
