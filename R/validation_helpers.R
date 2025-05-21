@@ -98,7 +98,7 @@ validate_time_tstart <- function(data, time_var, tstart_var) {
 
   if (any(times <= tstarts, na.rm = TRUE)) {
     problematic_indices <- which(times <= tstarts)
-    sample_issues <- head(problematic_indices, 5)
+    sample_issues <- utils::head(problematic_indices, 5)
 
     cli::cli_abort(c(
       "Found {length(problematic_indices)} case{?s} where event time is not greater than start time.",
@@ -140,11 +140,11 @@ standardize_data <- function(
   if (!is.null(tstart_var)) {
     data_std <- data_std |>
       dplyr::mutate(tstart = data[[rlang::as_name(tstart_var)]]) |>
-      dplyr::relocate(tstart, .before = time)
+      dplyr::relocate("tstart", .before = "time")
   } else {
     data_std <- data_std |>
       dplyr::mutate(tstart = 0) |>
-      dplyr::relocate(tstart, .before = time)
+      dplyr::relocate("tstart", .before = "time")
   }
 
   return(data_std)
@@ -162,7 +162,7 @@ standardize_data <- function(
 handle_simultaneous_events <- function(data_std, adjust_times, time_precision) {
   # Identify cases where a subject has different events at the same time
   duplicated_times <- data_std |>
-    dplyr::group_by(id, time) |>
+    dplyr::group_by(.data$id, .data$time) |>
     dplyr::filter(dplyr::n() > 1) |>
     dplyr::ungroup()
 
@@ -181,27 +181,29 @@ handle_simultaneous_events <- function(data_std, adjust_times, time_precision) {
       for (curr_id in affected_ids) {
         # Extract data for this ID
         id_data <- adjusted_data |>
-          dplyr::filter(id == curr_id) |>
-          dplyr::arrange(time)
+          dplyr::filter(.data$id == curr_id) |>
+          dplyr::arrange(.data$time)
 
         # Find duplicated times for this ID
         dup_times <- id_data |>
-          dplyr::group_by(time) |>
+          dplyr::group_by(.data$time) |>
           dplyr::filter(dplyr::n() > 1) |>
           dplyr::ungroup() |>
-          dplyr::pull(time) |>
+          dplyr::pull(.data$time) |>
           unique()
 
         for (dup_time in dup_times) {
           # Process each duplicated time
           dup_data <- id_data |>
-            dplyr::filter(time == dup_time)
+            dplyr::filter(.data$time == dup_time)
 
           # Sort by priority: event=1 first, then competing risk=2, then censoring=0
           dup_data <- dup_data |>
-            dplyr::mutate(cause_order = factor(cause, levels = c(1, 2, 0))) |>
-            dplyr::arrange(cause_order) |>
-            dplyr::select(-cause_order)
+            dplyr::mutate(
+              cause_order = factor(.data$cause, levels = c(1, 2, 0))
+            ) |>
+            dplyr::arrange(.data$cause_order) |>
+            dplyr::select(-"cause_order")
 
           # Adjust times for all but the first event
           if (nrow(dup_data) > 1) {
@@ -217,7 +219,9 @@ handle_simultaneous_events <- function(data_std, adjust_times, time_precision) {
           }
 
           # Update the adjusted data
-          filter_expr <- rlang::expr(id == !!curr_id & time == !!dup_time)
+          filter_expr <- rlang::expr(
+            .data$id == !!curr_id & .data$time == !!dup_time
+          )
 
           adjusted_data <- adjusted_data |>
             dplyr::anti_join(
@@ -225,7 +229,7 @@ handle_simultaneous_events <- function(data_std, adjust_times, time_precision) {
               by = join_cols
             ) |>
             dplyr::bind_rows(dup_data) |>
-            dplyr::arrange(id, time)
+            dplyr::arrange(.data$id, .data$time)
         }
       }
 

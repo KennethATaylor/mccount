@@ -117,7 +117,7 @@ mcc_sci <- function(
     tstart = tstart
   ) |>
     dplyr::mutate(cause1 = dplyr::if_else(cause == 2, -1, cause)) |>
-    dplyr::arrange(id, time, dplyr::desc(cause1))
+    dplyr::arrange(id, time, dplyr::desc(.data$cause1))
 
   # Check if we need to account for truncation
   calc_trunc <- any(tstart[!is.na(tstart)] != 0)
@@ -135,8 +135,8 @@ mcc_sci <- function(
   event_number <- input_data |>
     dplyr::group_by(id) |>
     dplyr::slice_tail(n = 1) |>
-    dplyr::select(id, first) |>
-    dplyr::rename(maxE = first) |>
+    dplyr::select("id", "first") |>
+    dplyr::rename(maxE = "first") |>
     dplyr::ungroup()
 
   # Merge back to main data
@@ -147,19 +147,19 @@ mcc_sci <- function(
 
   # Process first events
   data_temp <- all_data |>
-    dplyr::filter(first == 1) |>
+    dplyr::filter(.data$first == 1) |>
     dplyr::mutate(m_event = 1)
   data_mcc <- data_temp
 
   # Process subsequent events
   for (i in 2:max_events) {
     # For those with i or more records, take the ith record
-    the_ith <- all_data |> dplyr::filter(first == i)
+    the_ith <- all_data |> dplyr::filter(.data$first == i)
 
     # For those with <i records, take the last record
     # If the last record is an event 1, change it to 0
     the_last <- all_data |>
-      dplyr::filter(maxE < i, first == maxE) |>
+      dplyr::filter(.data$maxE < i, .data$first == .data$maxE) |>
       dplyr::mutate(cause = ifelse(cause == 1, 0, cause))
 
     ci_data_ith <- dplyr::bind_rows(the_ith, the_last) |>
@@ -175,7 +175,7 @@ mcc_sci <- function(
   mcc_base <- NULL
 
   for (j in 1:max_events) {
-    data_j <- data_mcc |> dplyr::filter(m_event == j)
+    data_j <- data_mcc |> dplyr::filter(.data$m_event == j)
 
     if (1 %in% data_j$cause) {
       # Only if the data contains events of interest
@@ -194,7 +194,7 @@ mcc_sci <- function(
         fit1 <- survival::survfit(
           survival::Surv(Tstart, Tstop, status == 1) ~ 1,
           data = exp_data,
-          weights = weight.cens * weight.trunc
+          weights = exp_data$weight.cens * exp_data$weight.trunc
         )
 
         cm1 <- tibble::tibble(
@@ -211,12 +211,12 @@ mcc_sci <- function(
       }
 
       # Store in all_cis list
-      all_cis[[j]] <- cm1 |> dplyr::rename(time = Time, ci = cm)
+      all_cis[[j]] <- cm1 |> dplyr::rename(time = "Time", ci = "cm")
 
       # Calculate incremental changes and add recurrence indicator
       cm1 <- cm1 |>
         dplyr::mutate(
-          Deta = c(cm[1], diff(cm)),
+          Deta = c(.data$cm[1], diff(.data$cm)),
           cumI = j
         )
 
@@ -230,10 +230,10 @@ mcc_sci <- function(
   if (!is.null(mcc_base)) {
     # Remove duplicates and sort by event dates
     nodup_mcc_base <- mcc_base |>
-      dplyr::distinct(cm, cumI, .keep_all = TRUE)
+      dplyr::distinct(.data$cm, .data$cumI, .keep_all = TRUE)
 
     sort_mcc_base <- nodup_mcc_base |>
-      dplyr::arrange(Time)
+      dplyr::arrange(.data$Time)
 
     # Calculate MCC by summing cumulative incidences
     mcc_values <- cumsum(sort_mcc_base$Deta)
@@ -244,9 +244,9 @@ mcc_sci <- function(
 
     # Create final output: max MCC value at each time point
     mcc_final <- combine_mcc |>
-      dplyr::group_by(Time) |>
-      dplyr::summarize(SumCIs = max(MCC), .groups = "drop") |>
-      dplyr::rename(time = Time)
+      dplyr::group_by(.data$Time) |>
+      dplyr::summarize(SumCIs = max(.data$MCC), .groups = "drop") |>
+      dplyr::rename(time = "Time")
 
     # Create SCItable
     # Get all unique time points from the data used in calculation
@@ -263,7 +263,7 @@ mcc_sci <- function(
 
       if (length(all_cis[[j]]$time) > 0) {
         ci_data <- all_cis[[j]]
-        ci_data <- ci_data |> dplyr::filter(time > 0) # Remove time 0
+        ci_data <- ci_data |> dplyr::filter(.data$time > 0) # Remove time 0
 
         if (nrow(ci_data) > 0) {
           # For each time point in sci_table, find the corresponding CI value
@@ -271,8 +271,8 @@ mcc_sci <- function(
             t <- sci_table$time[i]
             # Find the maximum CI value at or before this time
             ci_before <- ci_data |>
-              dplyr::filter(time <= t) |>
-              dplyr::pull(ci)
+              dplyr::filter(.data$time <= t) |>
+              dplyr::pull(.data$ci)
 
             if (length(ci_before) > 0) {
               sci_table[[ci_col]][i] <- max(ci_before)
@@ -297,7 +297,7 @@ mcc_sci <- function(
         mcc_final = mcc_final,
         sci_table = sci_table,
         all_cis = all_cis,
-        mcc_base = mcc_base |> dplyr::rename(time = Time),
+        mcc_base = mcc_base |> dplyr::rename(time = "Time"),
         original_data = data_std
       )
 

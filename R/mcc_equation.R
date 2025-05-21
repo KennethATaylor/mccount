@@ -54,20 +54,20 @@ mcc_equation <- function(
 
   # Sort data
   data_sorted <- data_to_use |>
-    dplyr::arrange(id, time)
+    dplyr::arrange(.data$id, .data$time)
 
   # Identify last record for each ID
   last_records <- data_sorted |>
-    dplyr::group_by(id) |>
+    dplyr::group_by(.data$id) |>
     dplyr::slice_tail(n = 1) |>
     dplyr::ungroup() |>
-    dplyr::filter(cause == 1)
+    dplyr::filter(.data$cause == 1)
 
   # If any last record is an event, add a censoring record
   if (nrow(last_records) > 0) {
     last_records$cause <- 0
     data_sorted <- dplyr::bind_rows(data_sorted, last_records) |>
-      dplyr::arrange(id, time)
+      dplyr::arrange(.data$id, .data$time)
   }
 
   # Total number of unique participants
@@ -76,14 +76,14 @@ mcc_equation <- function(
   # Count events by time and cause
   freq_cause <- data_sorted |>
     dplyr::mutate(count = 1) |>
-    dplyr::group_by(time, cause) |>
-    dplyr::summarize(count = sum(count), .groups = "drop")
+    dplyr::group_by(.data$time, .data$cause) |>
+    dplyr::summarize(count = sum(.data$count), .groups = "drop")
 
   # Create life table format
   lifetable <- freq_cause |>
     tidyr::pivot_wider(
-      names_from = cause,
-      values_from = count,
+      names_from = "cause",
+      values_from = "count",
       values_fill = 0
     ) |>
     dplyr::rename_with(
@@ -103,40 +103,40 @@ mcc_equation <- function(
   # Calculate cumulative sums for censoring and competing risks
   lifetable <- lifetable |>
     dplyr::mutate(
-      sum_censor = cumsum(censor),
-      sum_cmprk = cumsum(cmprk)
+      sum_censor = cumsum(.data$censor),
+      sum_cmprk = cumsum(.data$cmprk)
     ) |>
     dplyr::mutate(
-      nrisk_current = n_total - (sum_censor + sum_cmprk),
-      nrisk = dplyr::lag(nrisk_current, default = n_total)
+      nrisk_current = n_total - (.data$sum_censor + .data$sum_cmprk),
+      nrisk = dplyr::lag(.data$nrisk_current, default = n_total)
     )
 
   # Calculate survival probabilities and MCC
   mcc_table <- lifetable |>
     dplyr::mutate(
-      surv_prob = 1 - cmprk / nrisk,
-      overall_surv = cumprod(surv_prob),
-      overall_surv_previous = dplyr::lag(overall_surv, default = 1),
-      ave_events = overall_surv_previous * event / nrisk,
-      mcc = cumsum(ave_events)
+      surv_prob = 1 - .data$cmprk / .data$nrisk,
+      overall_surv = cumprod(.data$surv_prob),
+      overall_surv_previous = dplyr::lag(.data$overall_surv, default = 1),
+      ave_events = .data$overall_surv_previous * .data$event / .data$nrisk,
+      mcc = cumsum(.data$ave_events)
     ) |>
     dplyr::select(
-      time,
-      nrisk,
-      censor,
-      event,
-      cmprk,
-      overall_surv_previous,
-      ave_events,
-      mcc
+      "time",
+      "nrisk",
+      "censor",
+      "event",
+      "cmprk",
+      "overall_surv_previous",
+      "ave_events",
+      "mcc"
     )
 
   # Return only unique MCC values (first occurrence of each)
   mcc_final <- mcc_table |>
-    dplyr::group_by(mcc) |>
+    dplyr::group_by(.data$mcc) |>
     dplyr::slice_head(n = 1) |>
     dplyr::ungroup() |>
-    dplyr::select(time, mcc)
+    dplyr::select("time", "mcc")
 
   # Prepare the return list based on include_details parameter
   if (include_details) {

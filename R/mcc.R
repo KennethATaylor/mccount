@@ -73,15 +73,15 @@
 #' * `method`: The method used for calculation
 #'
 #' @examples
+#' # Attach dplyr
+#' library(dplyr)
 #' # Create sample data with recurrent events
 #' df <- data.frame(
 #'   id = c(1, 2, 3, 4, 4, 4, 5, 5),
 #'   time = c(8, 1, 5, 2, 6, 7, 3, 3), # Times will be adjusted for id = 5
 #'   cause = c(0, 0, 2, 1, 1, 1, 1, 2)
-#' )
-#' # Sort the data by id and time
-#' df <- df |>
-#'   dplyr::arrange(id, time)
+#'  ) |>
+#'   arrange(id, time)  # Sort the data by id and time
 #'
 #' # Print the dataset
 #' print("Hypothetical dataset from Dong et al. (2015):")
