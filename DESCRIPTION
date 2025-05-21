@@ -4,7 +4,7 @@ Version: 0.0.0.9000
 Authors@R: 
     person("Kenneth A.", "Taylor", , "kenneth.taylor.dpt@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-3205-9280"))
-Description: What the package does (one paragraph).
+Description: Provides tools for estimating the Mean Cumulative Count (MCC), a statistical method for quantifying the burden of recurrent events in the presence of competing risks. The package implements two complementary estimation approaches: the direct probability-based 'equation' method and the 'sum of cumulative incidence' method. Both approaches handle right censoring, with additional support for left truncation in the latter. Features include automatic adjustment for simultaneous events, detailed calculation tables, and utilities for bootstrapping confidence intervals. Methods are implemented following Dong et al. (2015) <doi:10.1093/aje/kwu289>.
 License: MIT + file LICENSE
 URL: https://github.com/KennethATaylor/mccount
 BugReports: https://github.com/KennethATaylor/mccount/issues
@@ -16,9 +16,18 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 Imports: 
+    boot,
     cli,
+    cmprsk,
     data.table,
+    dplyr,
     glue,
     lifecycle,
+    mstate,
+    parallel,
+    parallelly,
     rlang,
+    survival,
+    tibble,
+    tictoc,
     zoo
