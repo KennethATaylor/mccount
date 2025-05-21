@@ -12,6 +12,7 @@ Provides tools for estimating the Mean Cumulative Count (MCC), a statistical met
 Useful links:
 \itemize{
   \item \url{https://github.com/KennethATaylor/mccount}
+  \item \url{https://kennethataylor.github.io/mccount/}
   \item Report bugs at \url{https://github.com/KennethATaylor/mccount/issues}
 }
 
