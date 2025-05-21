@@ -12,7 +12,8 @@ mcc(
   method = c("equation", "sci"),
   tstart_var = NULL,
   adjust_times = TRUE,
-  time_precision = 1e-06
+  time_precision = 1e-06,
+  include_details = TRUE
 )
 }
 \arguments{
@@ -46,27 +47,39 @@ events and competing risk events occurring at the same time.}
 \item{time_precision}{(\code{numeric})\cr
 Precision used for adjusting simultaneous events (default: 1e-6). Must
 be a positive numeric value.}
+
+\item{include_details}{(\code{logical})\cr
+Whether to include detailed calculation tables and intermediate objects
+in the output. Default is \code{TRUE}, which returns all calculation details.
+Setting to \code{FALSE} returns only the final MCC estimates, making the function
+more efficient for bootstrapping.}
 }
 \value{
-A list with method-specific components:
+When \code{include_details = TRUE} (default), a list with method-specific components:
 
 For \code{method = "equation"}:
 \itemize{
-\item \code{mcc_final}: A tibble with columns for time and MCC
+\item \code{mcc_final}: A tibble with columns for \code{time} and \code{mcc}
 \item \code{mcc_table}: A tibble with detailed calculation steps
-\item \code{original_data}: The input data with standardized column names
+\item \code{original_data}: The input \code{data} with standardized column names
 \item \code{adjusted_data}: Present only if time adjustments were applied
 \item \code{method}: The method used for calculation
 }
 
 For \code{method = "sci"}:
 \itemize{
-\item \code{mcc_final}: A tibble with columns for time and MCC (expressed as SumCIs)
+\item \code{mcc_final}: A tibble with columns for \code{time} and MCC (expressed as \code{SumCIs})
 \item \code{sci_table}: A tibble with cumulative incidence for each event number and their sum
 \item \code{all_cis}: A list of cumulative incidence data for each event number
 \item \code{mcc_base}: A tibble with calculation details for the MCC
-\item \code{original_data}: The input data with standardized column names
+\item \code{original_data}: The input \code{data} with standardized column names
 \item \code{adjusted_data}: Present only if time adjustments were applied
+\item \code{method}: The \code{method} used for calculation
+}
+
+When \code{include_details = FALSE}, a simplified list containing only:
+\itemize{
+\item \code{mcc_final}: A tibble with columns for \code{time} and \code{mcc} (or \code{SumCIs} for \code{method = "sci"})
 \item \code{method}: The method used for calculation
 }
 }

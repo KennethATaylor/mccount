@@ -37,24 +37,39 @@
 #' @param time_precision (`numeric`)\cr
 #'     Precision used for adjusting simultaneous events (default: 1e-6). Must
 #'     be a positive numeric value.
+#' @param include_details (`logical`)\cr
+#'     Whether to include detailed calculation tables and intermediate objects
+#'     in the output. Default is `TRUE`, which returns all calculation details.
+#'     Setting to `FALSE` returns only the final MCC estimates, making the function
+#'     more efficient for bootstrapping.
+#'
+#' @references
+#' Dong H, Robison LL, Leisenring WM, Martin LJ, Armstrong GT, Yasui Y.
+#'     Estimating the burden of recurrent events in the presence of competing
+#'     risks: the method of mean cumulative count. *Am J Epidemiol*. 2015 Apr
+#'     1;181(7):532-40. doi: [10.1093/aje/kwu289](https://doi.org/10.1093/aje/kwu289)
 #'
 #' @returns
-#' A list with method-specific components:
+#' When `include_details = TRUE` (default), a list with method-specific components:
 #'
 #' For `method = "equation"`:
-#' * `mcc_final`: A tibble with columns for time and MCC
+#' * `mcc_final`: A tibble with columns for `time` and `mcc`
 #' * `mcc_table`: A tibble with detailed calculation steps
-#' * `original_data`: The input data with standardized column names
+#' * `original_data`: The input `data` with standardized column names
 #' * `adjusted_data`: Present only if time adjustments were applied
 #' * `method`: The method used for calculation
 #'
 #' For `method = "sci"`:
-#' * `mcc_final`: A tibble with columns for time and MCC (expressed as SumCIs)
+#' * `mcc_final`: A tibble with columns for `time` and MCC (expressed as `SumCIs`)
 #' * `sci_table`: A tibble with cumulative incidence for each event number and their sum
 #' * `all_cis`: A list of cumulative incidence data for each event number
 #' * `mcc_base`: A tibble with calculation details for the MCC
-#' * `original_data`: The input data with standardized column names
+#' * `original_data`: The input `data` with standardized column names
 #' * `adjusted_data`: Present only if time adjustments were applied
+#' * `method`: The `method` used for calculation
+#'
+#' When `include_details = FALSE`, a simplified list containing only:
+#' * `mcc_final`: A tibble with columns for `time` and `mcc` (or `SumCIs` for `method = "sci"`)
 #' * `method`: The method used for calculation
 #'
 #' @examples
@@ -101,12 +116,6 @@
 #' rm(mcc_eq)
 #' rm(mcc_sci)
 #'
-#' @references
-#' Dong H, Robison LL, Leisenring WM, Martin LJ, Armstrong GT, Yasui Y.
-#'     Estimating the burden of recurrent events in the presence of competing
-#'     risks: the method of mean cumulative count. *Am J Epidemiol*. 2015 Apr
-#'     1;181(7):532-40. doi: [10.1093/aje/kwu289](https://doi.org/10.1093/aje/kwu289)
-#'
 #' @export
 mcc <- function(
   data,
@@ -116,7 +125,8 @@ mcc <- function(
   method = c("equation", "sci"),
   tstart_var = NULL,
   adjust_times = TRUE,
-  time_precision = 1e-6
+  time_precision = 1e-6,
+  include_details = TRUE
 ) {
   # Match and validate method argument
   method <- match.arg(method)
@@ -154,6 +164,14 @@ mcc <- function(
     ))
   }
 
+  # Validate include_details is logical
+  if (!is.logical(include_details) || length(include_details) != 1) {
+    cli::cli_abort(c(
+      "{.arg include_details} must be a {.cls logical} value (`TRUE` or `FALSE`)",
+      "x" = "Received: {.val {include_details}}"
+    ))
+  }
+
   # Dispatch to appropriate internal function based on method
   if (method == "equation") {
     result <- mcc_equation(
@@ -162,7 +180,8 @@ mcc <- function(
       time_var = {{ time_var }},
       cause_var = {{ cause_var }},
       adjust_times = adjust_times,
-      time_precision = time_precision
+      time_precision = time_precision,
+      include_details = include_details
     )
   } else if (method == "sci") {
     result <- mcc_sci(
@@ -172,7 +191,8 @@ mcc <- function(
       cause_var = {{ cause_var }},
       tstart_var = {{ tstart_var }},
       adjust_times = adjust_times,
-      time_precision = time_precision
+      time_precision = time_precision,
+      include_details = include_details
     )
   }
 

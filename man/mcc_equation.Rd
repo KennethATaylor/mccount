@@ -10,7 +10,8 @@ mcc_equation(
   time_var,
   cause_var,
   adjust_times = TRUE,
-  time_precision = 1e-06
+  time_precision = 1e-06,
+  include_details = TRUE
 )
 }
 \arguments{
@@ -26,12 +27,13 @@ mcc_equation(
 \item{adjust_times}{Whether to automatically adjust times for simultaneous events (default: TRUE)}
 
 \item{time_precision}{Precision used for adjusting simultaneous events (default: 1e-6)}
+
+\item{include_details}{Whether to include detailed calculation tables and intermediate
+objects in the output (default: TRUE).}
 }
 \value{
-A list containing:
-\item{mcc_final}{A tibble with columns for time and MCC}
-\item{mcc_table}{A tibble with the detailed calculation table}
-\item{adjusted_data}{A tibble with the adjusted data (if time adjustment was applied)}
+A list containing MCC results. If \code{include_details = TRUE}, returns complete
+calculation details. Otherwise, returns only the final MCC estimates.
 }
 \description{
 Calculate Mean Cumulative Count using the equation method

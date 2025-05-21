@@ -11,7 +11,8 @@ mcc_sci(
   cause_var,
   tstart_var = NULL,
   adjust_times = TRUE,
-  time_precision = 1e-06
+  time_precision = 1e-06,
+  include_details = TRUE
 )
 }
 \arguments{
@@ -30,15 +31,13 @@ If NULL (default), a constant value of 0 is used for all observations.}
 \item{adjust_times}{Whether to automatically adjust times for simultaneous events (default: TRUE)}
 
 \item{time_precision}{Precision used for adjusting simultaneous events (default: 1e-6)}
+
+\item{include_details}{Whether to include detailed calculation tables and intermediate
+objects in the output (default: TRUE).}
 }
 \value{
-A list containing:
-\item{mcc_final}{A tibble with columns for time and MCC (expressed as SumCIs)}
-\item{sci_table}{A tibble with cumulative incidence for each event number and their sum}
-\item{all_cis}{A list of cumulative incidence data for each event number}
-\item{mcc_base}{A tibble with calculation details for the MCC}
-\item{original_data}{A tibble with the original input data}
-\item{adjusted_data}{A tibble with adjusted data (if time adjustment was applied)}
+A list containing MCC results. If include_details=TRUE, returns complete
+calculation details. Otherwise, returns only the final MCC estimates.
 }
 \description{
 Calculate Mean Cumulative Count using the Sum of Cumulative Incidence method

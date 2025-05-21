@@ -582,3 +582,198 @@ test_that("mcc() produces equivalent results from both methods", {
   expect_equal(final_mcc_eq1, final_mcc_eq2, tolerance = 1e-6)
   expect_equal(final_mcc_sci1, final_mcc_sci2, tolerance = 1e-6)
 })
+
+
+test_that("mcc() correctly passes include_details parameter to implementation functions", {
+  df <- data.frame(
+    id = c(1, 2, 3, 4),
+    time = c(5, 8, 12, 15),
+    cause = c(1, 0, 2, 1)
+  )
+
+  # Test with equation method
+  result_eq_full <- mcc(
+    data = df,
+    id_var = "id",
+    time_var = "time",
+    cause_var = "cause",
+    method = "equation",
+    include_details = TRUE
+  )
+
+  result_eq_simple <- mcc(
+    data = df,
+    id_var = "id",
+    time_var = "time",
+    cause_var = "cause",
+    method = "equation",
+    include_details = FALSE
+  )
+
+  # Verify that include_details=TRUE includes detailed outputs
+  expect_true("mcc_table" %in% names(result_eq_full))
+  expect_true("original_data" %in% names(result_eq_full))
+
+  # Verify that include_details=FALSE only returns mcc_final and method
+  expect_named(result_eq_simple, c("mcc_final", "method"))
+
+  # mcc_final should be identical regardless of include_details
+  expect_equal(result_eq_full$mcc_final, result_eq_simple$mcc_final)
+
+  # Test with sci method
+  result_sci_full <- mcc(
+    data = df,
+    id_var = "id",
+    time_var = "time",
+    cause_var = "cause",
+    method = "sci",
+    include_details = TRUE
+  )
+
+  result_sci_simple <- mcc(
+    data = df,
+    id_var = "id",
+    time_var = "time",
+    cause_var = "cause",
+    method = "sci",
+    include_details = FALSE
+  )
+
+  # Verify that include_details=TRUE includes detailed outputs
+  expect_true("sci_table" %in% names(result_sci_full))
+  expect_true("all_cis" %in% names(result_sci_full))
+  expect_true("original_data" %in% names(result_sci_full))
+
+  # Verify that include_details=FALSE only returns mcc_final and method
+  expect_named(result_sci_simple, c("mcc_final", "method"))
+
+  # mcc_final should be identical regardless of include_details
+  expect_equal(result_sci_full$mcc_final, result_sci_simple$mcc_final)
+})
+
+test_that("mcc() validates include_details parameter", {
+  df <- data.frame(
+    id = c(1, 2, 3),
+    time = c(5, 8, 10),
+    cause = c(1, 0, 2)
+  )
+
+  # Test with invalid include_details value
+  expect_snapshot(
+    error = TRUE,
+    mcc(
+      data = df,
+      id_var = "id",
+      time_var = "time",
+      cause_var = "cause",
+      include_details = "TRUE" # String instead of logical
+    )
+  )
+
+  expect_snapshot(
+    error = TRUE,
+    mcc(
+      data = df,
+      id_var = "id",
+      time_var = "time",
+      cause_var = "cause",
+      include_details = c(TRUE, FALSE) # Vector instead of single value
+    )
+  )
+
+  expect_snapshot(
+    error = TRUE,
+    mcc(
+      data = df,
+      id_var = "id",
+      time_var = "time",
+      cause_var = "cause",
+      include_details = NA # NA instead of TRUE/FALSE
+    )
+  )
+})
+
+test_that("mcc() with include_details=FALSE is suitable for bootstrapping", {
+  skip_if_not_installed("boot")
+
+  # Create sample data
+  set.seed(123)
+  df <- data.frame(
+    id = rep(1:20, each = 2),
+    time = c(runif(20, 1, 10), runif(20, 11, 20)),
+    cause = sample(0:2, 40, replace = TRUE, prob = c(0.2, 0.6, 0.2))
+  )
+
+  # Define a function to calculate MCC that returns just the maximum MCC value
+  mcc_statistic <- function(data, indices) {
+    # Create a bootstrap sample
+    boot_data <- data[indices, ]
+
+    # Calculate MCC with simplified output
+    result <- mcc(
+      data = boot_data,
+      id_var = "id",
+      time_var = "time",
+      cause_var = "cause",
+      method = "equation",
+      include_details = FALSE
+    )
+
+    # Return maximum MCC value
+    max_mcc <- max(result$mcc_final$mcc)
+    return(max_mcc)
+  }
+
+  # Test if we can run a small number of bootstrap replicates without error
+  tryCatch(
+    {
+      boot_result <- boot::boot(
+        data = df,
+        statistic = mcc_statistic,
+        R = 3 # Small number for testing
+      )
+
+      # If no error, the test passes
+      expect_true(is.numeric(boot_result$t))
+      expect_equal(length(boot_result$t), 3)
+    },
+    error = function(e) {
+      # If an error occurs, the test fails
+      fail(paste("Bootstrap failed:", e$message))
+    }
+  )
+})
+
+test_that("mcc() documentation example works with include_details=FALSE", {
+  # Create the sample data from the documentation example
+  df <- data.frame(
+    id = c(1, 2, 3, 4, 4, 4, 5, 5),
+    time = c(8, 1, 5, 2, 6, 7, 3, 3),
+    cause = c(0, 0, 2, 1, 1, 1, 1, 2)
+  ) |>
+    dplyr::arrange(id, time)
+
+  # Run with include_details=FALSE
+  expect_no_error({
+    mcc_eq <- mcc(
+      df,
+      id_var = "id",
+      time_var = "time",
+      cause_var = "cause",
+      include_details = FALSE
+    )
+
+    mcc_sci <- mcc(
+      df,
+      id_var = "id",
+      time_var = "time",
+      cause_var = "cause",
+      method = "sci",
+      include_details = FALSE
+    )
+  })
+
+  # Verify structure of simplified output
+  expect_named(mcc_eq, c("mcc_final", "method"))
+  expect_named(mcc_sci, c("mcc_final", "method"))
+})

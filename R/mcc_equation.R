@@ -7,11 +7,12 @@
 #'                 (1=event of interest, 2=competing risk, 0=censoring)
 #' @param adjust_times Whether to automatically adjust times for simultaneous events (default: TRUE)
 #' @param time_precision Precision used for adjusting simultaneous events (default: 1e-6)
+#' @param include_details Whether to include detailed calculation tables and intermediate
+#'                        objects in the output (default: TRUE).
 #'
-#' @return A list containing:
-#'   \item{mcc_final}{A tibble with columns for time and MCC}
-#'   \item{mcc_table}{A tibble with the detailed calculation table}
-#'   \item{adjusted_data}{A tibble with the adjusted data (if time adjustment was applied)}
+#' @returns A list containing MCC results. If `include_details = TRUE`, returns complete
+#'         calculation details. Otherwise, returns only the final MCC estimates.
+#'
 #' @keywords internal
 mcc_equation <- function(
   data,
@@ -19,7 +20,8 @@ mcc_equation <- function(
   time_var,
   cause_var,
   adjust_times = TRUE,
-  time_precision = 1e-6
+  time_precision = 1e-6,
+  include_details = TRUE
 ) {
   # Convert inputs to symbols for tidy evaluation
   id_var <- rlang::ensym(id_var)
@@ -136,16 +138,23 @@ mcc_equation <- function(
     dplyr::ungroup() |>
     dplyr::select(time, mcc)
 
-  # Prepare the return list with conditional inclusion of adjusted_data
-  result_list <- list(
-    mcc_final = mcc_final,
-    mcc_table = mcc_table,
-    original_data = data_std
-  )
+  # Prepare the return list based on include_details parameter
+  if (include_details) {
+    result_list <- list(
+      mcc_final = mcc_final,
+      mcc_table = mcc_table,
+      original_data = data_std
+    )
 
-  # Only include adjusted_data if times were actually adjusted
-  if (times_were_adjusted) {
-    result_list$adjusted_data <- adjusted_data
+    # Only include adjusted_data if times were actually adjusted
+    if (times_were_adjusted) {
+      result_list$adjusted_data <- adjusted_data
+    }
+  } else {
+    # Simplified output for bootstrapping
+    result_list <- list(
+      mcc_final = mcc_final
+    )
   }
 
   return(result_list)

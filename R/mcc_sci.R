@@ -9,14 +9,11 @@
 #'                  If NULL (default), a constant value of 0 is used for all observations.
 #' @param adjust_times Whether to automatically adjust times for simultaneous events (default: TRUE)
 #' @param time_precision Precision used for adjusting simultaneous events (default: 1e-6)
+#' @param include_details Whether to include detailed calculation tables and intermediate
+#'                        objects in the output (default: TRUE).
 #'
-#' @return A list containing:
-#'   \item{mcc_final}{A tibble with columns for time and MCC (expressed as SumCIs)}
-#'   \item{sci_table}{A tibble with cumulative incidence for each event number and their sum}
-#'   \item{all_cis}{A list of cumulative incidence data for each event number}
-#'   \item{mcc_base}{A tibble with calculation details for the MCC}
-#'   \item{original_data}{A tibble with the original input data}
-#'   \item{adjusted_data}{A tibble with adjusted data (if time adjustment was applied)}
+#' @returns A list containing MCC results. If include_details=TRUE, returns complete
+#'         calculation details. Otherwise, returns only the final MCC estimates.
 #'
 #' @keywords internal
 mcc_sci <- function(
@@ -26,7 +23,8 @@ mcc_sci <- function(
   cause_var,
   tstart_var = NULL,
   adjust_times = TRUE,
-  time_precision = 1e-6
+  time_precision = 1e-6,
+  include_details = TRUE
 ) {
   # Convert inputs to symbols for tidy evaluation
   id_var <- rlang::ensym(id_var)
@@ -64,12 +62,20 @@ mcc_sci <- function(
       wrap = TRUE
     )
 
-    # Create empty results
-    result_list <- list(
-      mcc_final = tibble::tibble(time = max_time, SumCIs = 0),
-      sci_table = tibble::tibble(time = max_time, SumCIs = 0),
-      original_data = data_std
-    )
+    # Create appropriate results based on include_details parameter
+    if (include_details) {
+      # Detailed output (original behavior)
+      result_list <- list(
+        mcc_final = tibble::tibble(time = max_time, SumCIs = 0),
+        sci_table = tibble::tibble(time = max_time, SumCIs = 0),
+        original_data = data_std
+      )
+    } else {
+      # Simplified output for bootstrapping
+      result_list <- list(
+        mcc_final = tibble::tibble(time = max_time, SumCIs = 0)
+      )
+    }
 
     return(result_list)
   }
@@ -285,18 +291,23 @@ mcc_sci <- function(
         ])))
       )
 
-    # Prepare the return list
-    result_list <- list(
-      mcc_final = mcc_final,
-      sci_table = sci_table,
-      all_cis = all_cis,
-      mcc_base = mcc_base |> dplyr::rename(time = Time),
-      original_data = data_std
-    )
+    # Prepare the return list based on include_details parameter
+    if (include_details) {
+      result_list <- list(
+        mcc_final = mcc_final,
+        sci_table = sci_table,
+        all_cis = all_cis,
+        mcc_base = mcc_base |> dplyr::rename(time = Time),
+        original_data = data_std
+      )
 
-    # Only include adjusted_data if times were actually adjusted
-    if (times_were_adjusted) {
-      result_list$adjusted_data <- adjusted_data
+      # Only include adjusted_data if times were actually adjusted
+      if (times_were_adjusted) {
+        result_list$adjusted_data <- adjusted_data
+      }
+    } else {
+      # Simplified output for bootstrapping
+      result_list <- list(mcc_final = mcc_final)
     }
 
     return(result_list)
@@ -312,15 +323,23 @@ mcc_sci <- function(
     )
 
     # Create empty results
-    result_list <- list(
-      mcc_final = tibble::tibble(time = max_time, SumCIs = 0),
-      sci_table = tibble::tibble(time = max_time, SumCIs = 0),
-      original_data = data_std
-    )
+    # Prepare simplified results if include_details is FALSE
+    if (include_details) {
+      result_list <- list(
+        mcc_final = tibble::tibble(time = max_time, SumCIs = 0),
+        sci_table = tibble::tibble(time = max_time, SumCIs = 0),
+        original_data = data_std
+      )
 
-    # Only include adjusted_data if times were adjusted
-    if (times_were_adjusted) {
-      result_list$adjusted_data <- adjusted_data
+      # Only include adjusted_data if times were adjusted
+      if (times_were_adjusted) {
+        result_list$adjusted_data <- adjusted_data
+      }
+    } else {
+      # Simplified output for bootstrapping
+      result_list <- list(
+        mcc_final = tibble::tibble(time = max_time, SumCIs = 0)
+      )
     }
 
     return(result_list)

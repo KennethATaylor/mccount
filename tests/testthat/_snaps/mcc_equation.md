@@ -23,3 +23,15 @@
         ..$ time  : num(0) 
         ..$ cause : num(0) 
 
+# mcc_equation() handles empty data with include_details=FALSE
+
+    Code
+      result <- mcc_equation(data = df, id_var = "id", time_var = "time", cause_var = "cause",
+        include_details = FALSE)
+      str(result)
+    Output
+      List of 1
+       $ mcc_final: tibble [0 x 2] (S3: tbl_df/tbl/data.frame)
+        ..$ time: num(0) 
+        ..$ mcc : num(0) 
+

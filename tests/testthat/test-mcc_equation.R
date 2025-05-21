@@ -258,3 +258,238 @@ test_that("mcc_equation() correctly processes data with all competing risks", {
   expect_equal(sum(result$mcc_table$event), 0)
   expect_equal(sum(result$mcc_table$mcc), 0)
 })
+
+
+test_that("mcc_equation() respects include_details=FALSE parameter", {
+  # Create a simple dataset
+  df <- data.frame(
+    id = c(1, 2, 3, 4, 4),
+    time = c(5, 8, 12, 10, 15),
+    cause = c(1, 0, 2, 1, 1)
+  )
+
+  # Run with default include_details=TRUE
+  result_detailed <- mcc_equation(
+    data = df,
+    id_var = "id",
+    time_var = "time",
+    cause_var = "cause"
+  )
+
+  # Run with include_details=FALSE
+  result_simple <- mcc_equation(
+    data = df,
+    id_var = "id",
+    time_var = "time",
+    cause_var = "cause",
+    include_details = FALSE
+  )
+
+  # Test output structure with include_details=FALSE
+  expect_type(result_simple, "list")
+
+  # Should only contain mcc_final
+  expect_named(result_simple, "mcc_final")
+
+  # mcc_final should be identical in both outputs
+  expect_equal(result_detailed$mcc_final, result_simple$mcc_final)
+
+  # Detailed output should contain more elements
+  expect_gt(length(result_detailed), length(result_simple))
+})
+
+test_that("mcc_equation() with include_details=FALSE works with various scenarios", {
+  # 1. With simultaneous events
+  df_sim <- data.frame(
+    id = c(1, 1, 2, 3),
+    time = c(5, 5, 8, 10),
+    cause = c(1, 2, 0, 1)
+  )
+
+  result_sim <- mcc_equation(
+    data = df_sim,
+    id_var = "id",
+    time_var = "time",
+    cause_var = "cause",
+    include_details = FALSE
+  )
+
+  expect_named(result_sim, "mcc_final")
+  expect_true(all(c("time", "mcc") %in% names(result_sim$mcc_final)))
+
+  # 2. With last records being events
+  df_last <- data.frame(
+    id = c(1, 2, 2, 3),
+    time = c(5, 8, 10, 12),
+    cause = c(0, 1, 1, 2) # ID 2's last record is an event
+  )
+
+  result_last <- mcc_equation(
+    data = df_last,
+    id_var = "id",
+    time_var = "time",
+    cause_var = "cause",
+    include_details = FALSE
+  )
+
+  expect_named(result_last, "mcc_final")
+  expect_true(all(c("time", "mcc") %in% names(result_last$mcc_final)))
+
+  # 3. With only censoring
+  df_censor <- data.frame(
+    id = 1:3,
+    time = c(10, 20, 30),
+    cause = c(0, 0, 0)
+  )
+
+  result_censor <- mcc_equation(
+    data = df_censor,
+    id_var = "id",
+    time_var = "time",
+    cause_var = "cause",
+    include_details = FALSE
+  )
+
+  expect_named(result_censor, "mcc_final")
+  expect_equal(sum(result_censor$mcc_final$mcc), 0)
+
+  # 4. With only competing risks
+  df_cmprk <- data.frame(
+    id = 1:3,
+    time = c(10, 20, 30),
+    cause = c(2, 2, 2)
+  )
+
+  result_cmprk <- mcc_equation(
+    data = df_cmprk,
+    id_var = "id",
+    time_var = "time",
+    cause_var = "cause",
+    include_details = FALSE
+  )
+
+  expect_named(result_cmprk, "mcc_final")
+  expect_equal(sum(result_cmprk$mcc_final$mcc), 0)
+})
+
+test_that("mcc_equation() with include_details=FALSE does not include adjusted_data", {
+  # Create dataset with simultaneous events
+  df <- data.frame(
+    id = c(1, 1, 2),
+    time = c(5, 5, 8),
+    cause = c(1, 2, 0)
+  )
+
+  # With default include_details=TRUE
+  result_detailed <- mcc_equation(
+    data = df,
+    id_var = "id",
+    time_var = "time",
+    cause_var = "cause"
+  )
+
+  # Should include adjusted_data
+  expect_true("adjusted_data" %in% names(result_detailed))
+
+  # With include_details=FALSE
+  result_simple <- mcc_equation(
+    data = df,
+    id_var = "id",
+    time_var = "time",
+    cause_var = "cause",
+    include_details = FALSE
+  )
+
+  # Should NOT include adjusted_data
+  expect_false("adjusted_data" %in% names(result_simple))
+})
+
+test_that("mcc_equation() with include_details=FALSE provides sufficient data for bootstrapping", {
+  # Create dataset with multiple events
+  df <- data.frame(
+    id = c(1, 2, 3, 4, 4),
+    time = c(5, 8, 12, 10, 15),
+    cause = c(1, 0, 2, 1, 1)
+  )
+
+  # Run with simplified output
+  result <- mcc_equation(
+    data = df,
+    id_var = "id",
+    time_var = "time",
+    cause_var = "cause",
+    include_details = FALSE
+  )
+
+  # Verify we have all the time points and MCC values needed for CI calculation
+  expect_true("time" %in% names(result$mcc_final))
+  expect_true("mcc" %in% names(result$mcc_final))
+
+  # Simulate a simple bootstrap process
+  n_boot <- 3 # Small number for testing
+  boot_results <- list()
+
+  # Create bootstrap samples and calculate MCC
+  for (i in 1:n_boot) {
+    # Sample IDs with replacement
+    sample_ids <- sample(unique(df$id), replace = TRUE)
+
+    # Create bootstrap sample
+    boot_df <- data.frame()
+    for (id in sample_ids) {
+      id_rows <- df[df$id == id, ]
+      boot_df <- rbind(boot_df, id_rows)
+    }
+
+    # Calculate MCC with simplified output
+    boot_result <- mcc_equation(
+      data = boot_df,
+      id_var = "id",
+      time_var = "time",
+      cause_var = "cause",
+      include_details = FALSE
+    )
+
+    boot_results[[i]] <- boot_result$mcc_final
+  }
+
+  # Check if we can extract data for each time point across bootstrap samples
+  all_times <- sort(unique(unlist(lapply(boot_results, function(x) x$time))))
+
+  # For example, for the first time point
+  if (length(all_times) > 0) {
+    t1 <- all_times[1]
+
+    # Extract MCC values for this time point from each bootstrap sample
+    mcc_values <- sapply(boot_results, function(x) {
+      if (t1 %in% x$time) {
+        return(x$mcc[x$time == t1])
+      } else {
+        return(NA)
+      }
+    })
+
+    # Verify we can calculate a confidence interval
+    expect_true(!all(is.na(mcc_values)))
+  }
+})
+
+test_that("mcc_equation() handles empty data with include_details=FALSE", {
+  df <- data.frame(
+    id = numeric(0),
+    time = numeric(0),
+    cause = numeric(0)
+  )
+
+  # Capture the result with simplified output
+  expect_snapshot({
+    result <- mcc_equation(
+      data = df,
+      id_var = "id",
+      time_var = "time",
+      cause_var = "cause",
+      include_details = FALSE
+    )
+    str(result) # Include structure in the snapshot
+  })
+})
