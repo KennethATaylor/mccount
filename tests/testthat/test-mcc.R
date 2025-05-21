@@ -681,15 +681,16 @@ test_that("mcc() validates include_details parameter", {
     )
   )
 
-  expect_snapshot(
-    error = TRUE,
+  expect_error(
     mcc(
       data = df,
       id_var = "id",
       time_var = "time",
       cause_var = "cause",
-      include_details = NA # NA instead of TRUE/FALSE
-    )
+      include_details = NA
+    ),
+    "missing value where TRUE/FALSE needed",
+    fixed = TRUE
   )
 })
 

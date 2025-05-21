@@ -346,12 +346,3 @@
       ! `include_details` must be a <logical> value (`TRUE` or `FALSE`)
       x Received: TRUE and FALSE
 
----
-
-    Code
-      mcc(data = df, id_var = "id", time_var = "time", cause_var = "cause",
-        include_details = NA)
-    Condition
-      Error in `if (include_details) ...`:
-      ! missing value where TRUE/FALSE needed
-
