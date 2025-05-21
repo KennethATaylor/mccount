@@ -6,7 +6,7 @@ Authors@R:
            comment = c(ORCID = "0000-0002-3205-9280"))
 Description: Provides tools for estimating the Mean Cumulative Count (MCC), a statistical method for quantifying the burden of recurrent events in the presence of competing risks. The package implements two complementary estimation approaches: the direct probability-based 'equation' method and the 'sum of cumulative incidence' method. Both approaches handle right censoring, with additional support for left truncation in the latter. Features include automatic adjustment for simultaneous events, detailed calculation tables, and utilities for bootstrapping confidence intervals. Methods are implemented following Dong et al. (2015) <doi:10.1093/aje/kwu289>.
 License: MIT + file LICENSE
-URL: https://github.com/KennethATaylor/mccount
+URL: https://github.com/KennethATaylor/mccount, https://kennethataylor.github.io/mccount/
 BugReports: https://github.com/KennethATaylor/mccount/issues
 Suggests: 
     boot,
