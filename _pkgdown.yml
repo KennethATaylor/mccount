@@ -1,4 +1,17 @@
 url: https://kennethataylor.github.io/mccount/
+
+home:
+  title: Estimate Recurrent Event Burden with Competing Risks
+
+development:
+  mode: auto
+
+repo:
+  url:
+    home: https://github.com/KennethATaylor/mccount/
+    source: https://github.com/KennethATaylor/mccount/blob/HEAD/
+    issue: https://github.com/KennethATaylor/mccount/issues/
+    user: https://github.com/
+
 template:
   bootstrap: 5
-
