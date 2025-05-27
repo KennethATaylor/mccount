@@ -116,24 +116,24 @@
     Code
       handle_simultaneous_events(data_std = 1)
     Condition
-      Error in `UseMethod()`:
-      ! no applicable method for 'group_by' applied to an object of class "c('double', 'numeric')"
+      Error in `setorderv()`:
+      ! some columns are not in the data.table: [id, time]
 
 ---
 
     Code
       handle_simultaneous_events(data_std = 1, adjust_times = TRUE)
     Condition
-      Error in `UseMethod()`:
-      ! no applicable method for 'group_by' applied to an object of class "c('double', 'numeric')"
+      Error in `setorderv()`:
+      ! some columns are not in the data.table: [id, time]
 
 ---
 
     Code
       handle_simultaneous_events(data_std = 1, adjust_times = TRUE, time_precision = 1)
     Condition
-      Error in `UseMethod()`:
-      ! no applicable method for 'group_by' applied to an object of class "c('double', 'numeric')"
+      Error in `setorderv()`:
+      ! some columns are not in the data.table: [id, time]
 
 ---
 
@@ -158,9 +158,11 @@
       i Adjusted time points for events occurring simultaneously for the same subject.
     Output
       $data
-        id time cause
-      1  1    1     1
-      2  1    2     2
+      # A tibble: 2 x 3
+           id  time cause
+        <dbl> <dbl> <dbl>
+      1     1     1     1
+      2     1     2     2
       
       $times_were_adjusted
       [1] TRUE

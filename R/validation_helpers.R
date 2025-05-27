@@ -160,103 +160,72 @@ standardize_data <- function(
 #' @keywords internal
 #' @noRd
 handle_simultaneous_events <- function(data_std, adjust_times, time_precision) {
-  # Identify cases where a subject has different events at the same time
-  duplicated_times <- data_std |>
-    dplyr::group_by(.data$id, .data$time) |>
-    dplyr::filter(dplyr::n() > 1) |>
-    dplyr::ungroup()
+  # Convert to data.table for efficient operations
+  dt <- data.table::as.data.table(data_std)
+  data.table::setorder(dt, id, time)
 
-  # Check if there are simultaneous events that need handling
-  has_simultaneous_events <- nrow(duplicated_times) > 0
-  times_were_adjusted <- FALSE
+  # Identify simultaneous events efficiently
+  dt[, n_events_at_time := .N, by = .(id, time)]
+  has_simultaneous_events <- dt[n_events_at_time > 1, .N] > 0
 
-  if (has_simultaneous_events) {
-    if (adjust_times) {
-      # Get unique IDs with duplicated times
-      affected_ids <- unique(duplicated_times$id)
-
-      # Copy original data to perform adjustments
-      adjusted_data <- data_std
-
-      for (curr_id in affected_ids) {
-        # Extract data for this ID
-        id_data <- adjusted_data |>
-          dplyr::filter(.data$id == curr_id) |>
-          dplyr::arrange(.data$time)
-
-        # Find duplicated times for this ID
-        dup_times <- id_data |>
-          dplyr::group_by(.data$time) |>
-          dplyr::filter(dplyr::n() > 1) |>
-          dplyr::ungroup() |>
-          dplyr::pull(.data$time) |>
-          unique()
-
-        for (dup_time in dup_times) {
-          # Process each duplicated time
-          dup_data <- id_data |>
-            dplyr::filter(.data$time == dup_time)
-
-          # Sort by priority: event=1 first, then competing risk=2, then censoring=0
-          dup_data <- dup_data |>
-            dplyr::mutate(
-              cause_order = factor(.data$cause, levels = c(1, 2, 0))
-            ) |>
-            dplyr::arrange(.data$cause_order) |>
-            dplyr::select(-"cause_order")
-
-          # Adjust times for all but the first event
-          if (nrow(dup_data) > 1) {
-            for (i in 2:nrow(dup_data)) {
-              dup_data$time[i] <- dup_data$time[i] + time_precision * (i - 1)
-            }
-          }
-
-          # Determine columns to use for anti-join (handling whether tstart exists)
-          join_cols <- c("id", "time", "cause")
-          if ("tstart" %in% names(adjusted_data)) {
-            join_cols <- c(join_cols, "tstart")
-          }
-
-          # Update the adjusted data
-          filter_expr <- rlang::expr(
-            .data$id == !!curr_id & .data$time == !!dup_time
-          )
-
-          adjusted_data <- adjusted_data |>
-            dplyr::anti_join(
-              dplyr::filter(adjusted_data, !!filter_expr),
-              by = join_cols
-            ) |>
-            dplyr::bind_rows(dup_data) |>
-            dplyr::arrange(.data$id, .data$time)
-        }
-      }
-
-      # Set flag indicating adjustments were made
-      times_were_adjusted <- TRUE
-
-      # Inform the user about the adjustment
-      cli::cli_alert_info(
-        "Adjusted time points for events occurring simultaneously for the same subject."
-      )
-
-      return(list(
-        data = adjusted_data,
-        times_were_adjusted = times_were_adjusted
-      ))
-    } else {
-      # If adjust_times=FALSE but simultaneous events exist, issue a warning
-      cli::cli_warn(c(
-        "Data contains events occurring simultaneously for the same subject.",
-        "i" = "These events will be processed without time adjustment ({.arg adjust_times = FALSE}).",
-        "i" = "This may affect calculation accuracy. Consider using {.code adjust_times = TRUE}."
-      ))
-    }
+  if (!has_simultaneous_events) {
+    return(list(
+      data = data_std,
+      times_were_adjusted = FALSE
+    ))
   }
 
-  return(list(
-    data = data_std,
-    times_were_adjusted = times_were_adjusted
-  ))
+  if (adjust_times) {
+    # Create cause priority ordering: event=1 first, then competing risk=2, then censoring=0
+    dt[,
+      cause_priority := data.table::fcase(
+        cause == 1L,
+        1L,
+        cause == 2L,
+        2L,
+        cause == 0L,
+        3L,
+        default = 4L # fallback for unexpected values
+      )
+    ]
+
+    # Sort by id, time, then by cause priority
+    data.table::setorder(dt, id, time, cause_priority)
+
+    # Add row number within each (id, time) group to determine adjustment order
+    dt[, row_within_time := seq_len(.N), by = .(id, time)]
+
+    # Apply time adjustments only where needed (row_within_time > 1)
+    dt[
+      row_within_time > 1L,
+      time := time + time_precision * (row_within_time - 1L)
+    ]
+
+    # Clean up helper columns
+    dt[, c("n_events_at_time", "cause_priority", "row_within_time") := NULL]
+
+    # Re-sort by final adjusted times
+    data.table::setorder(dt, id, time)
+
+    cli::cli_alert_info(
+      "Adjusted time points for events occurring simultaneously for the same subject."
+    )
+
+    return(list(
+      data = tibble::as_tibble(dt),
+      times_were_adjusted = TRUE
+    ))
+  } else {
+    # Issue warning but don't adjust
+    cli::cli_warn(c(
+      "Data contains events occurring simultaneously for the same subject.",
+      "i" = "These events will be processed without time adjustment ({.arg adjust_times = FALSE}).",
+      "i" = "This may affect calculation accuracy. Consider using {.code adjust_times = TRUE}."
+    ))
+
+    return(list(
+      data = data_std,
+      times_were_adjusted = FALSE
+    ))
+  }
 }
