@@ -6,5 +6,19 @@ utils::globalVariables(c(
   ".",
   "cause_priority",
   "cause",
-  "row_within_time"
+  "row_within_time",
+  "time_adj",
+  "cause1",
+  "first",
+  "maxE",
+  "i.maxE",
+  "m_event",
+  "cm",
+  "Time",
+  "MCC",
+  "Deta",
+  "ci",
+  "SumCIs",
+  ".SD",
+  "cumI"
 ))
