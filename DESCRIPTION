@@ -30,8 +30,7 @@ Imports:
     mstate,
     rlang,
     survival,
-    tibble,
-    tidyr
+    tibble
 Suggests: 
     boot,
     spelling,

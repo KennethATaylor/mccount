@@ -23,8 +23,10 @@ validate_column_existence <- function(
     rlang::as_name(cause_var)
   )
 
-  if (!all(required_vars %in% names(data))) {
-    missing_vars <- setdiff(required_vars, names(data))
+  # Vectorized check for all required columns at once
+  missing_vars <- required_vars[!required_vars %in% names(data)]
+
+  if (length(missing_vars) > 0) {
     cli::cli_abort(c(
       "Missing required variables in {.arg data}:",
       "x" = "Missing: {missing_vars}"
@@ -67,10 +69,14 @@ validate_data_type <- function(data) {
 #' @keywords internal
 #' @noRd
 validate_cause_values <- function(data, cause_var) {
-  cause_values <- unique(data[[rlang::as_name(cause_var)]])
-  invalid_values <- setdiff(cause_values, c(0, 1, 2))
+  cause_col <- data[[rlang::as_name(cause_var)]]
 
-  if (length(invalid_values) > 0) {
+  # More efficient validation using vectorized operations
+  valid_values <- c(0, 1, 2)
+  invalid_mask <- !cause_col %in% valid_values
+
+  if (any(invalid_mask)) {
+    invalid_values <- unique(cause_col[invalid_mask])
     cli::cli_abort(c(
       "{.arg cause_var} must only contain values 0, 1, or 2",
       "x" = "Found invalid values: {invalid_values}"
@@ -96,8 +102,11 @@ validate_time_tstart <- function(data, time_var, tstart_var) {
   times <- data[[time_name]]
   tstarts <- data[[tstart_name]]
 
-  if (any(times <= tstarts, na.rm = TRUE)) {
-    problematic_indices <- which(times <= tstarts)
+  # Vectorized check for efficiency
+  invalid_mask <- times <= tstarts & !is.na(times) & !is.na(tstarts)
+
+  if (any(invalid_mask)) {
+    problematic_indices <- which(invalid_mask)
     sample_issues <- utils::head(problematic_indices, 5)
 
     cli::cli_abort(c(
@@ -128,21 +137,22 @@ standardize_data <- function(
   cause_var,
   tstart_var = NULL
 ) {
-  # Create standardized data frame
-  data_std <- data |>
-    dplyr::select(
-      id = !!id_var,
-      time = !!time_var,
-      cause = !!cause_var
-    )
-
-  # Add tstart column if specified
+  # Create standardized data frame - more efficient column selection
   if (!is.null(tstart_var)) {
-    data_std <- data_std |>
-      dplyr::mutate(tstart = data[[rlang::as_name(tstart_var)]]) |>
-      dplyr::relocate("tstart", .before = "time")
+    data_std <- data |>
+      dplyr::select(
+        id = !!id_var,
+        tstart = !!tstart_var,
+        time = !!time_var,
+        cause = !!cause_var
+      )
   } else {
-    data_std <- data_std |>
+    data_std <- data |>
+      dplyr::select(
+        id = !!id_var,
+        time = !!time_var,
+        cause = !!cause_var
+      ) |>
       dplyr::mutate(tstart = 0) |>
       dplyr::relocate("tstart", .before = "time")
   }

@@ -1,24 +1,49 @@
 utils::globalVariables(c(
+  # Data manipulation variables
   "id",
   "time",
+  "cause",
+  "tstart",
+
+  # data.table variables
   "n_events_at_time",
   ".N",
   ".",
+  ".SD",
   "cause_priority",
-  "cause",
   "row_within_time",
-  "time_adj",
-  "cause1",
+
+  # MCC calculation variables
   "first",
   "maxE",
   "i.maxE",
   "m_event",
-  "cm",
+  "time_adj",
+  "tstart_adj",
+  "cause1",
   "Time",
-  "MCC",
+  "cm",
   "Deta",
-  "ci",
+  "cumI",
+  "MCC",
   "SumCIs",
-  ".SD",
-  "cumI"
+
+  # Lifetable variables
+  "count",
+  "censor",
+  "event",
+  "cmprk",
+  "sum_censor",
+  "sum_cmprk",
+  "nrisk_current",
+  "nrisk",
+  "surv_prob",
+  "overall_surv",
+  "overall_surv_previous",
+  "ave_events",
+  "mcc",
+
+  # General variables
+  "V1",
+  "ci"
 ))

@@ -12,9 +12,8 @@ handle_simultaneous_events <- function(data_std, adjust_times, time_precision) {
   dt <- data.table::as.data.table(data_std)
   data.table::setorder(dt, id, time)
 
-  # Identify simultaneous events efficiently
-  dt[, n_events_at_time := .N, by = .(id, time)]
-  has_simultaneous_events <- dt[n_events_at_time > 1, .N] > 0
+  # Identify simultaneous events efficiently - check only once
+  has_simultaneous_events <- dt[, any(.N > 1), by = .(id, time)][, any(V1)]
 
   if (!has_simultaneous_events) {
     return(list(
@@ -27,11 +26,11 @@ handle_simultaneous_events <- function(data_std, adjust_times, time_precision) {
     # Create cause priority ordering: event=1 first, then competing risk=2, then censoring=0
     dt[,
       cause_priority := data.table::fcase(
-        cause == 1L,
+        cause == 1,
         1L,
-        cause == 2L,
+        cause == 2,
         2L,
-        cause == 0L,
+        cause == 0,
         3L,
         default = 4L # fallback for unexpected values
       )
@@ -43,14 +42,17 @@ handle_simultaneous_events <- function(data_std, adjust_times, time_precision) {
     # Add row number within each (id, time) group to determine adjustment order
     dt[, row_within_time := seq_len(.N), by = .(id, time)]
 
-    # Apply time adjustments only where needed (row_within_time > 1)
-    dt[
-      row_within_time > 1L,
-      time := time + time_precision * (row_within_time - 1L)
-    ]
+    # Apply time adjustments only where needed (row_within_time > 1) - vectorized
+    adjustment_needed <- dt$row_within_time > 1L
+    if (any(adjustment_needed)) {
+      dt[
+        adjustment_needed,
+        time := time + time_precision * (row_within_time - 1L)
+      ]
+    }
 
     # Clean up helper columns
-    dt[, c("n_events_at_time", "cause_priority", "row_within_time") := NULL]
+    dt[, c("cause_priority", "row_within_time") := NULL]
 
     # Re-sort by final adjusted times
     data.table::setorder(dt, id, time)
