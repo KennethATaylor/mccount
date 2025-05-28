@@ -92,11 +92,14 @@ mcc_sci <- function(
   # Use adjusted_data if adjustments were made, otherwise use original
   data_to_use <- if (times_were_adjusted) adjusted_data else data_std
 
+  # Convert to data.table for efficient operations
+  dt <- data.table::as.data.table(data_to_use)
+
   # Extract vectors for calculation - more efficient for numerical operations
-  id <- data_to_use$id
-  time <- data_to_use$time
-  cause <- data_to_use$cause
-  tstart <- data_to_use$tstart
+  id <- dt$id
+  time <- dt$time
+  cause <- dt$cause
+  tstart <- dt$tstart
 
   # Handle tstart as a vector if it's a single value
   if (length(unique(tstart)) == 1) {
@@ -109,85 +112,77 @@ mcc_sci <- function(
     time[time_equal_tstart] <- tstart[time_equal_tstart] + exp(-13)
   }
 
-  # Create and sort dataset
-  input_data <- tibble::tibble(
-    id = id,
-    time = time,
-    cause = cause,
-    tstart = tstart
-  ) |>
-    dplyr::mutate(cause1 = dplyr::if_else(cause == 2, -1, cause)) |>
-    dplyr::arrange(id, time, dplyr::desc(.data$cause1))
+  # Create data.table with all required columns
+  dt[, `:=`(
+    cause1 = data.table::fcase(cause == 2, -1, default = cause),
+    time_adj = time,
+    tstart_adj = tstart
+  )]
+
+  # Sort once by id, time, and cause priority
+  data.table::setorder(dt, id, time_adj, -cause1)
 
   # Check if we need to account for truncation
   calc_trunc <- any(tstart[!is.na(tstart)] != 0)
 
   # Add sequence number within each ID
-  input_data <- input_data |>
-    dplyr::group_by(id) |>
-    dplyr::mutate(first = dplyr::row_number()) |>
-    dplyr::ungroup()
+  dt[, first := seq_len(.N), by = id]
 
   # Maximum number of events per ID
-  max_events <- max(input_data$first)
+  max_events <- dt[, max(first)]
 
   # Get the last row for each ID to determine max events per person
-  event_number <- input_data |>
-    dplyr::group_by(id) |>
-    dplyr::slice_tail(n = 1) |>
-    dplyr::select("id", "first") |>
-    dplyr::rename(maxE = "first") |>
-    dplyr::ungroup()
+  event_number <- dt[, .(maxE = .N), by = id]
 
   # Merge back to main data
-  all_data <- dplyr::left_join(input_data, event_number, by = "id")
+  dt[event_number, maxE := i.maxE, on = "id"]
 
   # Create dataset for cumulative incidence calculations
-  data_mcc <- NULL
+  data_mcc_list <- vector("list", max_events)
 
   # Process first events
-  data_temp <- all_data |>
-    dplyr::filter(.data$first == 1) |>
-    dplyr::mutate(m_event = 1)
-  data_mcc <- data_temp
+  data_mcc_list[[1]] <- dt[first == 1][, m_event := 1]
 
   # Process subsequent events
   for (i in 2:max_events) {
     # For those with i or more records, take the ith record
-    the_ith <- all_data |> dplyr::filter(.data$first == i)
+    the_ith <- dt[first == i][, m_event := i]
 
     # For those with <i records, take the last record
     # If the last record is an event 1, change it to 0
-    the_last <- all_data |>
-      dplyr::filter(.data$maxE < i, .data$first == .data$maxE) |>
-      dplyr::mutate(cause = ifelse(cause == 1, 0, cause))
+    the_last <- dt[maxE < i & first == maxE][,
+      `:=`(
+        cause = data.table::fcase(cause == 1, 0, default = cause),
+        m_event = i
+      )
+    ]
 
-    ci_data_ith <- dplyr::bind_rows(the_ith, the_last) |>
-      dplyr::mutate(m_event = i)
-
-    data_mcc <- dplyr::bind_rows(data_mcc, ci_data_ith)
+    data_mcc_list[[i]] <- rbind(the_ith, the_last)
   }
 
+  # Combine all data
+  data_mcc <- data.table::rbindlist(data_mcc_list)
+
   # Store all cumulative incidence results
-  all_cis <- list()
+  all_cis <- vector("list", max_events)
 
   # Calculate cumulative incidence for each recurrence level
-  mcc_base <- NULL
+  mcc_base_list <- vector("list", max_events)
 
-  for (j in 1:max_events) {
-    data_j <- data_mcc |> dplyr::filter(.data$m_event == j)
+  for (j in seq_len(max_events)) {
+    data_j <- data_mcc[m_event == j]
 
     if (1 %in% data_j$cause) {
       # Only if the data contains events of interest
       if (calc_trunc) {
         # For left truncation, use mstate::crprep and survival
         exp_data <- mstate::crprep(
-          Tstop = "time",
+          Tstop = "time_adj",
           status = "cause",
           data = data_j,
           trans = 1,
           cens = 0,
-          Tstart = "tstart",
+          Tstart = "tstart_adj",
           id = "id"
         )
 
@@ -197,85 +192,76 @@ mcc_sci <- function(
           weights = exp_data$weight.cens * exp_data$weight.trunc
         )
 
-        cm1 <- tibble::tibble(
+        cm1 <- data.table::data.table(
           Time = summary(fit1)$time,
           cm = 1 - summary(fit1)$surv
         )
       } else {
         # For right censoring only, use cmprsk::cuminc
-        ci_grey <- cmprsk::cuminc(data_j$time, data_j$cause)
-        cm1 <- tibble::tibble(
+        ci_grey <- cmprsk::cuminc(data_j$time_adj, data_j$cause)
+        cm1 <- data.table::data.table(
           Time = ci_grey[[1]]$time,
           cm = ci_grey[[1]]$est
         )
       }
 
       # Store in all_cis list
-      all_cis[[j]] <- cm1 |> dplyr::rename(time = "Time", ci = "cm")
+      all_cis[[j]] <- tibble::tibble(time = cm1$Time, ci = cm1$cm)
 
       # Calculate incremental changes and add recurrence indicator
-      cm1 <- cm1 |>
-        dplyr::mutate(
-          Deta = c(.data$cm[1], diff(.data$cm)),
-          cumI = j
-        )
+      cm1[, `:=`(
+        Deta = c(cm[1], diff(cm)),
+        cumI = j
+      )]
 
-      mcc_base <- dplyr::bind_rows(mcc_base, cm1)
+      mcc_base_list[[j]] <- cm1
     } else {
       all_cis[[j]] <- tibble::tibble(time = numeric(0), ci = numeric(0))
     }
   }
 
-  # Process results to create final outputs
-  if (!is.null(mcc_base)) {
-    # Remove duplicates and sort by event dates
-    nodup_mcc_base <- mcc_base |>
-      dplyr::distinct(.data$cm, .data$cumI, .keep_all = TRUE)
+  # Combine all mcc_base results
+  mcc_base <- data.table::rbindlist(mcc_base_list, fill = TRUE)
 
-    sort_mcc_base <- nodup_mcc_base |>
-      dplyr::arrange(.data$Time)
+  # Process results to create final outputs
+  if (nrow(mcc_base) > 0) {
+    # Remove duplicates and sort by event dates efficiently
+    mcc_base_unique <- unique(mcc_base, by = c("cm", "cumI"))
+    data.table::setorder(mcc_base_unique, Time)
 
     # Calculate MCC by summing cumulative incidences
-    mcc_values <- cumsum(sort_mcc_base$Deta)
-
-    # Combine results
-    combine_mcc <- sort_mcc_base |>
-      dplyr::mutate(MCC = mcc_values)
+    mcc_base_unique[, MCC := cumsum(Deta)]
 
     # Create final output: max MCC value at each time point
-    mcc_final <- combine_mcc |>
-      dplyr::group_by(.data$Time) |>
-      dplyr::summarize(SumCIs = max(.data$MCC), .groups = "drop") |>
-      dplyr::rename(time = "Time")
+    mcc_final_dt <- mcc_base_unique[, .(SumCIs = max(MCC)), by = Time]
+    data.table::setnames(mcc_final_dt, "Time", "time")
+    mcc_final <- tibble::as_tibble(mcc_final_dt)
 
     # Create SCItable
     # Get all unique time points from the data used in calculation
-    all_times <- sort(unique(time))
-    all_times <- all_times[all_times > 0] # Remove time 0 if present
+    all_times <- sort(unique(time[time > 0]))
 
     # Create a table with all time points
-    sci_table <- tibble::tibble(time = all_times)
+    sci_table_dt <- data.table::data.table(time = all_times)
 
     # Fill in CI values for each event number
-    for (j in 1:max_events) {
+    for (j in seq_len(max_events)) {
       ci_col <- paste0("CI", j)
-      sci_table[[ci_col]] <- 0 # Initialize with zeros
+      sci_table_dt[, (ci_col) := 0]
 
       if (length(all_cis[[j]]$time) > 0) {
-        ci_data <- all_cis[[j]]
-        ci_data <- ci_data |> dplyr::filter(.data$time > 0) # Remove time 0
+        ci_data_dt <- data.table::as.data.table(all_cis[[j]])
+        ci_data_dt <- ci_data_dt[time > 0]
 
-        if (nrow(ci_data) > 0) {
+        if (nrow(ci_data_dt) > 0) {
           # For each time point in sci_table, find the corresponding CI value
-          for (i in 1:nrow(sci_table)) {
-            t <- sci_table$time[i]
+          for (i in seq_len(nrow(sci_table_dt))) {
+            t <- sci_table_dt$time[i]
             # Find the maximum CI value at or before this time
-            ci_before <- ci_data |>
-              dplyr::filter(.data$time <= t) |>
-              dplyr::pull(.data$ci)
+            ci_before <- ci_data_dt[time <= t, ci]
 
             if (length(ci_before) > 0) {
-              sci_table[[ci_col]][i] <- max(ci_before)
+              sci_table_dt[i, (ci_col) := max(ci_before)]
             }
           }
         }
@@ -283,13 +269,16 @@ mcc_sci <- function(
     }
 
     # Calculate SumCIs as the sum of all CI columns
-    ci_cols <- grep("^CI", names(sci_table))
-    sci_table <- sci_table |>
-      dplyr::mutate(
-        SumCIs = rowSums(dplyr::across(dplyr::all_of(names(sci_table)[
-          ci_cols
-        ])))
-      )
+    ci_cols <- paste0("CI", seq_len(max_events))
+    existing_ci_cols <- intersect(ci_cols, names(sci_table_dt))
+
+    if (length(existing_ci_cols) > 0) {
+      sci_table_dt[, SumCIs := rowSums(.SD), .SDcols = existing_ci_cols]
+    } else {
+      sci_table_dt[, SumCIs := 0]
+    }
+
+    sci_table <- tibble::as_tibble(sci_table_dt)
 
     # Prepare the return list based on include_details parameter
     if (include_details) {
@@ -297,7 +286,12 @@ mcc_sci <- function(
         mcc_final = mcc_final,
         sci_table = sci_table,
         all_cis = all_cis,
-        mcc_base = mcc_base |> dplyr::rename(time = "Time"),
+        mcc_base = tibble::as_tibble(mcc_base[, .(
+          time = Time,
+          cm,
+          Deta,
+          cumI
+        )]),
         original_data = data_std
       )
 

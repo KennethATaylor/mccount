@@ -52,91 +52,107 @@ mcc_equation <- function(
   # Use adjusted_data if adjustments were made, otherwise use original
   data_to_use <- if (times_were_adjusted) adjusted_data else data_std
 
-  # Sort data
-  data_sorted <- data_to_use |>
-    dplyr::arrange(.data$id, .data$time)
+  # Convert to data.table for efficient operations
+  dt <- data.table::as.data.table(data_to_use)
+  data.table::setorder(dt, id, time)
 
-  # Identify last record for each ID
-  last_records <- data_sorted |>
-    dplyr::group_by(.data$id) |>
-    dplyr::slice_tail(n = 1) |>
-    dplyr::ungroup() |>
-    dplyr::filter(.data$cause == 1)
+  # Identify last record for each ID efficiently
+  last_records <- dt[, .SD[.N], by = id][cause == 1]
 
   # If any last record is an event, add a censoring record
   if (nrow(last_records) > 0) {
-    last_records$cause <- 0
-    data_sorted <- dplyr::bind_rows(data_sorted, last_records) |>
-      dplyr::arrange(.data$id, .data$time)
+    last_records[, cause := 0]
+    dt <- data.table::rbindlist(list(dt, last_records))
+    data.table::setorder(dt, id, time)
   }
 
   # Total number of unique participants
-  n_total <- dplyr::n_distinct(data_sorted$id)
+  n_total <- dt[, data.table::uniqueN(id)]
 
-  # Count events by time and cause
-  freq_cause <- data_sorted |>
-    dplyr::mutate(count = 1) |>
-    dplyr::group_by(.data$time, .data$cause) |>
-    dplyr::summarize(count = sum(.data$count), .groups = "drop")
+  # Count events by time and cause efficiently
+  freq_cause <- dt[, .(count = .N), by = .(time, cause)]
 
-  # Create life table format
-  lifetable <- freq_cause |>
-    tidyr::pivot_wider(
-      names_from = "cause",
-      values_from = "count",
-      values_fill = 0
-    ) |>
-    dplyr::rename_with(
-      ~ dplyr::case_when(
-        . == "1" ~ "event",
-        . == "0" ~ "censor",
-        . == "2" ~ "cmprk",
-        TRUE ~ .
-      )
+  # Create life table format efficiently using data.table
+  lifetable_dt <- data.table::dcast(
+    freq_cause,
+    time ~ cause,
+    value.var = "count",
+    fill = 0
+  )
+
+  # Rename columns efficiently
+  old_names <- names(lifetable_dt)
+  new_names <- old_names
+  new_names[new_names == "0"] <- "censor"
+  new_names[new_names == "1"] <- "event"
+  new_names[new_names == "2"] <- "cmprk"
+  data.table::setnames(lifetable_dt, old_names, new_names)
+
+  # Add missing columns if needed and ensure numeric type
+  required_cols <- c("censor", "event", "cmprk")
+  missing_cols <- setdiff(required_cols, names(lifetable_dt))
+  if (length(missing_cols) > 0) {
+    lifetable_dt[, (missing_cols) := 0.0] # Use 0.0 to ensure numeric type
+  }
+
+  # Ensure all count columns are numeric (not integer)
+  count_cols <- c("censor", "event", "cmprk")
+  existing_count_cols <- intersect(count_cols, names(lifetable_dt))
+  lifetable_dt[,
+    (existing_count_cols) := lapply(.SD, as.numeric),
+    .SDcols = existing_count_cols
+  ]
+
+  # Calculate cumulative sums and other measures efficiently
+  lifetable_dt[, `:=`(
+    sum_censor = cumsum(censor),
+    sum_cmprk = cumsum(cmprk)
+  )]
+
+  lifetable_dt[, `:=`(
+    nrisk_current = n_total - (sum_censor + sum_cmprk),
+    nrisk = data.table::shift(
+      n_total - (sum_censor + sum_cmprk),
+      n = 1,
+      fill = n_total
     )
+  )]
 
-  # Check for missing cause columns and add them if needed
-  if (!"censor" %in% names(lifetable)) lifetable$censor <- 0
-  if (!"event" %in% names(lifetable)) lifetable$event <- 0
-  if (!"cmprk" %in% names(lifetable)) lifetable$cmprk <- 0
+  # Calculate survival probabilities and MCC efficiently
+  lifetable_dt[, `:=`(
+    surv_prob = 1 - cmprk / nrisk,
+    overall_surv = cumprod(1 - cmprk / nrisk)
+  )]
 
-  # Calculate cumulative sums for censoring and competing risks
-  lifetable <- lifetable |>
-    dplyr::mutate(
-      sum_censor = cumsum(.data$censor),
-      sum_cmprk = cumsum(.data$cmprk)
-    ) |>
-    dplyr::mutate(
-      nrisk_current = n_total - (.data$sum_censor + .data$sum_cmprk),
-      nrisk = dplyr::lag(.data$nrisk_current, default = n_total)
-    )
+  lifetable_dt[,
+    overall_surv_previous := data.table::shift(overall_surv, n = 1, fill = 1)
+  ]
+  lifetable_dt[, ave_events := overall_surv_previous * event / nrisk]
+  lifetable_dt[, mcc := cumsum(ave_events)]
 
-  # Calculate survival probabilities and MCC
-  mcc_table <- lifetable |>
-    dplyr::mutate(
-      surv_prob = 1 - .data$cmprk / .data$nrisk,
-      overall_surv = cumprod(.data$surv_prob),
-      overall_surv_previous = dplyr::lag(.data$overall_surv, default = 1),
-      ave_events = .data$overall_surv_previous * .data$event / .data$nrisk,
-      mcc = cumsum(.data$ave_events)
-    ) |>
-    dplyr::select(
-      "time",
-      "nrisk",
-      "censor",
-      "event",
-      "cmprk",
-      "overall_surv_previous",
-      "ave_events",
-      "mcc"
-    )
+  # Select required columns
+  mcc_table_dt <- lifetable_dt[, .(
+    time,
+    nrisk,
+    censor,
+    event,
+    cmprk,
+    overall_surv_previous,
+    ave_events,
+    mcc
+  )]
 
-  # Return only unique MCC values (first occurrence of each)
-  mcc_final <- mcc_table |>
-    dplyr::group_by(.data$mcc) |>
-    dplyr::slice_head(n = 1) |>
-    dplyr::ungroup() |>
-    dplyr::select("time", "mcc")
+  # Return only unique MCC values (first occurrence of each) efficiently
+  mcc_final_dt <- mcc_table_dt[, .SD[1], by = mcc][, .(time, mcc)]
+
+  # Convert to tibbles for output and clean up data.table attributes
+  mcc_final <- tibble::as_tibble(mcc_final_dt)
+  mcc_table <- tibble::as_tibble(mcc_table_dt)
+
+  # Remove data.table attributes to ensure clean tibbles
+  attr(mcc_final, ".internal.selfref") <- NULL
+  attr(mcc_table, ".internal.selfref") <- NULL
+  attr(mcc_table, "sorted") <- NULL
 
   # Prepare the return list based on include_details parameter
   if (include_details) {
