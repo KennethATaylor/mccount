@@ -1,0 +1,10 @@
+utils::globalVariables(c(
+  "id",
+  "time",
+  "n_events_at_time",
+  ".N",
+  ".",
+  "cause_priority",
+  "cause",
+  "row_within_time"
+))
