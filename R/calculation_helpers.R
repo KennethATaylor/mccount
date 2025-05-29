@@ -166,6 +166,24 @@ combine_group_results <- function(group_results, by_name, include_details) {
       component_list <- component_list[!sapply(component_list, is.null)]
 
       if (length(component_list) > 0) {
+        # For sci_table specifically, we need to handle different CI columns
+        if (component == "sci_table") {
+          # Get all unique column names across all sci_tables
+          all_cols <- unique(unlist(lapply(component_list, names)))
+
+          # Ensure all tibbles have the same columns by adding missing ones with NA
+          component_list <- lapply(component_list, function(tbl) {
+            missing_cols <- setdiff(all_cols, names(tbl))
+            if (length(missing_cols) > 0) {
+              for (col in missing_cols) {
+                tbl[[col]] <- NA_real_ # Use appropriate NA type
+              }
+            }
+            # Reorder columns to match
+            tbl[, all_cols]
+          })
+        }
+
         # Combine all tibbles using rbind
         combined_result[[component]] <- do.call(rbind, component_list)
       }
