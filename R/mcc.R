@@ -305,16 +305,29 @@ mcc_by_group <- function(
         include_details = include_details
       )
     } else if (method == "sci") {
-      group_result <- mcc_sci(
-        data = group_data,
-        id_var = !!id_var_sym,
-        time_var = !!time_var_sym,
-        cause_var = !!cause_var_sym,
-        tstart_var = !!tstart_var_sym,
-        adjust_times = adjust_times,
-        time_precision = time_precision,
-        include_details = include_details
-      )
+      # Handle tstart_var conditionally to avoid NULL issues
+      if (!is.null(tstart_var_sym)) {
+        group_result <- mcc_sci(
+          data = group_data,
+          id_var = !!id_var_sym,
+          time_var = !!time_var_sym,
+          cause_var = !!cause_var_sym,
+          tstart_var = tstart_var_sym,
+          adjust_times = adjust_times,
+          time_precision = time_precision,
+          include_details = include_details
+        )
+      } else {
+        group_result <- mcc_sci(
+          data = group_data,
+          id_var = !!id_var_sym,
+          time_var = !!time_var_sym,
+          cause_var = !!cause_var_sym,
+          adjust_times = adjust_times,
+          time_precision = time_precision,
+          include_details = include_details
+        )
+      }
     }
 
     # Add group identifier to all tibbles in the result
