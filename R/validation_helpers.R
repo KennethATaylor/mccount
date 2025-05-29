@@ -6,7 +6,7 @@
 #' @param cause_var Symbol for cause variable
 #' @param tstart_var Optional symbol for start time variable
 #'
-#' @return TRUE if all required columns exist (errors otherwise)
+#' @returns TRUE if all required columns exist (errors otherwise)
 #' @keywords internal
 #' @noRd
 validate_column_existence <- function(
@@ -50,7 +50,7 @@ validate_column_existence <- function(
 #'
 #' @param data The input data frame
 #'
-#' @return TRUE if data is a data.frame (errors otherwise)
+#' @returns TRUE if data is a data.frame (errors otherwise)
 #' @keywords internal
 #' @noRd
 validate_data_type <- function(data) {
@@ -65,7 +65,7 @@ validate_data_type <- function(data) {
 #' @param data Input data
 #' @param cause_var Symbol for cause variable
 #'
-#' @return TRUE if validation passes (errors otherwise)
+#' @returns TRUE if validation passes (errors otherwise)
 #' @keywords internal
 #' @noRd
 validate_cause_values <- function(data, cause_var) {
@@ -92,7 +92,7 @@ validate_cause_values <- function(data, cause_var) {
 #' @param time_var Symbol for time variable
 #' @param tstart_var Symbol for start time variable
 #'
-#' @return TRUE if validation passes (errors otherwise)
+#' @returns TRUE if validation passes (errors otherwise)
 #' @keywords internal
 #' @noRd
 validate_time_tstart <- function(data, time_var, tstart_var) {
@@ -119,6 +119,59 @@ validate_time_tstart <- function(data, time_var, tstart_var) {
   return(TRUE)
 }
 
+#' Validate by variable
+#'
+#' @param data Input data
+#' @param by_var String name of grouping variable
+#'
+#' @returns TRUE if validation passes (errors otherwise)
+#' @keywords internal
+#' @noRd
+validate_by_variable <- function(data, by_var) {
+  if (is.null(by_var)) {
+    return(TRUE)
+  }
+
+  # Check if by_var is a single character string
+  if (!is.character(by_var) || length(by_var) != 1) {
+    cli::cli_abort(c(
+      "{.arg by} must be a single character string",
+      "x" = "Received: {.val {by_var}}"
+    ))
+  }
+
+  # Check if column exists
+  if (!by_var %in% names(data)) {
+    cli::cli_abort(c(
+      "Column specified in {.arg by} not found in {.arg data}",
+      "x" = "Column '{by_var}' does not exist"
+    ))
+  }
+
+  # Check if there are any non-NA values
+  by_values <- data[[by_var]]
+  if (all(is.na(by_values))) {
+    cli::cli_abort(c(
+      "All values in {.arg by} variable are missing (NA)",
+      "x" = "Column '{by_var}' contains only NA values"
+    ))
+  }
+
+  # Check for reasonable number of groups (optional warning)
+  unique_groups <- unique(by_values[!is.na(by_values)])
+  n_groups <- length(unique_groups)
+
+  if (n_groups > 20) {
+    cli::cli_warn(c(
+      "Large number of groups detected in {.arg by} variable",
+      "i" = "Found {n_groups} unique groups in '{by_var}'",
+      "i" = "Consider whether this many groups is intended"
+    ))
+  }
+
+  return(TRUE)
+}
+
 #' Create standardized dataset for MCC calculations
 #'
 #' @param data The input data frame
@@ -127,7 +180,7 @@ validate_time_tstart <- function(data, time_var, tstart_var) {
 #' @param cause_var Symbol for cause variable
 #' @param tstart_var Optional symbol for start time variable
 #'
-#' @return A standardized data frame with consistent column names
+#' @returns A standardized data frame with consistent column names
 #' @keywords internal
 #' @noRd
 standardize_data <- function(

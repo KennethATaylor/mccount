@@ -103,3 +103,112 @@
       Error in `UseMethod()`:
       ! no applicable method for 'select' applied to an object of class "NULL"
 
+# validate_data_type() works with various data types
+
+    Code
+      validate_data_type(list(x = 1))
+    Condition
+      Error in `validate_data_type()`:
+      ! `data` must be a <data.frame> or <tbl_df>
+
+---
+
+    Code
+      validate_data_type(matrix(1:4, nrow = 2))
+    Condition
+      Error in `validate_data_type()`:
+      ! `data` must be a <data.frame> or <tbl_df>
+
+---
+
+    Code
+      validate_data_type(c(1, 2, 3))
+    Condition
+      Error in `validate_data_type()`:
+      ! `data` must be a <data.frame> or <tbl_df>
+
+---
+
+    Code
+      validate_data_type(NULL)
+    Condition
+      Error in `validate_data_type()`:
+      ! `data` must be a <data.frame> or <tbl_df>
+
+# validate_cause_values() works with valid values
+
+    Code
+      validate_cause_values(data.frame(status = c(-1, 3, 5)), quote(status))
+    Condition
+      Error in `validate_cause_values()`:
+      ! `cause_var` must only contain values 0, 1, or 2
+      x Found invalid values: -1, 3, and 5
+
+---
+
+    Code
+      validate_cause_values(data.frame(outcome = c(0, 1, 3, 2, -1)), quote(outcome))
+    Condition
+      Error in `validate_cause_values()`:
+      ! `cause_var` must only contain values 0, 1, or 2
+      x Found invalid values: 3 and -1
+
+# validate_time_tstart() works with valid values
+
+    Code
+      validate_time_tstart(data = data.frame(time = c(5, 5), tstart = c(5, 3)),
+      time_var = "time", tstart_var = "tstart")
+    Condition
+      Error in `validate_time_tstart()`:
+      ! Found 1 case where event time is not greater than start time.
+      i First indices with issues: 1
+      i Ensure all event times are strictly greater than start times.
+
+# validate_by_variable() works
+
+    Code
+      validate_by_variable(data.frame(x = 1), 123)
+    Condition
+      Error in `validate_by_variable()`:
+      ! `by` must be a single character string
+      x Received: 123
+
+---
+
+    Code
+      validate_by_variable(data.frame(x = 1), c("group1", "group2"))
+    Condition
+      Error in `validate_by_variable()`:
+      ! `by` must be a single character string
+      x Received: "group1" and "group2"
+
+---
+
+    Code
+      validate_by_variable(data.frame(x = 1), "missing_col")
+    Condition
+      Error in `validate_by_variable()`:
+      ! Column specified in `by` not found in `data`
+      x Column 'missing_col' does not exist
+
+---
+
+    Code
+      validate_by_variable(data.frame(group = c(NA, NA, NA)), "group")
+    Condition
+      Error in `validate_by_variable()`:
+      ! All values in `by` variable are missing (NA)
+      x Column 'group' contains only NA values
+
+---
+
+    Code
+      validate_by_variable(many_groups_data, "group")
+    Condition
+      Warning:
+      Large number of groups detected in `by` variable
+      i Found 25 unique groups in 'group'
+      i Consider whether this many groups is intended
+    Output
+      [1] TRUE
+

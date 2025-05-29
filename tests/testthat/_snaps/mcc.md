@@ -346,3 +346,60 @@
       ! `include_details` must be a <logical> value (`TRUE` or `FALSE`)
       x Received: TRUE and FALSE
 
+# mcc() validates by argument correctly
+
+    Code
+      mcc(df, id_var = "id", time_var = "time", cause_var = "cause", by = 123)
+    Condition
+      Error in `validate_by_variable()`:
+      ! `by` must be a single character string
+      x Received: 123
+
+---
+
+    Code
+      mcc(df, id_var = "id", time_var = "time", cause_var = "cause", by = c("group1",
+        "group2"))
+    Condition
+      Error in `validate_by_variable()`:
+      ! `by` must be a single character string
+      x Received: "group1" and "group2"
+
+---
+
+    Code
+      mcc(df, id_var = "id", time_var = "time", cause_var = "cause", by = "missing_column")
+    Condition
+      Error in `validate_by_variable()`:
+      ! Column specified in `by` not found in `data`
+      x Column 'missing_column' does not exist
+
+---
+
+    Code
+      mcc(df_na, id_var = "id", time_var = "time", cause_var = "cause", by = "group")
+    Condition
+      Error in `validate_by_variable()`:
+      ! All values in `by` variable are missing (NA)
+      x Column 'group' contains only NA values
+
+# mcc_by_group() handles all empty groups scenario
+
+    Code
+      mcc(df_all_na, id_var = "id", time_var = "time", cause_var = "cause", by = "group")
+    Condition
+      Error in `validate_by_variable()`:
+      ! All values in `by` variable are missing (NA)
+      x Column 'group' contains only NA values
+
+# mcc() with by argument warning for many groups
+
+    Code
+      result <- mcc(many_groups_df, id_var = "id", time_var = "time", cause_var = "cause",
+        by = "group")
+    Condition
+      Warning:
+      Large number of groups detected in `by` variable
+      i Found 25 unique groups in 'group'
+      i Consider whether this many groups is intended
+

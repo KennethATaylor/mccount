@@ -23,6 +23,10 @@
 #' @param cause_var (`string`)\cr
 #'     Name of the column containing event indicator values (1 = event of
 #'     interest, 2 = competing risk, 0 = censoring)
+#' @param by (`string`, optional)\cr
+#'     Name of the column to group by for calculating MCC within subgroups.
+#'     If provided, MCC will be calculated separately for each level of this
+#'     variable
 #' @param method (`string`)\cr
 #'     Method to use for MCC calculation. Either `"equation"` (default) or
 #'     `"sci"` (sum of cumulative incidence)
@@ -30,18 +34,18 @@
 #'     Name of the column containing start times of follow-up for incorporating
 #'     left truncation. Only allowed to be specified when `method = "sci"`. If
 #'     `NULL` (default), a constant value of `0` is used in calculation (i.e.,
-#'     right truncation only).
+#'     right truncation only)
 #' @param adjust_times (`logical`)\cr
 #'     If `TRUE` (default), automatically adjusts times to account for outcome
-#'     events and competing risk events occurring at the same time.
+#'     events and competing risk events occurring at the same time
 #' @param time_precision (`numeric`)\cr
 #'     Precision used for adjusting simultaneous events (default: 1e-6). Must
-#'     be a positive numeric value.
+#'     be a positive numeric value
 #' @param include_details (`logical`)\cr
 #'     Whether to include detailed calculation tables and intermediate objects
 #'     in the output. Default is `TRUE`, which returns all calculation details.
-#'     Setting to `FALSE` returns only the final MCC estimates, making the function
-#'     more efficient for bootstrapping.
+#'     Setting to `FALSE` returns only the final MCC estimates, making the
+#'     function more efficient for bootstrapping
 #'
 #' @references
 #' Dong H, Robison LL, Leisenring WM, Martin LJ, Armstrong GT, Yasui Y.
@@ -50,6 +54,8 @@
 #'     1;181(7):532-40. doi: [10.1093/aje/kwu289](https://doi.org/10.1093/aje/kwu289)
 #'
 #' @returns
+#' When `by` is NULL (single group analysis):
+#'
 #' When `include_details = TRUE` (default), a list with method-specific components:
 #'
 #' For `method = "equation"`:
@@ -71,6 +77,13 @@
 #' When `include_details = FALSE`, a simplified list containing only:
 #' * `mcc_final`: A tibble with columns for `time` and `mcc` (or `SumCIs` for `method = "sci"`)
 #' * `method`: The method used for calculation
+#'
+#' When `by` is specified (grouped analysis):
+#'
+#' A list with the same structure as above, but with an additional `by_group`
+#' component and all tibbles containing an additional column with the grouping
+#' variable values. The `by_group` component contains the name of the grouping
+#' variable for reference.
 #'
 #' @examples
 #' # Attach dplyr
@@ -95,6 +108,7 @@
 #'
 #' # MCC estimates
 #' mcc_eq$mcc_final
+#'
 #'
 #' # Calculate MCC using the sum of cumulative incidence method
 #' mcc_sci <- mcc(
@@ -122,6 +136,7 @@ mcc <- function(
   id_var,
   time_var,
   cause_var,
+  by = NULL,
   method = c("equation", "sci"),
   tstart_var = NULL,
   adjust_times = TRUE,
@@ -172,23 +187,48 @@ mcc <- function(
     ))
   }
 
-  # Dispatch to appropriate internal function based on method
-  if (method == "equation") {
-    result <- mcc_equation(
+  # Validate by argument if provided
+  if (!is.null(by)) {
+    validate_by_variable(data, by)
+  }
+
+  # Handle grouped vs ungrouped analysis
+  if (is.null(by)) {
+    # Single group analysis (existing behavior - call internal functions directly)
+    if (method == "equation") {
+      result <- mcc_equation(
+        data = data,
+        id_var = {{ id_var }},
+        time_var = {{ time_var }},
+        cause_var = {{ cause_var }},
+        adjust_times = adjust_times,
+        time_precision = time_precision,
+        include_details = include_details
+      )
+    } else if (method == "sci") {
+      result <- mcc_sci(
+        data = data,
+        id_var = {{ id_var }},
+        time_var = {{ time_var }},
+        cause_var = {{ cause_var }},
+        tstart_var = {{ tstart_var }},
+        adjust_times = adjust_times,
+        time_precision = time_precision,
+        include_details = include_details
+      )
+    }
+
+    # Add method used to the result
+    result$method <- method
+  } else {
+    # Grouped analysis
+    result <- mcc_by_group(
       data = data,
       id_var = {{ id_var }},
       time_var = {{ time_var }},
       cause_var = {{ cause_var }},
-      adjust_times = adjust_times,
-      time_precision = time_precision,
-      include_details = include_details
-    )
-  } else if (method == "sci") {
-    result <- mcc_sci(
-      data = data,
-      id_var = {{ id_var }},
-      time_var = {{ time_var }},
-      cause_var = {{ cause_var }},
+      by = by,
+      method = method,
       tstart_var = {{ tstart_var }},
       adjust_times = adjust_times,
       time_precision = time_precision,
@@ -196,8 +236,156 @@ mcc <- function(
     )
   }
 
-  # Add method used to the result
-  result$method <- method
+  return(result)
+}
+
+#' Calculate MCC by group (internal function)
+#'
+#' @inheritParams mcc
+#' @param by Name of grouping variable
+#' @keywords internal
+#' @noRd
+mcc_by_group <- function(
+  data,
+  id_var,
+  time_var,
+  cause_var,
+  by,
+  method,
+  tstart_var = NULL,
+  adjust_times = TRUE,
+  time_precision = 1e-6,
+  include_details = TRUE
+) {
+  # Convert to symbols for consistent handling
+  id_var_sym <- rlang::ensym(id_var)
+  time_var_sym <- rlang::ensym(time_var)
+  cause_var_sym <- rlang::ensym(cause_var)
+
+  if (!is.null(tstart_var)) {
+    tstart_var_sym <- rlang::ensym(tstart_var)
+  } else {
+    tstart_var_sym <- NULL
+  }
+
+  # Get unique groups efficiently
+  unique_groups <- unique(data[[by]])
+  unique_groups <- unique_groups[!is.na(unique_groups)] # Remove NA values
+
+  if (length(unique_groups) == 0) {
+    cli::cli_abort(c(
+      "No valid groups found in {.arg by} variable",
+      "x" = "All values in column '{by}' are NA"
+    ))
+  }
+
+  # Pre-allocate list for results
+  group_results <- vector("list", length(unique_groups))
+  names(group_results) <- as.character(unique_groups)
+
+  # Calculate MCC for each group
+  for (i in seq_along(unique_groups)) {
+    group_val <- unique_groups[i]
+    group_data <- data[data[[by]] == group_val & !is.na(data[[by]]), ]
+
+    if (nrow(group_data) == 0) {
+      cli::cli_warn("No data available for group: {.val {group_val}}")
+      next
+    }
+
+    # Calculate MCC for this group using the internal functions directly
+    if (method == "equation") {
+      group_result <- mcc_equation(
+        data = group_data,
+        id_var = !!id_var_sym,
+        time_var = !!time_var_sym,
+        cause_var = !!cause_var_sym,
+        adjust_times = adjust_times,
+        time_precision = time_precision,
+        include_details = include_details
+      )
+    } else if (method == "sci") {
+      # Handle tstart_var conditionally to avoid NULL issues
+      if (!is.null(tstart_var_sym)) {
+        group_result <- mcc_sci(
+          data = group_data,
+          id_var = !!id_var_sym,
+          time_var = !!time_var_sym,
+          cause_var = !!cause_var_sym,
+          tstart_var = tstart_var_sym,
+          adjust_times = adjust_times,
+          time_precision = time_precision,
+          include_details = include_details
+        )
+      } else {
+        group_result <- mcc_sci(
+          data = group_data,
+          id_var = !!id_var_sym,
+          time_var = !!time_var_sym,
+          cause_var = !!cause_var_sym,
+          adjust_times = adjust_times,
+          time_precision = time_precision,
+          include_details = include_details
+        )
+      }
+    }
+
+    # Add group identifier to all tibbles in the result
+    group_result <- add_group_column_to_result(group_result, by, group_val)
+
+    group_results[[as.character(group_val)]] <- group_result
+  }
+
+  # Remove any NULL results (from empty groups)
+  group_results <- group_results[!sapply(group_results, is.null)]
+
+  if (length(group_results) == 0) {
+    cli::cli_abort("No valid results obtained for any group")
+  }
+
+  # Combine results from all groups
+  combined_result <- combine_group_results(group_results, by, include_details)
+
+  # Add method and by_group to the result
+  combined_result$method <- method
+  combined_result$by_group <- by
+
+  return(combined_result)
+}
+
+#' Add group column to result tibbles
+#'
+#' @param result Result list from MCC calculation
+#' @param by_name Name of the grouping variable
+#' @param group_value Value of the group
+#' @returns Modified result list with group column added
+#' @keywords internal
+#' @noRd
+add_group_column_to_result <- function(result, by_name, group_value) {
+  # Components that are tibbles and should get the group column
+  tibble_components <- c(
+    "mcc_final",
+    "mcc_table",
+    "sci_table",
+    "mcc_base",
+    "original_data",
+    "adjusted_data"
+  )
+
+  for (component in tibble_components) {
+    if (
+      component %in%
+        names(result) &&
+        inherits(result[[component]], "data.frame")
+    ) {
+      # Add group column as the first column
+      result[[component]] <- tibble::add_column(
+        result[[component]],
+        !!rlang::sym(by_name) := group_value,
+        .before = 1
+      )
+    }
+  }
 
   return(result)
 }

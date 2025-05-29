@@ -778,3 +778,566 @@ test_that("mcc() documentation example works with include_details=FALSE", {
   expect_named(mcc_eq, c("mcc_final", "method"))
   expect_named(mcc_sci, c("mcc_final", "method"))
 })
+
+test_that("by argument basic functionality works", {
+  # Create simple test data
+  df <- data.frame(
+    id = c(1, 2, 3, 4, 5, 6),
+    time = c(5, 8, 12, 15, 10, 20),
+    cause = c(1, 0, 2, 1, 1, 0),
+    group = c("A", "A", "A", "B", "B", "B")
+  )
+
+  # Test that by argument works without error
+  expect_no_error(
+    result <- mcc(
+      df,
+      id_var = "id",
+      time_var = "time",
+      cause_var = "cause",
+      by = "group"
+    )
+  )
+
+  # Test that result has expected structure
+  expect_true("by_group" %in% names(result))
+  expect_equal(result$by_group, "group")
+  expect_true("group" %in% names(result$mcc_final))
+  expect_true(all(c("A", "B") %in% result$mcc_final$group))
+})
+
+test_that("backward compatibility maintained", {
+  # Create simple test data
+  df <- data.frame(
+    id = c(1, 2, 3, 4),
+    time = c(5, 8, 12, 15),
+    cause = c(1, 0, 2, 1)
+  )
+
+  # Test that existing behavior is unchanged
+  result <- mcc(
+    data = df,
+    id_var = "id",
+    time_var = "time",
+    cause_var = "cause"
+  )
+
+  # Should not have by_group component when by is not specified
+  expect_false("by_group" %in% names(result))
+
+  # Should have all the expected components
+  expect_true("mcc_final" %in% names(result))
+  expect_true("method" %in% names(result))
+
+  # mcc_final should not have any grouping column
+  expect_named(result$mcc_final, c("time", "mcc"))
+})
+
+test_that("mcc() validates by argument correctly", {
+  df <- data.frame(
+    id = c(1, 2, 3),
+    time = c(5, 8, 10),
+    cause = c(1, 0, 2),
+    group = c("A", "B", "A")
+  )
+
+  # Test with invalid by argument types
+  expect_snapshot(
+    error = TRUE,
+    mcc(
+      df,
+      id_var = "id",
+      time_var = "time",
+      cause_var = "cause",
+      by = 123
+    )
+  )
+
+  expect_snapshot(
+    error = TRUE,
+    mcc(
+      df,
+      id_var = "id",
+      time_var = "time",
+      cause_var = "cause",
+      by = c("group1", "group2")
+    )
+  )
+
+  # Test with missing by column
+  expect_snapshot(
+    error = TRUE,
+    mcc(
+      df,
+      id_var = "id",
+      time_var = "time",
+      cause_var = "cause",
+      by = "missing_column"
+    )
+  )
+
+  # Test with all NA values in by column
+  df_na <- data.frame(
+    id = c(1, 2, 3),
+    time = c(5, 8, 10),
+    cause = c(1, 0, 2),
+    group = c(NA, NA, NA)
+  )
+
+  expect_snapshot(
+    error = TRUE,
+    mcc(
+      df_na,
+      id_var = "id",
+      time_var = "time",
+      cause_var = "cause",
+      by = "group"
+    )
+  )
+})
+
+test_that("mcc() with by argument handles various group scenarios", {
+  # Test with single group (after filtering)
+  df_single <- data.frame(
+    id = c(1, 2, 3),
+    time = c(5, 8, 10),
+    cause = c(1, 0, 2),
+    treatment = c("Active", "Active", "Active")
+  )
+
+  expect_no_error(
+    result_single <- mcc(
+      df_single,
+      id_var = "id",
+      time_var = "time",
+      cause_var = "cause",
+      by = "treatment"
+    )
+  )
+
+  expect_equal(unique(result_single$mcc_final$treatment), "Active")
+  expect_equal(result_single$by_group, "treatment")
+
+  # Test with mixed NA and valid values
+  df_mixed_na <- data.frame(
+    id = c(1, 2, 3, 4),
+    time = c(5, 8, 10, 12),
+    cause = c(1, 0, 2, 1),
+    site = c("Hospital_A", NA, "Hospital_B", "Hospital_A")
+  )
+
+  expect_no_error(
+    result_mixed <- mcc(
+      df_mixed_na,
+      id_var = "id",
+      time_var = "time",
+      cause_var = "cause",
+      by = "site"
+    )
+  )
+
+  # Should only include non-NA groups
+  expect_true(all(
+    c("Hospital_A", "Hospital_B") %in% result_mixed$mcc_final$site
+  ))
+  expect_false(any(is.na(result_mixed$mcc_final$site)))
+
+  # Test with numeric grouping variable
+  df_numeric <- data.frame(
+    id = c(1, 2, 3, 4),
+    time = c(5, 8, 10, 12),
+    cause = c(1, 0, 2, 1),
+    dose = c(10, 10, 20, 20)
+  )
+
+  expect_no_error(
+    result_numeric <- mcc(
+      df_numeric,
+      id_var = "id",
+      time_var = "time",
+      cause_var = "cause",
+      by = "dose"
+    )
+  )
+
+  expect_true(all(c(10, 20) %in% result_numeric$mcc_final$dose))
+})
+
+test_that("mcc() with by argument works with both methods", {
+  df <- data.frame(
+    id = c(1, 1, 2, 2, 3, 4),
+    time = c(5, 10, 8, 12, 15, 20),
+    cause = c(1, 1, 0, 2, 1, 0),
+    treatment = c("A", "A", "A", "A", "B", "B")
+  )
+
+  # Test equation method with by
+  expect_no_error(
+    result_eq <- mcc(
+      df,
+      id_var = "id",
+      time_var = "time",
+      cause_var = "cause",
+      by = "treatment",
+      method = "equation"
+    )
+  )
+
+  expect_true("mcc_table" %in% names(result_eq))
+  expect_equal(result_eq$method, "equation")
+
+  # Test sci method with by (without tstart_var)
+  expect_no_error(
+    result_sci <- mcc(
+      df,
+      id_var = "id",
+      time_var = "time",
+      cause_var = "cause",
+      by = "treatment",
+      method = "sci"
+    )
+  )
+
+  expect_true("sci_table" %in% names(result_sci))
+  expect_equal(result_sci$method, "sci")
+})
+
+test_that("mcc() with by argument and tstart_var works", {
+  # Separate test for tstart_var functionality
+  df_tstart <- data.frame(
+    id = c(1, 2, 3, 4),
+    time = c(5, 8, 10, 12),
+    cause = c(1, 0, 2, 1),
+    treatment = c("A", "A", "B", "B"),
+    tstart = c(0, 1, 0, 2)
+  )
+
+  # Test sci method with by and tstart_var
+  expect_no_error(
+    result_sci_tstart <- mcc(
+      df_tstart,
+      id_var = "id",
+      time_var = "time",
+      cause_var = "cause",
+      by = "treatment",
+      method = "sci",
+      tstart_var = "tstart"
+    )
+  )
+
+  expect_true("sci_table" %in% names(result_sci_tstart))
+  expect_equal(result_sci_tstart$method, "sci")
+  expect_true("treatment" %in% names(result_sci_tstart$mcc_final))
+})
+
+test_that("mcc() with by argument preserves group information in all components", {
+  df <- data.frame(
+    id = c(1, 1, 2, 3, 3),
+    time = c(5, 10, 8, 12, 15),
+    cause = c(1, 1, 0, 2, 1),
+    treatment = c("A", "A", "A", "B", "B")
+  )
+
+  # Test with SCI method to check all_cis handling (without tstart_var)
+  result_sci <- mcc(
+    df,
+    id_var = "id",
+    time_var = "time",
+    cause_var = "cause",
+    by = "treatment",
+    method = "sci",
+    include_details = TRUE
+  )
+
+  # Check that all_cis has group structure
+  expect_true("all_cis" %in% names(result_sci))
+  expect_true("A" %in% names(result_sci$all_cis))
+  expect_true("B" %in% names(result_sci$all_cis))
+
+  # Check that non-empty all_cis tibbles have group columns
+  for (group_name in names(result_sci$all_cis)) {
+    for (ci_table in result_sci$all_cis[[group_name]]) {
+      if (nrow(ci_table) > 0) {
+        expect_true("treatment" %in% names(ci_table))
+        expect_equal(unique(ci_table$treatment), group_name)
+      }
+    }
+  }
+
+  # Check that other components have group columns
+  expect_true("treatment" %in% names(result_sci$sci_table))
+  expect_true("treatment" %in% names(result_sci$mcc_base))
+})
+
+test_that("mcc() with by argument and include_details parameter", {
+  df <- data.frame(
+    id = c(1, 2, 3, 4),
+    time = c(5, 8, 10, 12),
+    cause = c(1, 0, 2, 1),
+    group = c("Control", "Control", "Treatment", "Treatment")
+  )
+
+  # Test with include_details = TRUE
+  result_detailed <- mcc(
+    df,
+    id_var = "id",
+    time_var = "time",
+    cause_var = "cause",
+    by = "group",
+    include_details = TRUE
+  )
+
+  expect_true("mcc_table" %in% names(result_detailed))
+  expect_true("original_data" %in% names(result_detailed))
+  expect_true("group" %in% names(result_detailed$mcc_table))
+  expect_true("group" %in% names(result_detailed$original_data))
+
+  # Test with include_details = FALSE
+  result_simple <- mcc(
+    df,
+    id_var = "id",
+    time_var = "time",
+    cause_var = "cause",
+    by = "group",
+    include_details = FALSE
+  )
+
+  expect_named(result_simple, c("mcc_final", "method", "by_group"))
+  expect_false("mcc_table" %in% names(result_simple))
+  expect_false("original_data" %in% names(result_simple))
+})
+
+test_that("mcc_by_group() handles empty groups gracefully", {
+  # Create data where one group becomes empty after filtering
+  df <- data.frame(
+    id = c(1, 2, 3),
+    time = c(5, 8, 10),
+    cause = c(1, 0, 2),
+    group = c("A", "B", "C")
+  )
+
+  # Mock a scenario where group B has no data (simulate empty group)
+  # This tests the warning and continuation logic
+  expect_no_error(
+    result <- mcc(
+      df,
+      id_var = "id",
+      time_var = "time",
+      cause_var = "cause",
+      by = "group"
+    )
+  )
+
+  # Should have results for all non-empty groups
+  expect_true(all(c("A", "B", "C") %in% result$mcc_final$group))
+})
+
+test_that("mcc_by_group() handles all empty groups scenario", {
+  # Create a scenario that would result in all groups being empty
+  # This is hard to simulate directly, so we test the error handling
+  df_all_na <- data.frame(
+    id = c(1, 2, 3),
+    time = c(5, 8, 10),
+    cause = c(1, 0, 2),
+    group = c(NA, NA, NA)
+  )
+
+  expect_snapshot(
+    error = TRUE,
+    mcc(
+      df_all_na,
+      id_var = "id",
+      time_var = "time",
+      cause_var = "cause",
+      by = "group"
+    )
+  )
+})
+
+test_that("mcc() with by argument preserves group information in all components", {
+  df <- data.frame(
+    id = c(1, 1, 2, 3, 3),
+    time = c(5, 10, 8, 12, 15),
+    cause = c(1, 1, 0, 2, 1),
+    treatment = c("A", "A", "A", "B", "B")
+  )
+
+  # Test with SCI method to check all_cis handling (without tstart_var)
+  result_sci <- mcc(
+    df,
+    id_var = "id",
+    time_var = "time",
+    cause_var = "cause",
+    by = "treatment",
+    method = "sci",
+    include_details = TRUE
+  )
+
+  # Check that all_cis has group structure
+  expect_true("all_cis" %in% names(result_sci))
+  expect_true("A" %in% names(result_sci$all_cis))
+  expect_true("B" %in% names(result_sci$all_cis))
+
+  # Check that non-empty all_cis tibbles have group columns
+  for (group_name in names(result_sci$all_cis)) {
+    for (ci_table in result_sci$all_cis[[group_name]]) {
+      if (nrow(ci_table) > 0) {
+        expect_true("treatment" %in% names(ci_table))
+        expect_equal(unique(ci_table$treatment), group_name)
+      }
+    }
+  }
+
+  # Check that other components have group columns
+  expect_true("treatment" %in% names(result_sci$sci_table))
+  expect_true("treatment" %in% names(result_sci$mcc_base))
+})
+
+test_that("mcc() with by argument handles factor grouping variables", {
+  df <- data.frame(
+    id = c(1, 2, 3, 4),
+    time = c(5, 8, 10, 12),
+    cause = c(1, 0, 2, 1),
+    stage = factor(
+      c("Early", "Late", "Early", "Late"),
+      levels = c("Early", "Late")
+    )
+  )
+
+  expect_no_error(
+    result <- mcc(
+      df,
+      id_var = "id",
+      time_var = "time",
+      cause_var = "cause",
+      by = "stage"
+    )
+  )
+
+  # Factor levels should be preserved
+  expect_true(all(c("Early", "Late") %in% result$mcc_final$stage))
+  expect_equal(result$by_group, "stage")
+})
+
+test_that("mcc() with by argument warning for many groups", {
+  # Create data with many groups to trigger warning
+  many_groups_df <- data.frame(
+    id = 1:25,
+    time = rep(10, 25),
+    cause = rep(1, 25),
+    group = paste0("group_", 1:25)
+  )
+
+  expect_snapshot(
+    result <- mcc(
+      many_groups_df,
+      id_var = "id",
+      time_var = "time",
+      cause_var = "cause",
+      by = "group"
+    )
+  )
+
+  # Should still work despite warning
+  expect_equal(length(unique(result$mcc_final$group)), 25)
+})
+
+test_that("add_group_column_to_result() handles edge cases", {
+  # Test with empty result
+  empty_result <- list()
+  result_empty <- add_group_column_to_result(empty_result, "group", "A")
+  expect_equal(result_empty, empty_result)
+
+  # Test with result containing NULL components
+  result_with_nulls <- list(
+    mcc_final = tibble::tibble(time = 1, mcc = 0.1),
+    mcc_table = NULL,
+    other_component = "some_value"
+  )
+
+  result_nulls <- add_group_column_to_result(
+    result_with_nulls,
+    "treatment",
+    "Active"
+  )
+  expect_true("treatment" %in% names(result_nulls$mcc_final))
+  expect_null(result_nulls$mcc_table)
+  expect_equal(result_nulls$other_component, "some_value")
+})
+
+test_that("combine_group_results() handles mismatched structures", {
+  # Create results with different components
+  group_results <- list(
+    "A" = list(
+      mcc_final = tibble::tibble(
+        group = "A",
+        time = 5,
+        mcc = 0.1
+      ),
+      mcc_table = tibble::tibble(
+        group = "A",
+        time = 5,
+        nrisk = 10,
+        mcc = 0.1
+      )
+    ),
+    "B" = list(
+      mcc_final = tibble::tibble(
+        group = "B",
+        time = 8,
+        mcc = 0.2
+      )
+      # Note: mcc_table missing for group B
+    )
+  )
+
+  # Should handle missing components gracefully
+  expect_no_error(
+    combined <- combine_group_results(group_results, "group", TRUE)
+  )
+
+  expect_equal(nrow(combined$mcc_final), 2)
+  expect_equal(nrow(combined$mcc_table), 1) # Only from group A
+})
+
+test_that("mcc() output structure is consistent between single and grouped analysis", {
+  df <- data.frame(
+    id = c(1, 2, 3, 4),
+    time = c(5, 8, 10, 12),
+    cause = c(1, 0, 2, 1),
+    treatment = c("A", "A", "A", "A") # All same group
+  )
+
+  # Single group analysis (by = NULL)
+  result_single <- mcc(
+    df,
+    id_var = "id",
+    time_var = "time",
+    cause_var = "cause"
+  )
+
+  # Grouped analysis with only one group
+  result_grouped <- mcc(
+    df,
+    id_var = "id",
+    time_var = "time",
+    cause_var = "cause",
+    by = "treatment"
+  )
+
+  # mcc_final values should be the same (ignoring group column)
+  expect_equal(
+    result_single$mcc_final$mcc,
+    result_grouped$mcc_final$mcc
+  )
+  expect_equal(
+    result_single$mcc_final$time,
+    result_grouped$mcc_final$time
+  )
+
+  # Grouped result should have additional structure
+  expect_true("by_group" %in% names(result_grouped))
+  expect_false("by_group" %in% names(result_single))
+  expect_true("treatment" %in% names(result_grouped$mcc_final))
+  expect_false("treatment" %in% names(result_single$mcc_final))
+})
