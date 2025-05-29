@@ -9,6 +9,7 @@ mcc(
   id_var,
   time_var,
   cause_var,
+  by = NULL,
   method = c("equation", "sci"),
   tstart_var = NULL,
   adjust_times = TRUE,
@@ -30,6 +31,11 @@ Name of the column containing follow-up times}
 Name of the column containing event indicator values (1 = event of
 interest, 2 = competing risk, 0 = censoring)}
 
+\item{by}{(\code{string}, optional)\cr
+Name of the column to group by for calculating MCC within subgroups.
+If provided, MCC will be calculated separately for each level of this
+variable}
+
 \item{method}{(\code{string})\cr
 Method to use for MCC calculation. Either \code{"equation"} (default) or
 \code{"sci"} (sum of cumulative incidence)}
@@ -38,23 +44,25 @@ Method to use for MCC calculation. Either \code{"equation"} (default) or
 Name of the column containing start times of follow-up for incorporating
 left truncation. Only allowed to be specified when \code{method = "sci"}. If
 \code{NULL} (default), a constant value of \code{0} is used in calculation (i.e.,
-right truncation only).}
+right truncation only)}
 
 \item{adjust_times}{(\code{logical})\cr
 If \code{TRUE} (default), automatically adjusts times to account for outcome
-events and competing risk events occurring at the same time.}
+events and competing risk events occurring at the same time}
 
 \item{time_precision}{(\code{numeric})\cr
 Precision used for adjusting simultaneous events (default: 1e-6). Must
-be a positive numeric value.}
+be a positive numeric value}
 
 \item{include_details}{(\code{logical})\cr
 Whether to include detailed calculation tables and intermediate objects
 in the output. Default is \code{TRUE}, which returns all calculation details.
-Setting to \code{FALSE} returns only the final MCC estimates, making the function
-more efficient for bootstrapping.}
+Setting to \code{FALSE} returns only the final MCC estimates, making the
+function more efficient for bootstrapping}
 }
 \value{
+When \code{by} is NULL (single group analysis):
+
 When \code{include_details = TRUE} (default), a list with method-specific components:
 
 For \code{method = "equation"}:
@@ -82,6 +90,13 @@ When \code{include_details = FALSE}, a simplified list containing only:
 \item \code{mcc_final}: A tibble with columns for \code{time} and \code{mcc} (or \code{SumCIs} for \code{method = "sci"})
 \item \code{method}: The method used for calculation
 }
+
+When \code{by} is specified (grouped analysis):
+
+A list with the same structure as above, but with an additional \code{by_group}
+component and all tibbles containing an additional column with the grouping
+variable values. The \code{by_group} component contains the name of the grouping
+variable for reference.
 }
 \description{
 Calculates the Mean Cumulative Count (MCC), which estimates the expected
@@ -120,6 +135,7 @@ mcc_eq$mcc_table
 
 # MCC estimates
 mcc_eq$mcc_final
+
 
 # Calculate MCC using the sum of cumulative incidence method
 mcc_sci <- mcc(

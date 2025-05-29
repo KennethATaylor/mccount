@@ -778,3 +778,57 @@ test_that("mcc() documentation example works with include_details=FALSE", {
   expect_named(mcc_eq, c("mcc_final", "method"))
   expect_named(mcc_sci, c("mcc_final", "method"))
 })
+
+test_that("by argument basic functionality works", {
+  # Create simple test data
+  df <- data.frame(
+    id = c(1, 2, 3, 4, 5, 6),
+    time = c(5, 8, 12, 15, 10, 20),
+    cause = c(1, 0, 2, 1, 1, 0),
+    group = c("A", "A", "A", "B", "B", "B")
+  )
+
+  # Test that by argument works without error
+  expect_no_error(
+    result <- mcc(
+      df,
+      id_var = "id",
+      time_var = "time",
+      cause_var = "cause",
+      by = "group"
+    )
+  )
+
+  # Test that result has expected structure
+  expect_true("by_group" %in% names(result))
+  expect_equal(result$by_group, "group")
+  expect_true("group" %in% names(result$mcc_final))
+  expect_true(all(c("A", "B") %in% result$mcc_final$group))
+})
+
+test_that("backward compatibility maintained", {
+  # Create simple test data
+  df <- data.frame(
+    id = c(1, 2, 3, 4),
+    time = c(5, 8, 12, 15),
+    cause = c(1, 0, 2, 1)
+  )
+
+  # Test that existing behavior is unchanged
+  result <- mcc(
+    data = df,
+    id_var = "id",
+    time_var = "time",
+    cause_var = "cause"
+  )
+
+  # Should not have by_group component when by is not specified
+  expect_false("by_group" %in% names(result))
+
+  # Should have all the expected components
+  expect_true("mcc_final" %in% names(result))
+  expect_true("method" %in% names(result))
+
+  # mcc_final should not have any grouping column
+  expect_named(result$mcc_final, c("time", "mcc"))
+})
