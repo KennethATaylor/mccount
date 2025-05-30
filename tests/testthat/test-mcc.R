@@ -1341,3 +1341,464 @@ test_that("mcc() output structure is consistent between single and grouped analy
   expect_true("treatment" %in% names(result_grouped$mcc_final))
   expect_false("treatment" %in% names(result_single$mcc_final))
 })
+
+test_that("mcc() validates calculate_se parameter correctly", {
+  df <- data.frame(
+    id = c(1, 2, 3, 4),
+    time = c(5, 8, 12, 15),
+    cause = c(1, 0, 2, 1)
+  )
+
+  # Test invalid calculate_se values
+  expect_error(
+    mcc(
+      df,
+      id_var = "id",
+      time_var = "time",
+      cause_var = "cause",
+      calculate_se = "TRUE"
+    ),
+    "must be a.*logical.*value"
+  )
+
+  expect_error(
+    mcc(
+      df,
+      id_var = "id",
+      time_var = "time",
+      cause_var = "cause",
+      calculate_se = c(TRUE, FALSE)
+    ),
+    "must be a.*logical.*value"
+  )
+
+  # Test calculate_se with unsupported method
+  expect_error(
+    mcc(
+      df,
+      id_var = "id",
+      time_var = "time",
+      cause_var = "cause",
+      method = "sci",
+      calculate_se = TRUE
+    ),
+    "Analytical standard errors are only available.*equation"
+  )
+
+  # Test valid calculate_se usage
+  expect_no_error(
+    mcc(
+      df,
+      id_var = "id",
+      time_var = "time",
+      cause_var = "cause",
+      method = "equation",
+      calculate_se = TRUE
+    )
+  )
+})
+
+test_that("mcc() validates se_method and conf_level parameters", {
+  df <- data.frame(
+    id = c(1, 2, 3, 4),
+    time = c(5, 8, 12, 15),
+    cause = c(1, 0, 2, 1)
+  )
+
+  # Test invalid se_method
+  expect_error(
+    mcc(
+      df,
+      id_var = "id",
+      time_var = "time",
+      cause_var = "cause",
+      calculate_se = TRUE,
+      se_method = "invalid"
+    ),
+    "should be one of"
+  )
+
+  # Test invalid conf_level values
+  expect_error(
+    mcc(
+      df,
+      id_var = "id",
+      time_var = "time",
+      cause_var = "cause",
+      calculate_se = TRUE,
+      conf_level = -0.1
+    ),
+    "must be.*between 0 and 1"
+  )
+
+  expect_error(
+    mcc(
+      df,
+      id_var = "id",
+      time_var = "time",
+      cause_var = "cause",
+      calculate_se = TRUE,
+      conf_level = 1.1
+    ),
+    "must be.*between 0 and 1"
+  )
+
+  expect_error(
+    mcc(
+      df,
+      id_var = "id",
+      time_var = "time",
+      cause_var = "cause",
+      calculate_se = TRUE,
+      conf_level = c(0.9, 0.95)
+    ),
+    "must be a single number"
+  )
+
+  # Test valid parameters
+  expect_no_error(
+    mcc(
+      df,
+      id_var = "id",
+      time_var = "time",
+      cause_var = "cause",
+      calculate_se = TRUE,
+      se_method = "log",
+      conf_level = 0.95
+    )
+  )
+
+  expect_no_error(
+    mcc(
+      df,
+      id_var = "id",
+      time_var = "time",
+      cause_var = "cause",
+      calculate_se = TRUE,
+      se_method = "normal",
+      conf_level = 0.90
+    )
+  )
+})
+
+test_that("mcc() with calculate_se=TRUE returns expected structure", {
+  df <- data.frame(
+    id = c(1, 1, 2, 2, 3, 4),
+    time = c(5, 10, 8, 12, 15, 20),
+    cause = c(1, 1, 1, 0, 2, 1)
+  )
+
+  # Test with include_details = TRUE
+  result_detailed <- mcc(
+    df,
+    id_var = "id",
+    time_var = "time",
+    cause_var = "cause",
+    calculate_se = TRUE,
+    include_details = TRUE
+  )
+
+  # Check that SE columns are present in mcc_final
+  expect_true("se" %in% names(result_detailed$mcc_final))
+  expect_true("lower_ci" %in% names(result_detailed$mcc_final))
+  expect_true("upper_ci" %in% names(result_detailed$mcc_final))
+  expect_true("ci_method" %in% names(result_detailed$mcc_final))
+  expect_true("conf_level" %in% names(result_detailed$mcc_final))
+
+  # Check that SE columns are present in mcc_table
+  expect_true("se" %in% names(result_detailed$mcc_table))
+  expect_true("lower_ci" %in% names(result_detailed$mcc_table))
+  expect_true("upper_ci" %in% names(result_detailed$mcc_table))
+
+  # Check that se_info is present
+  expect_true("se_info" %in% names(result_detailed))
+  expect_equal(result_detailed$se_info$calculated, TRUE)
+  expect_equal(result_detailed$se_info$method, "log")
+  expect_equal(result_detailed$se_info$conf_level, 0.95)
+
+  # Test with include_details = FALSE
+  result_simple <- mcc(
+    df,
+    id_var = "id",
+    time_var = "time",
+    cause_var = "cause",
+    calculate_se = TRUE,
+    include_details = FALSE
+  )
+
+  # Should still have SE columns in mcc_final
+  expect_true("se" %in% names(result_simple$mcc_final))
+  expect_true("lower_ci" %in% names(result_simple$mcc_final))
+  expect_true("upper_ci" %in% names(result_simple$mcc_final))
+
+  # Should have se_info
+  expect_true("se_info" %in% names(result_simple))
+
+  # Should not have detailed components
+  expect_false("mcc_table" %in% names(result_simple))
+  expect_false("original_data" %in% names(result_simple))
+})
+
+test_that("analytical SE calculations produce reasonable results", {
+  # Create a larger dataset for more stable SE estimates
+  set.seed(123)
+  df <- data.frame(
+    id = rep(1:50, each = 2),
+    time = c(runif(50, 1, 10), runif(50, 11, 20)),
+    cause = sample(0:2, 100, replace = TRUE, prob = c(0.3, 0.5, 0.2))
+  ) |>
+    dplyr::arrange(id, time)
+
+  result <- mcc(
+    df,
+    id_var = "id",
+    time_var = "time",
+    cause_var = "cause",
+    calculate_se = TRUE,
+    se_method = "log"
+  )
+
+  # Check that SEs are positive for non-NA values
+  non_na_se <- !is.na(result$mcc_final$se)
+  expect_true(all(result$mcc_final$se[non_na_se] > 0))
+
+  # Check that confidence intervals are reasonable for finite values
+  finite_ci <- !is.na(result$mcc_final$lower_ci) &
+    !is.na(result$mcc_final$upper_ci) &
+    is.finite(result$mcc_final$lower_ci) &
+    is.finite(result$mcc_final$upper_ci)
+
+  if (any(finite_ci)) {
+    expect_true(all(
+      result$mcc_final$lower_ci[finite_ci] <= result$mcc_final$mcc[finite_ci]
+    ))
+    expect_true(all(
+      result$mcc_final$upper_ci[finite_ci] >= result$mcc_final$mcc[finite_ci]
+    ))
+    expect_true(all(result$mcc_final$lower_ci[finite_ci] >= 0))
+  }
+
+  # Check that log method gives different results than normal method
+  result_normal <- mcc(
+    df,
+    id_var = "id",
+    time_var = "time",
+    cause_var = "cause",
+    calculate_se = TRUE,
+    se_method = "normal"
+  )
+
+  # CI methods should give different bounds (at least sometimes) for finite values
+  both_finite <- finite_ci &
+    !is.na(result_normal$mcc_final$lower_ci) &
+    is.finite(result_normal$mcc_final$lower_ci)
+
+  if (any(both_finite)) {
+    expect_false(all(
+      abs(
+        result$mcc_final$lower_ci[both_finite] -
+          result_normal$mcc_final$lower_ci[both_finite]
+      ) <
+        1e-10
+    ))
+  }
+})
+
+test_that("mcc() with calculate_se works with grouped analysis", {
+  df <- data.frame(
+    id = c(1, 1, 2, 2, 3, 3, 4, 4),
+    time = c(5, 10, 8, 12, 6, 15, 9, 18),
+    cause = c(1, 1, 1, 0, 2, 1, 1, 0),
+    group = c("A", "A", "A", "A", "B", "B", "B", "B")
+  )
+
+  result <- mcc(
+    df,
+    id_var = "id",
+    time_var = "time",
+    cause_var = "cause",
+    by = "group",
+    calculate_se = TRUE,
+    se_method = "log"
+  )
+
+  # Check that SE columns are present and grouped correctly
+  expect_true("se" %in% names(result$mcc_final))
+  expect_true("group" %in% names(result$mcc_final))
+  expect_true(all(c("A", "B") %in% result$mcc_final$group))
+
+  # Check that se_info is present
+  expect_true("se_info" %in% names(result))
+  expect_equal(result$se_info$calculated, TRUE)
+})
+
+test_that("calculate_confidence_intervals function works correctly", {
+  # Test normal method
+  mcc_est <- c(0.1, 0.5, 1.0, 2.0)
+  se_est <- c(0.05, 0.1, 0.2, 0.3)
+
+  ci_normal <- calculate_confidence_intervals(
+    mcc_est,
+    se_est,
+    method = "normal",
+    conf_level = 0.95
+  )
+
+  # Check structure
+  expect_true("lower" %in% names(ci_normal))
+  expect_true("upper" %in% names(ci_normal))
+  expect_equal(length(ci_normal$lower), 4)
+  expect_equal(length(ci_normal$upper), 4)
+
+  # Check bounds are reasonable for finite values
+  finite_vals <- is.finite(ci_normal$lower) & is.finite(ci_normal$upper)
+  expect_true(all(ci_normal$lower[finite_vals] <= mcc_est[finite_vals]))
+  expect_true(all(ci_normal$upper[finite_vals] >= mcc_est[finite_vals]))
+  expect_true(all(ci_normal$lower[finite_vals] >= 0)) # Should be non-negative
+
+  # Test log method
+  ci_log <- calculate_confidence_intervals(
+    mcc_est,
+    se_est,
+    method = "log",
+    conf_level = 0.95
+  )
+
+  # Should give different results for finite values
+  both_finite <- finite_vals & is.finite(ci_log$lower) & is.finite(ci_log$upper)
+  if (any(both_finite)) {
+    expect_false(all(
+      abs(ci_normal$lower[both_finite] - ci_log$lower[both_finite]) < 1e-10
+    ))
+    expect_false(all(
+      abs(ci_normal$upper[both_finite] - ci_log$upper[both_finite]) < 1e-10
+    ))
+  }
+
+  # Test with zero MCC values (log method should handle gracefully)
+  mcc_with_zero <- c(0, 0.5, 1.0)
+  se_with_zero <- c(0.1, 0.1, 0.2)
+
+  ci_log_zero <- calculate_confidence_intervals(
+    mcc_with_zero,
+    se_with_zero,
+    method = "log",
+    conf_level = 0.95
+  )
+
+  expect_equal(ci_log_zero$lower[1], 0) # Should be 0 for zero MCC
+  expect_true(ci_log_zero$lower[2] > 0) # Should be positive for non-zero MCC
+
+  # Test with NA values
+  mcc_with_na <- c(NA, 0.5, 1.0)
+  se_with_na <- c(0.1, NA, 0.2)
+
+  ci_with_na <- calculate_confidence_intervals(
+    mcc_with_na,
+    se_with_na,
+    method = "normal",
+    conf_level = 0.95
+  )
+
+  # Should handle NA values gracefully
+  expect_true(is.na(ci_with_na$lower[1]))
+  expect_true(is.na(ci_with_na$upper[1]))
+  expect_true(is.na(ci_with_na$lower[2]))
+  expect_true(is.na(ci_with_na$upper[2]))
+  expect_true(is.finite(ci_with_na$lower[3]))
+  expect_true(is.finite(ci_with_na$upper[3]))
+})
+
+test_that("calculate_analytical_se handles edge cases", {
+  # Test with minimal data
+  df_minimal <- data.frame(
+    id = c(1, 2),
+    time = c(5, 8),
+    cause = c(1, 0)
+  )
+
+  expect_no_error({
+    result_minimal <- mcc(
+      df_minimal,
+      id_var = "id",
+      time_var = "time",
+      cause_var = "cause",
+      calculate_se = TRUE
+    )
+  })
+
+  # Standard errors should be calculable (though may be large)
+  expect_true(all(is.finite(result_minimal$mcc_final$se)))
+  expect_true(all(result_minimal$mcc_final$se > 0))
+
+  # Test with single observation
+  df_single <- data.frame(
+    id = 1,
+    time = 5,
+    cause = 1
+  )
+
+  expect_no_error({
+    result_single <- mcc(
+      df_single,
+      id_var = "id",
+      time_var = "time",
+      cause_var = "cause",
+      calculate_se = TRUE
+    )
+  })
+})
+
+test_that("SE calculation does not affect main MCC results", {
+  df <- data.frame(
+    id = c(1, 1, 2, 2, 3),
+    time = c(5, 10, 8, 12, 15),
+    cause = c(1, 1, 1, 0, 2)
+  )
+
+  # Calculate MCC without SE
+  result_no_se <- mcc(
+    df,
+    id_var = "id",
+    time_var = "time",
+    cause_var = "cause",
+    calculate_se = FALSE
+  )
+
+  # Calculate MCC with SE
+  result_with_se <- mcc(
+    df,
+    id_var = "id",
+    time_var = "time",
+    cause_var = "cause",
+    calculate_se = TRUE
+  )
+
+  # MCC estimates should be identical
+  expect_equal(
+    result_no_se$mcc_final$mcc,
+    result_with_se$mcc_final$mcc
+  )
+
+  expect_equal(
+    result_no_se$mcc_final$time,
+    result_with_se$mcc_final$time
+  )
+
+  # Detailed tables should have same core columns
+  core_cols <- c(
+    "time",
+    "nrisk",
+    "censor",
+    "event",
+    "cmprk",
+    "overall_surv_previous",
+    "ave_events",
+    "mcc"
+  )
+
+  expect_equal(
+    result_no_se$mcc_table[, core_cols],
+    result_with_se$mcc_table[, core_cols]
+  )
+})

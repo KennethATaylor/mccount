@@ -46,6 +46,16 @@
 #'     in the output. Default is `TRUE`, which returns all calculation details.
 #'     Setting to `FALSE` returns only the final MCC estimates, making the
 #'     function more efficient for bootstrapping
+#' @param calculate_se (`logical`)\cr
+#'     Whether to calculate analytical standard errors and confidence intervals.
+#'     Only available for `method = "equation"`. Default is `FALSE`
+#' @param se_method (`string`)\cr
+#'     Method for calculating confidence intervals when `calculate_se = TRUE`.
+#'     Options are `"normal"` for normal approximation or `"log"` (default) for
+#'     log-transformation which typically provides better coverage properties
+#' @param conf_level (`numeric`)\cr
+#'     Confidence level for confidence intervals when `calculate_se = TRUE`.
+#'     Must be between 0 and 1. Default is 0.95 (95% confidence intervals)
 #'
 #' @references
 #' Dong H, Robison LL, Leisenring WM, Martin LJ, Armstrong GT, Yasui Y.
@@ -53,16 +63,22 @@
 #'     risks: the method of mean cumulative count. *Am J Epidemiol*. 2015 Apr
 #'     1;181(7):532-40. doi: [10.1093/aje/kwu289](https://doi.org/10.1093/aje/kwu289)
 #'
+#' Ghosh D, Lin DY. Nonparametric analysis of recurrent events and death.
+#'     *Biometrics*. 2000;56(2):554-562. doi: [10.1111/j.0006-341X.2000.00554.x](https://doi.org/10.1111/j.0006-341X.2000.00554.x)
+#'
 #' @returns
 #' When `by` is NULL (single group analysis):
 #'
 #' When `include_details = TRUE` (default), a list with method-specific components:
 #'
 #' For `method = "equation"`:
-#' * `mcc_final`: A tibble with columns for `time` and `mcc`
-#' * `mcc_table`: A tibble with detailed calculation steps
+#' * `mcc_final`: A tibble with columns for `time` and `mcc`. If `calculate_se = TRUE`,
+#'   also includes `se`, `lower_ci`, `upper_ci`, `ci_method`, and `conf_level`
+#' * `mcc_table`: A tibble with detailed calculation steps. If `calculate_se = TRUE`,
+#'   also includes standard error and confidence interval columns
 #' * `original_data`: The input `data` with standardized column names
 #' * `adjusted_data`: Present only if time adjustments were applied
+#' * `se_info`: Present only if `calculate_se = TRUE`, contains metadata about SE calculation
 #' * `method`: The method used for calculation
 #'
 #' For `method = "sci"`:
@@ -76,6 +92,7 @@
 #'
 #' When `include_details = FALSE`, a simplified list containing only:
 #' * `mcc_final`: A tibble with columns for `time` and `mcc` (or `SumCIs` for `method = "sci"`)
+#' * `se_info`: Present only if `calculate_se = TRUE`
 #' * `method`: The method used for calculation
 #'
 #' When `by` is specified (grouped analysis):
@@ -109,6 +126,18 @@
 #' # MCC estimates
 #' mcc_eq$mcc_final
 #'
+#' # Calculate MCC with analytical standard errors
+#' mcc_with_se <- mcc(
+#'   df,
+#'   id_var = "id",
+#'   time_var = "time",
+#'   cause_var = "cause",
+#'   calculate_se = TRUE,
+#'   se_method = "log"
+#' )
+#'
+#' # View results with confidence intervals
+#' mcc_with_se$mcc_final
 #'
 #' # Calculate MCC using the sum of cumulative incidence method
 #' mcc_sci <- mcc(
@@ -128,6 +157,7 @@
 #' # Clean up
 #' rm(df)
 #' rm(mcc_eq)
+#' rm(mcc_with_se)
 #' rm(mcc_sci)
 #'
 #' @export
@@ -141,10 +171,14 @@ mcc <- function(
   tstart_var = NULL,
   adjust_times = TRUE,
   time_precision = 1e-6,
-  include_details = TRUE
+  include_details = TRUE,
+  calculate_se = FALSE,
+  se_method = c("log", "normal"),
+  conf_level = 0.95
 ) {
   # Match and validate method argument
   method <- match.arg(method)
+  se_method <- match.arg(se_method)
 
   # Validate time_precision
   if (
@@ -187,6 +221,38 @@ mcc <- function(
     ))
   }
 
+  # Validate calculate_se is logical
+  if (!is.logical(calculate_se) || length(calculate_se) != 1) {
+    cli::cli_abort(c(
+      "{.arg calculate_se} must be a {.cls logical} value (`TRUE` or `FALSE`)",
+      "x" = "Received: {.val {calculate_se}}"
+    ))
+  }
+
+  # Check if calculate_se is requested with unsupported method
+  if (calculate_se && method != "equation") {
+    cli::cli_abort(c(
+      "Analytical standard errors are only available for {.code method = \"equation\"}",
+      "i" = "You specified {.code method = \"{method}\"} with {.code calculate_se = TRUE}",
+      "i" = "Either change to {.code method = \"equation\"} or set {.code calculate_se = FALSE}"
+    ))
+  }
+
+  # Validate conf_level
+  if (calculate_se) {
+    if (
+      !is.numeric(conf_level) ||
+        length(conf_level) != 1 ||
+        conf_level <= 0 ||
+        conf_level >= 1
+    ) {
+      cli::cli_abort(c(
+        "{.arg conf_level} must be a single number between 0 and 1",
+        "x" = "Received: {.val {conf_level}}"
+      ))
+    }
+  }
+
   # Validate by argument if provided
   if (!is.null(by)) {
     validate_by_variable(data, by)
@@ -196,15 +262,30 @@ mcc <- function(
   if (is.null(by)) {
     # Single group analysis (existing behavior - call internal functions directly)
     if (method == "equation") {
-      result <- mcc_equation(
-        data = data,
-        id_var = {{ id_var }},
-        time_var = {{ time_var }},
-        cause_var = {{ cause_var }},
-        adjust_times = adjust_times,
-        time_precision = time_precision,
-        include_details = include_details
-      )
+      if (calculate_se) {
+        result <- mcc_equation_with_se(
+          data = data,
+          id_var = {{ id_var }},
+          time_var = {{ time_var }},
+          cause_var = {{ cause_var }},
+          adjust_times = adjust_times,
+          time_precision = time_precision,
+          include_details = include_details,
+          calculate_se = calculate_se,
+          se_method = se_method,
+          conf_level = conf_level
+        )
+      } else {
+        result <- mcc_equation(
+          data = data,
+          id_var = {{ id_var }},
+          time_var = {{ time_var }},
+          cause_var = {{ cause_var }},
+          adjust_times = adjust_times,
+          time_precision = time_precision,
+          include_details = include_details
+        )
+      }
     } else if (method == "sci") {
       result <- mcc_sci(
         data = data,
@@ -232,7 +313,10 @@ mcc <- function(
       tstart_var = {{ tstart_var }},
       adjust_times = adjust_times,
       time_precision = time_precision,
-      include_details = include_details
+      include_details = include_details,
+      calculate_se = calculate_se,
+      se_method = se_method,
+      conf_level = conf_level
     )
   }
 
@@ -255,7 +339,10 @@ mcc_by_group <- function(
   tstart_var = NULL,
   adjust_times = TRUE,
   time_precision = 1e-6,
-  include_details = TRUE
+  include_details = TRUE,
+  calculate_se = FALSE,
+  se_method = "log",
+  conf_level = 0.95
 ) {
   # Convert to symbols for consistent handling
   id_var_sym <- rlang::ensym(id_var)
@@ -295,15 +382,30 @@ mcc_by_group <- function(
 
     # Calculate MCC for this group using the internal functions directly
     if (method == "equation") {
-      group_result <- mcc_equation(
-        data = group_data,
-        id_var = !!id_var_sym,
-        time_var = !!time_var_sym,
-        cause_var = !!cause_var_sym,
-        adjust_times = adjust_times,
-        time_precision = time_precision,
-        include_details = include_details
-      )
+      if (calculate_se) {
+        group_result <- mcc_equation_with_se(
+          data = group_data,
+          id_var = !!id_var_sym,
+          time_var = !!time_var_sym,
+          cause_var = !!cause_var_sym,
+          adjust_times = adjust_times,
+          time_precision = time_precision,
+          include_details = include_details,
+          calculate_se = calculate_se,
+          se_method = se_method,
+          conf_level = conf_level
+        )
+      } else {
+        group_result <- mcc_equation(
+          data = group_data,
+          id_var = !!id_var_sym,
+          time_var = !!time_var_sym,
+          cause_var = !!cause_var_sym,
+          adjust_times = adjust_times,
+          time_precision = time_precision,
+          include_details = include_details
+        )
+      }
     } else if (method == "sci") {
       # Handle tstart_var conditionally to avoid NULL issues
       if (!is.null(tstart_var_sym)) {
@@ -351,41 +453,4 @@ mcc_by_group <- function(
   combined_result$by_group <- by
 
   return(combined_result)
-}
-
-#' Add group column to result tibbles
-#'
-#' @param result Result list from MCC calculation
-#' @param by_name Name of the grouping variable
-#' @param group_value Value of the group
-#' @returns Modified result list with group column added
-#' @keywords internal
-#' @noRd
-add_group_column_to_result <- function(result, by_name, group_value) {
-  # Components that are tibbles and should get the group column
-  tibble_components <- c(
-    "mcc_final",
-    "mcc_table",
-    "sci_table",
-    "mcc_base",
-    "original_data",
-    "adjusted_data"
-  )
-
-  for (component in tibble_components) {
-    if (
-      component %in%
-        names(result) &&
-        inherits(result[[component]], "data.frame")
-    ) {
-      # Add group column as the first column
-      result[[component]] <- tibble::add_column(
-        result[[component]],
-        !!rlang::sym(by_name) := group_value,
-        .before = 1
-      )
-    }
-  }
-
-  return(result)
 }
