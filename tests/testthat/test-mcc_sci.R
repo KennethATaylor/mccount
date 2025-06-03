@@ -519,3 +519,216 @@ test_that("mcc_sci() with include_details=FALSE provides sufficient data for boo
     expect_true(!all(is.na(mcc_values)))
   }
 })
+
+
+test_that("mcc_sci cleans up time precision adjustments in output", {
+  # Create data with events at time 0 (will trigger time adjustment)
+  test_data <- data.frame(
+    id = c(1, 1, 2, 3),
+    time = c(0, 5, 10, 0), # Events at time 0
+    cause = c(1, 1, 0, 2) # Mix of events and competing risks at time 0
+  )
+
+  result <- mcc_sci(
+    data = test_data,
+    id_var = "id",
+    time_var = "time",
+    cause_var = "cause"
+  )
+
+  # Check that output shows time = 0, not time = 1e-06
+  first_time <- result$mcc_final$time[1]
+  expect_equal(first_time, 0)
+
+  # Check sci_table also has clean times
+  if ("sci_table" %in% names(result)) {
+    sci_first_time <- min(result$sci_table$time)
+    expect_equal(sci_first_time, 0)
+  }
+
+  # Check mcc_base also has clean times
+  if ("mcc_base" %in% names(result)) {
+    base_first_time <- min(result$mcc_base$time)
+    expect_equal(base_first_time, 0)
+  }
+})
+
+test_that("mcc_sci only calculates CI for event numbers with actual events", {
+  # Create data where highest sequence number has no events of interest
+  test_data <- data.frame(
+    id = c(1, 1, 1, 2, 2, 2),
+    time = c(1, 5, 10, 2, 8, 15),
+    cause = c(1, 1, 0, 1, 2, 0) # No cause=1 events in 3rd position
+  )
+
+  result <- mcc_sci(
+    data = test_data,
+    id_var = "id",
+    time_var = "time",
+    cause_var = "cause"
+  )
+
+  # Should only have CI1 and CI2 columns, not CI3
+  sci_cols <- names(result$sci_table)
+  ci_cols <- sci_cols[grepl("^CI\\d+$", sci_cols)]
+
+  expect_true("CI1" %in% ci_cols)
+  expect_true("CI2" %in% ci_cols)
+  expect_false("CI3" %in% ci_cols)
+
+  # all_cis should only have 2 elements, not 3
+  expect_length(result$all_cis, 2)
+})
+
+test_that("mcc_sci handles case with no events of interest gracefully", {
+  # Data with only censoring and competing risks
+  test_data <- data.frame(
+    id = c(1, 2, 3),
+    time = c(5, 10, 15),
+    cause = c(0, 2, 0) # No cause=1 events
+  )
+
+  # Should not error and should return appropriate warning
+  expect_snapshot(
+    result <- mcc_sci(
+      data = test_data,
+      id_var = "id",
+      time_var = "time",
+      cause_var = "cause"
+    )
+  )
+
+  # Should return zero MCC
+  expect_equal(result$mcc_final$SumCIs, 0)
+})
+
+test_that("grouped mcc fills missing CI columns with 0, not NA", {
+  # Create data where groups have different numbers of recurrent events
+  test_data <- data.frame(
+    id = c(1, 1, 1, 2, 2, 3, 3, 3, 3, 3),
+    time = c(1, 5, 10, 2, 8, 3, 6, 9, 12, 15),
+    cause = c(1, 1, 1, 1, 0, 1, 1, 1, 1, 0), # Group A: 3 events, Group B: 4 events
+    treatment = c("A", "A", "A", "A", "A", "B", "B", "B", "B", "B")
+  )
+
+  result <- mcc(
+    data = test_data,
+    id_var = "id",
+    time_var = "time",
+    cause_var = "cause",
+    by = "treatment",
+    method = "sci"
+  )
+
+  # Check that Group A has CI4 = 0 (not NA)
+  group_a_rows <- result$sci_table$treatment == "A"
+
+  expect_true("CI4" %in% names(result$sci_table))
+  expect_true(all(result$sci_table$CI4[group_a_rows] == 0))
+  expect_false(any(is.na(result$sci_table$CI4[group_a_rows])))
+
+  # Group B should have actual CI4 values > 0
+  group_b_rows <- result$sci_table$treatment == "B"
+  expect_true(any(result$sci_table$CI4[group_b_rows] > 0))
+})
+
+
+test_that("mcc_sci uses time_precision parameter consistently", {
+  test_data <- data.frame(
+    id = c(1, 2),
+    time = c(0, 5), # Event at time 0 will trigger adjustment
+    cause = c(1, 1)
+  )
+
+  # Test with custom time_precision
+  custom_precision <- 1e-8
+
+  result <- mcc_sci(
+    data = test_data,
+    id_var = "id",
+    time_var = "time",
+    cause_var = "cause",
+    time_precision = custom_precision
+  )
+
+  # Output should still show clean time = 0 regardless of precision used
+  expect_equal(min(result$mcc_final$time), 0)
+  expect_equal(min(result$sci_table$time), 0)
+})
+
+
+test_that("mcc_sci handles mixed events at time 0 correctly", {
+  test_data <- data.frame(
+    id = c(1, 2, 3, 4, 4),
+    time = c(0, 0, 0, 0, 5), # Multiple events at time 0
+    cause = c(1, 2, 0, 1, 1) # Event, competing risk, censoring at time 0
+  )
+
+  result <- mcc_sci(
+    data = test_data,
+    id_var = "id",
+    time_var = "time",
+    cause_var = "cause"
+  )
+
+  # Should handle this without error and show time = 0 in output
+  expect_equal(min(result$mcc_final$time), 0)
+  expect_true(result$mcc_final$SumCIs[1] >= 0)
+})
+
+
+test_that("both methods show consistent time values for events at time 0", {
+  test_data <- data.frame(
+    id = c(1, 1, 2),
+    time = c(0, 5, 0),
+    cause = c(1, 1, 2)
+  )
+
+  result_eq <- mcc(
+    data = test_data,
+    id_var = "id",
+    time_var = "time",
+    cause_var = "cause",
+    method = "equation"
+  )
+
+  result_sci <- mcc(
+    data = test_data,
+    id_var = "id",
+    time_var = "time",
+    cause_var = "cause",
+    method = "sci"
+  )
+
+  # Both methods should show time = 0 for first time point
+  expect_equal(min(result_eq$mcc_final$time), 0)
+  expect_equal(min(result_sci$mcc_final$time), 0)
+})
+
+
+test_that("CI column names are consistent across groups with different max events", {
+  test_data <- data.frame(
+    id = c(1, 1, 2, 2, 2, 3),
+    time = c(1, 5, 2, 6, 10, 3),
+    cause = c(1, 1, 1, 1, 1, 1), # Group A: 2 events, Group B: 3 events, Group C: 1 event
+    group = c("A", "A", "B", "B", "B", "C")
+  )
+
+  result <- mcc(
+    data = test_data,
+    id_var = "id",
+    time_var = "time",
+    cause_var = "cause",
+    by = "group",
+    method = "sci"
+  )
+
+  # All groups should have CI1, CI2, CI3 columns
+  expected_cols <- c("group", "time", "CI1", "CI2", "CI3", "SumCIs")
+  expect_true(all(expected_cols %in% names(result$sci_table)))
+
+  # Group C should have CI2 = 0 and CI3 = 0
+  group_c_rows <- result$sci_table$group == "C"
+  expect_true(all(result$sci_table$CI2[group_c_rows] == 0))
+  expect_true(all(result$sci_table$CI3[group_c_rows] == 0))
+})

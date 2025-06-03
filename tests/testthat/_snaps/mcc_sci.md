@@ -36,3 +36,13 @@
     Output
       [1] 2
 
+# mcc_sci handles case with no events of interest gracefully
+
+    Code
+      result <- mcc_sci(data = test_data, id_var = "id", time_var = "time",
+        cause_var = "cause")
+    Condition
+      Warning:
+      `cause_var` variable includes 0 and 2 only
+      i Setting sum of cumulative incidence to 0 at maximum time point 15
+
