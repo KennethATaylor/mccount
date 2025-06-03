@@ -176,7 +176,12 @@ combine_group_results <- function(group_results, by_name, include_details) {
             missing_cols <- setdiff(all_cols, names(tbl))
             if (length(missing_cols) > 0) {
               for (col in missing_cols) {
-                tbl[[col]] <- NA_real_ # Use appropriate NA type
+                # Use 0 for CI columns and SumCIs, NA for other columns
+                if (grepl("^CI\\d+$", col)) {
+                  tbl[[col]] <- 0 # Cumulative incidence of 0 for non-occurring events
+                } else {
+                  tbl[[col]] <- NA_real_ # NA for other numeric columns
+                }
               }
             }
             # Reorder columns to match
@@ -218,4 +223,35 @@ combine_group_results <- function(group_results, by_name, include_details) {
   }
 
   return(combined_result)
+}
+
+#' Clean up tiny adjusted time values for user-facing output
+#'
+#' Converts times that are very close to time_precision back to 0.
+#'    This handles the case where 0 was adjusted to time_precision for
+#'    computation to prevent the first row of `time` column from being equal
+#'    to `time_precision` instead of being equal to zero.
+#'
+#' @param data_table data_table of results from `method = "sci"`
+#' @param time_precision time_precision used when calculating MCC to handle
+#'     when `time == tstart_var== 0`
+#'
+#' @returns Updated table where time 0 is converted back to value of 0 if it
+#'     was adjusted for computation reasons
+#'
+#' @keywords internal
+#' @noRd
+cleanup_output_times <- function(data_table, time_precision = 1e-6) {
+  if ("time" %in% names(data_table)) {
+    tiny_times <- abs(data_table$time - time_precision) <
+      (.Machine$double.eps * 100)
+    data_table[tiny_times, time := 0]
+  }
+  if ("Time" %in% names(data_table)) {
+    tiny_times <- abs(data_table$Time - time_precision) <
+      (.Machine$double.eps * 100)
+    data_table[tiny_times, Time := 0]
+  }
+
+  return(data_table)
 }

@@ -25,7 +25,7 @@
     Code
       print(sum(grepl("^CI", names(result$sci_table))))
     Output
-      [1] 3
+      [1] 2
     Code
       cat("\nNumber of all_cis elements:\n")
     Output
@@ -34,5 +34,5 @@
     Code
       print(length(result$all_cis))
     Output
-      [1] 3
+      [1] 2
 

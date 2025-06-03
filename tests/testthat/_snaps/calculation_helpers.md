@@ -269,7 +269,7 @@
       * <chr> <dbl> <dbl> <dbl>  <dbl>
       1 A         5  0.08  0.02   0.1 
       2 A        10  0.2   0.1    0.3 
-      3 B         8  0.15 NA      0.15
+      3 B         8  0.15  0      0.15
     Code
       cat("\nMCC Base:\n")
     Output

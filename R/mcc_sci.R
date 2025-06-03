@@ -109,7 +109,7 @@ mcc_sci <- function(
   # Adjust for identical time and tstart values
   time_equal_tstart <- time == tstart
   if (any(time_equal_tstart)) {
-    time[time_equal_tstart] <- tstart[time_equal_tstart] + exp(-13)
+    time[time_equal_tstart] <- tstart[time_equal_tstart] + time_precision
   }
 
   # Create data.table with all required columns
@@ -128,8 +128,9 @@ mcc_sci <- function(
   # Add sequence number within each ID
   dt[, first := seq_len(.N), by = id]
 
-  # Maximum number of events per ID
-  max_events <- dt[, max(first)]
+  # Maximum number of recurrent events per ID
+  recurrent_event_of_interest <- dt[cause == 1, unique(first)]
+  max_events <- max(recurrent_event_of_interest)
 
   # Get the last row for each ID to determine max events per person
   event_number <- dt[, .(maxE = .N), by = id]
@@ -235,6 +236,7 @@ mcc_sci <- function(
     # Create final output: max MCC value at each time point
     mcc_final_dt <- mcc_base_unique[, .(SumCIs = max(MCC)), by = Time]
     data.table::setnames(mcc_final_dt, "Time", "time")
+    mcc_final_dt <- cleanup_output_times(mcc_final_dt, time_precision)
     mcc_final <- tibble::as_tibble(mcc_final_dt)
 
     # Create SCItable
@@ -278,7 +280,21 @@ mcc_sci <- function(
       sci_table_dt[, SumCIs := 0]
     }
 
+    sci_table_dt <- cleanup_output_times(sci_table_dt, time_precision)
+
     sci_table <- tibble::as_tibble(sci_table_dt)
+
+    # Rename Time to time in the data.table
+    data.table::setnames(mcc_base, "Time", "time")
+
+    mcc_base <- cleanup_output_times(mcc_base, time_precision)
+
+    mcc_base <- tibble::as_tibble(mcc_base[, .(
+      time,
+      cm,
+      Deta,
+      cumI
+    )])
 
     # Prepare the return list based on include_details parameter
     if (include_details) {
@@ -286,12 +302,7 @@ mcc_sci <- function(
         mcc_final = mcc_final,
         sci_table = sci_table,
         all_cis = all_cis,
-        mcc_base = tibble::as_tibble(mcc_base[, .(
-          time = Time,
-          cm,
-          Deta,
-          cumI
-        )]),
+        mcc_base = mcc_base,
         original_data = data_std
       )
 
