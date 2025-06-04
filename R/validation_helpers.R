@@ -5,6 +5,7 @@
 #' @param time_var Symbol for time variable
 #' @param cause_var Symbol for cause variable
 #' @param tstart_var Optional symbol for start time variable
+#' @param weights Optional string for weights variable
 #'
 #' @returns TRUE if all required columns exist (errors otherwise)
 #' @keywords internal
@@ -14,7 +15,8 @@ validate_column_existence <- function(
   id_var,
   time_var,
   cause_var,
-  tstart_var = NULL
+  tstart_var = NULL,
+  weights = NULL
 ) {
   # Convert inputs to names for validation
   required_vars <- c(
@@ -39,6 +41,15 @@ validate_column_existence <- function(
     if (!tstart_name %in% names(data)) {
       cli::cli_abort(
         "{.arg tstart_var} column '{tstart_name}' not found in {.arg data}"
+      )
+    }
+  }
+
+  # Check weights if provided
+  if (!is.null(weights)) {
+    if (!weights %in% names(data)) {
+      cli::cli_abort(
+        "{.arg weights} column '{weights}' not found in {.arg data}"
       )
     }
   }
@@ -172,6 +183,91 @@ validate_by_variable <- function(data, by_var) {
   return(TRUE)
 }
 
+#' Validate weights variable
+#'
+#' @param data Input data
+#' @param weights_var String name of weights variable
+#'
+#' @returns TRUE if validation passes (errors otherwise)
+#' @keywords internal
+#' @noRd
+validate_weights_variable <- function(data, weights_var) {
+  if (is.null(weights_var)) {
+    return(TRUE)
+  }
+
+  # Check if weights_var is a single character string
+  if (!is.character(weights_var) || length(weights_var) != 1) {
+    cli::cli_abort(c(
+      "{.arg weights} must be a single character string",
+      "x" = "Received: {.val {weights_var}}"
+    ))
+  }
+
+  # Check if column exists
+  if (!weights_var %in% names(data)) {
+    cli::cli_abort(c(
+      "Column specified in {.arg weights} not found in {.arg data}",
+      "x" = "Column '{weights_var}' does not exist"
+    ))
+  }
+
+  # Extract weights values
+  weights_values <- data[[weights_var]]
+
+  # Check for missing values
+  if (any(is.na(weights_values))) {
+    n_missing <- sum(is.na(weights_values))
+    cli::cli_abort(c(
+      "Missing values found in {.arg weights} column",
+      "x" = "Found {n_missing} missing value{?s} in column '{weights_var}'",
+      "i" = "All weights must be non-missing"
+    ))
+  }
+
+  # Check for non-numeric values
+  if (!is.numeric(weights_values)) {
+    cli::cli_abort(c(
+      "{.arg weights} column must contain numeric values",
+      "x" = "Column '{weights_var}' is of type {.cls {class(weights_values)}}"
+    ))
+  }
+
+  # Check for negative values
+  if (any(weights_values < 0)) {
+    n_negative <- sum(weights_values < 0)
+    min_weight <- min(weights_values)
+    cli::cli_abort(c(
+      "Negative values found in {.arg weights} column",
+      "x" = "Found {n_negative} negative value{?s} in column '{weights_var}'",
+      "x" = "Minimum weight: {.val {min_weight}}",
+      "i" = "All weights must be non-negative (>= 0)"
+    ))
+  }
+
+  # Optional warning for extreme weights
+  if (any(weights_values == 0)) {
+    n_zero <- sum(weights_values == 0)
+    cli::cli_warn(c(
+      "Zero weights found in {.arg weights} column",
+      "!" = "Found {n_zero} zero weight{?s} in column '{weights_var}'",
+      "i" = "Observations with zero weights will not contribute to the analysis"
+    ))
+  }
+
+  # Check for extremely large weights (optional warning)
+  weight_ratio <- max(weights_values) / min(weights_values[weights_values > 0])
+  if (weight_ratio > 100) {
+    cli::cli_warn(c(
+      "Large variation in weights detected",
+      "!" = "Maximum to minimum weight ratio: {.val {round(weight_ratio, 2)}}",
+      "i" = "Consider checking for potential outliers in weights"
+    ))
+  }
+
+  return(TRUE)
+}
+
 #' Create standardized dataset for MCC calculations
 #'
 #' @param data The input data frame
@@ -179,6 +275,7 @@ validate_by_variable <- function(data, by_var) {
 #' @param time_var Symbol for time variable
 #' @param cause_var Symbol for cause variable
 #' @param tstart_var Optional symbol for start time variable
+#' @param weights Optional string for weights variable
 #'
 #' @returns A standardized data frame with consistent column names
 #' @keywords internal
@@ -188,7 +285,8 @@ standardize_data <- function(
   id_var,
   time_var,
   cause_var,
-  tstart_var = NULL
+  tstart_var = NULL,
+  weights = NULL
 ) {
   # Create standardized data frame - more efficient column selection
   if (!is.null(tstart_var)) {
@@ -208,6 +306,13 @@ standardize_data <- function(
       ) |>
       dplyr::mutate(tstart = 0) |>
       dplyr::relocate("tstart", .before = "time")
+  }
+
+  # Add weights column if provided
+  if (!is.null(weights)) {
+    data_std <- data_std |>
+      dplyr::mutate(weights = data[[weights]]) |>
+      dplyr::relocate("weights", .after = "cause")
   }
 
   return(data_std)

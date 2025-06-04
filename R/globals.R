@@ -4,6 +4,7 @@ utils::globalVariables(c(
   "time",
   "cause",
   "tstart",
+  "weights",
 
   # data.table variables
   "n_events_at_time",

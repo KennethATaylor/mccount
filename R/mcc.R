@@ -35,6 +35,10 @@
 #'     left truncation. Only allowed to be specified when `method = "sci"`. If
 #'     `NULL` (default), a constant value of `0` is used in calculation (i.e.,
 #'     right truncation only)
+#' @param weights (`string`, optional)\cr
+#'     Name of the column containing weights for weighted MCC estimation.
+#'     Currently only supported with `method = "equation"`.
+#'     If provided, all weights must be non-negative and non-missing
 #' @param adjust_times (`logical`)\cr
 #'     If `TRUE` (default), automatically adjusts times to account for outcome
 #'     events and competing risk events occurring at the same time
@@ -53,6 +57,11 @@
 #'     risks: the method of mean cumulative count. *Am J Epidemiol*. 2015 Apr
 #'     1;181(7):532-40. doi: [10.1093/aje/kwu289](https://doi.org/10.1093/aje/kwu289)
 #'
+#' Gaber CE, Edwards JK, Lund JL, Peery AF, Richardson DB, Kinlaw AC.
+#'     Inverse Probability Weighting to Estimate Exposure Effects on the Burden of
+#'     Recurrent Outcomes in the Presence of Competing Events. *Am J Epidemiol*.
+#'     2023;192(5):830-839. doi: [10.1093/aje/kwad031](https://doi.org/10.1093/aje/kwad031)
+#'
 #' @returns
 #' When `by` is NULL (single group analysis):
 #'
@@ -64,6 +73,7 @@
 #' * `original_data`: The input `data` with standardized column names
 #' * `adjusted_data`: Present only if time adjustments were applied
 #' * `method`: The method used for calculation
+#' * `weighted`: Logical indicating whether weighted estimation was used
 #'
 #' For `method = "sci"`:
 #' * `mcc_final`: A tibble with columns for `time` and MCC (expressed as `SumCIs`)
@@ -73,10 +83,12 @@
 #' * `original_data`: The input `data` with standardized column names
 #' * `adjusted_data`: Present only if time adjustments were applied
 #' * `method`: The `method` used for calculation
+#' * `weighted`: Logical indicating whether weighted estimation was used
 #'
 #' When `include_details = FALSE`, a simplified list containing only:
 #' * `mcc_final`: A tibble with columns for `time` and `mcc` (or `SumCIs` for `method = "sci"`)
 #' * `method`: The method used for calculation
+#' * `weighted`: Logical indicating whether weighted estimation was used
 #'
 #' When `by` is specified (grouped analysis):
 #'
@@ -139,6 +151,7 @@ mcc <- function(
   by = NULL,
   method = c("equation", "sci"),
   tstart_var = NULL,
+  weights = NULL,
   adjust_times = TRUE,
   time_precision = 1e-6,
   include_details = TRUE
@@ -171,6 +184,15 @@ mcc <- function(
     ))
   }
 
+  # Check if weights are provided with method "sci"
+  if (!is.null(weights) && method == "sci") {
+    cli::cli_abort(c(
+      "{.arg weights} is currently only compatible with {.code method = \"equation\"}",
+      "i" = "You specified {.code method = \"sci\"}, which does not currently support weighted estimation",
+      "i" = "Either change to {.code method = \"equation\"} or remove the {.arg weights} argument specification"
+    ))
+  }
+
   # Validate adjust_times is logical
   if (!is.logical(adjust_times) || length(adjust_times) != 1) {
     cli::cli_abort(c(
@@ -192,6 +214,11 @@ mcc <- function(
     validate_by_variable(data, by)
   }
 
+  # Validate weights argument if provided
+  if (!is.null(weights)) {
+    validate_weights_variable(data, weights)
+  }
+
   # Handle grouped vs ungrouped analysis
   if (is.null(by)) {
     # Single group analysis (existing behavior - call internal functions directly)
@@ -201,6 +228,7 @@ mcc <- function(
         id_var = {{ id_var }},
         time_var = {{ time_var }},
         cause_var = {{ cause_var }},
+        weights = weights,
         adjust_times = adjust_times,
         time_precision = time_precision,
         include_details = include_details
@@ -218,8 +246,9 @@ mcc <- function(
       )
     }
 
-    # Add method used to the result
+    # Add method and weighted indicator to the result
     result$method <- method
+    result$weighted <- !is.null(weights)
   } else {
     # Grouped analysis
     result <- mcc_by_group(
@@ -230,6 +259,7 @@ mcc <- function(
       by = by,
       method = method,
       tstart_var = {{ tstart_var }},
+      weights = weights,
       adjust_times = adjust_times,
       time_precision = time_precision,
       include_details = include_details
@@ -253,6 +283,7 @@ mcc_by_group <- function(
   by,
   method,
   tstart_var = NULL,
+  weights = NULL,
   adjust_times = TRUE,
   time_precision = 1e-6,
   include_details = TRUE
@@ -300,6 +331,7 @@ mcc_by_group <- function(
         id_var = !!id_var_sym,
         time_var = !!time_var_sym,
         cause_var = !!cause_var_sym,
+        weights = weights,
         adjust_times = adjust_times,
         time_precision = time_precision,
         include_details = include_details
@@ -346,8 +378,9 @@ mcc_by_group <- function(
   # Combine results from all groups
   combined_result <- combine_group_results(group_results, by, include_details)
 
-  # Add method and by_group to the result
+  # Add method, weighted indicator, and by_group to the result
   combined_result$method <- method
+  combined_result$weighted <- !is.null(weights)
   combined_result$by_group <- by
 
   return(combined_result)
