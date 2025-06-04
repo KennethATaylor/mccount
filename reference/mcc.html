@@ -76,6 +76,7 @@ structure.</p>
 <span>  by <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"equation"</span>, <span class="st">"sci"</span><span class="op">)</span>,</span>
 <span>  tstart_var <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  weights <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  adjust_times <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  time_precision <span class="op">=</span> <span class="fl">1e-06</span>,</span>
 <span>  include_details <span class="op">=</span> <span class="cn">TRUE</span></span>
@@ -128,6 +129,13 @@ left truncation. Only allowed to be specified when <code>method = "sci"</code>. 
 right truncation only)</p></dd>
 
 
+<dt id="arg-weights">weights<a class="anchor" aria-label="anchor" href="#arg-weights"></a></dt>
+<dd><p>(<code>string</code>, optional)<br>
+Name of the column containing weights for weighted MCC estimation.
+Currently only supported with <code>method = "equation"</code>.
+If provided, all weights must be non-negative and non-missing</p></dd>
+
+
 <dt id="arg-adjust-times">adjust_times<a class="anchor" aria-label="anchor" href="#arg-adjust-times"></a></dt>
 <dd><p>(<code>logical</code>)<br>
 If <code>TRUE</code> (default), automatically adjusts times to account for outcome
@@ -157,6 +165,7 @@ function more efficient for bootstrapping</p></dd>
 <li><p><code>original_data</code>: The input <code>data</code> with standardized column names</p></li>
 <li><p><code>adjusted_data</code>: Present only if time adjustments were applied</p></li>
 <li><p><code>method</code>: The method used for calculation</p></li>
+<li><p><code>weighted</code>: Logical indicating whether weighted estimation was used</p></li>
 </ul><p>For <code>method = "sci"</code>:</p><ul><li><p><code>mcc_final</code>: A tibble with columns for <code>time</code> and MCC (expressed as <code>SumCIs</code>)</p></li>
 <li><p><code>sci_table</code>: A tibble with cumulative incidence for each event number and their sum</p></li>
 <li><p><code>all_cis</code>: A list of cumulative incidence data for each event number</p></li>
@@ -164,8 +173,10 @@ function more efficient for bootstrapping</p></dd>
 <li><p><code>original_data</code>: The input <code>data</code> with standardized column names</p></li>
 <li><p><code>adjusted_data</code>: Present only if time adjustments were applied</p></li>
 <li><p><code>method</code>: The <code>method</code> used for calculation</p></li>
+<li><p><code>weighted</code>: Logical indicating whether weighted estimation was used</p></li>
 </ul><p>When <code>include_details = FALSE</code>, a simplified list containing only:</p><ul><li><p><code>mcc_final</code>: A tibble with columns for <code>time</code> and <code>mcc</code> (or <code>SumCIs</code> for <code>method = "sci"</code>)</p></li>
 <li><p><code>method</code>: The method used for calculation</p></li>
+<li><p><code>weighted</code>: Logical indicating whether weighted estimation was used</p></li>
 </ul><p>When <code>by</code> is specified (grouped analysis):</p>
 <p>A list with the same structure as above, but with an additional <code>by_group</code>
 component and all tibbles containing an additional column with the grouping
@@ -178,6 +189,10 @@ variable for reference.</p>
 Estimating the burden of recurrent events in the presence of competing
 risks: the method of mean cumulative count. <em>Am J Epidemiol</em>. 2015 Apr
 1;181(7):532-40. doi: <a href="https://doi.org/10.1093/aje/kwu289" class="external-link">10.1093/aje/kwu289</a></p>
+<p>Gaber CE, Edwards JK, Lund JL, Peery AF, Richardson DB, Kinlaw AC.
+Inverse Probability Weighting to Estimate Exposure Effects on the Burden of
+Recurrent Outcomes in the Presence of Competing Events. <em>Am J Epidemiol</em>.
+2023;192(5):830-839. doi: <a href="https://doi.org/10.1093/aje/kwad031" class="external-link">10.1093/aje/kwad031</a></p>
     </div>
 
     <div class="section level2">

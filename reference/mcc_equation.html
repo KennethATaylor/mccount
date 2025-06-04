@@ -43,6 +43,7 @@
 <span>  <span class="va">id_var</span>,</span>
 <span>  <span class="va">time_var</span>,</span>
 <span>  <span class="va">cause_var</span>,</span>
+<span>  weights <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  adjust_times <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  time_precision <span class="op">=</span> <span class="fl">1e-06</span>,</span>
 <span>  include_details <span class="op">=</span> <span class="cn">TRUE</span></span>
@@ -68,6 +69,10 @@
 <dt id="arg-cause-var">cause_var<a class="anchor" aria-label="anchor" href="#arg-cause-var"></a></dt>
 <dd><p>Name of the column containing event indicators (as string or symbol)
 (1=event of interest, 2=competing risk, 0=censoring)</p></dd>
+
+
+<dt id="arg-weights">weights<a class="anchor" aria-label="anchor" href="#arg-weights"></a></dt>
+<dd><p>Name of the column containing weights (as string, optional)</p></dd>
 
 
 <dt id="arg-adjust-times">adjust_times<a class="anchor" aria-label="anchor" href="#arg-adjust-times"></a></dt>
