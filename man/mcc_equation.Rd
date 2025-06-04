@@ -9,6 +9,7 @@ mcc_equation(
   id_var,
   time_var,
   cause_var,
+  weights = NULL,
   adjust_times = TRUE,
   time_precision = 1e-06,
   include_details = TRUE
@@ -23,6 +24,8 @@ mcc_equation(
 
 \item{cause_var}{Name of the column containing event indicators (as string or symbol)
 (1=event of interest, 2=competing risk, 0=censoring)}
+
+\item{weights}{Name of the column containing weights (as string, optional)}
 
 \item{adjust_times}{Whether to automatically adjust times for simultaneous events (default: TRUE)}
 

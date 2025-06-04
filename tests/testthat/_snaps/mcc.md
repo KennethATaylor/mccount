@@ -24,6 +24,9 @@
       $method
       [1] "equation"
       
+      $weighted
+      [1] FALSE
+      
 
 ---
 
@@ -71,6 +74,9 @@
       
       $method
       [1] "sci"
+      
+      $weighted
+      [1] FALSE
       
 
 ---
@@ -136,6 +142,9 @@
       $method
       [1] "equation"
       
+      $weighted
+      [1] FALSE
+      
 
 ---
 
@@ -162,6 +171,9 @@
       
       $method
       [1] "equation"
+      
+      $weighted
+      [1] FALSE
       
 
 # mcc() validates tstart_var compatibility with method
@@ -218,6 +230,9 @@
       $method
       [1] "sci"
       
+      $weighted
+      [1] FALSE
+      
 
 # mcc() validates adjust_times correctly
 
@@ -273,6 +288,9 @@
       $method
       [1] "equation"
       
+      $weighted
+      [1] FALSE
+      
 
 ---
 
@@ -299,6 +317,9 @@
       
       $method
       [1] "equation"
+      
+      $weighted
+      [1] FALSE
       
 
 # mcc() end-to-end functionality through snapshots

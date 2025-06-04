@@ -12,6 +12,7 @@ mcc(
   by = NULL,
   method = c("equation", "sci"),
   tstart_var = NULL,
+  weights = NULL,
   adjust_times = TRUE,
   time_precision = 1e-06,
   include_details = TRUE
@@ -46,6 +47,11 @@ left truncation. Only allowed to be specified when \code{method = "sci"}. If
 \code{NULL} (default), a constant value of \code{0} is used in calculation (i.e.,
 right truncation only)}
 
+\item{weights}{(\code{string}, optional)\cr
+Name of the column containing weights for weighted MCC estimation.
+Currently only supported with \code{method = "equation"}.
+If provided, all weights must be non-negative and non-missing}
+
 \item{adjust_times}{(\code{logical})\cr
 If \code{TRUE} (default), automatically adjusts times to account for outcome
 events and competing risk events occurring at the same time}
@@ -72,6 +78,7 @@ For \code{method = "equation"}:
 \item \code{original_data}: The input \code{data} with standardized column names
 \item \code{adjusted_data}: Present only if time adjustments were applied
 \item \code{method}: The method used for calculation
+\item \code{weighted}: Logical indicating whether weighted estimation was used
 }
 
 For \code{method = "sci"}:
@@ -83,12 +90,14 @@ For \code{method = "sci"}:
 \item \code{original_data}: The input \code{data} with standardized column names
 \item \code{adjusted_data}: Present only if time adjustments were applied
 \item \code{method}: The \code{method} used for calculation
+\item \code{weighted}: Logical indicating whether weighted estimation was used
 }
 
 When \code{include_details = FALSE}, a simplified list containing only:
 \itemize{
 \item \code{mcc_final}: A tibble with columns for \code{time} and \code{mcc} (or \code{SumCIs} for \code{method = "sci"})
 \item \code{method}: The method used for calculation
+\item \code{weighted}: Logical indicating whether weighted estimation was used
 }
 
 When \code{by} is specified (grouped analysis):
@@ -163,4 +172,9 @@ Dong H, Robison LL, Leisenring WM, Martin LJ, Armstrong GT, Yasui Y.
 Estimating the burden of recurrent events in the presence of competing
 risks: the method of mean cumulative count. \emph{Am J Epidemiol}. 2015 Apr
 1;181(7):532-40. doi: \href{https://doi.org/10.1093/aje/kwu289}{10.1093/aje/kwu289}
+
+Gaber CE, Edwards JK, Lund JL, Peery AF, Richardson DB, Kinlaw AC.
+Inverse Probability Weighting to Estimate Exposure Effects on the Burden of
+Recurrent Outcomes in the Presence of Competing Events. \emph{Am J Epidemiol}.
+2023;192(5):830-839. doi: \href{https://doi.org/10.1093/aje/kwad031}{10.1093/aje/kwad031}
 }

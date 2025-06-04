@@ -4,6 +4,7 @@ utils::globalVariables(c(
   "time",
   "cause",
   "tstart",
+  "weights",
 
   # data.table variables
   "n_events_at_time",
@@ -27,6 +28,7 @@ utils::globalVariables(c(
   "cumI",
   "MCC",
   "SumCIs",
+  "weight_per_person",
 
   # Lifetable variables
   "count",
