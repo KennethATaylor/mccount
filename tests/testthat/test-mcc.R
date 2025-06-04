@@ -1,9 +1,9 @@
 test_that("mcc() dispatches to the correct implementation based on method", {
   # Create simple test data
   df <- data.frame(
-    id = c(1, 2, 3, 4),
-    time = c(5, 8, 12, 15),
-    cause = c(1, 0, 2, 1)
+    id = c(1, 1, 2, 3, 4, 4),
+    time = c(5, 6, 8, 12, 15, 16),
+    cause = c(1, 0, 0, 2, 1, 0)
   )
 
   # Test equation method (default)
@@ -47,7 +47,11 @@ test_that("mcc() dispatches to the correct implementation based on method", {
 })
 
 test_that("mcc() validates the method argument correctly", {
-  df <- data.frame(id = 1, time = 5, cause = 1)
+  df <- data.frame(
+    id = c(1, 1),
+    time = c(5, 6),
+    cause = c(1, 0)
+  )
 
   # Valid methods should work
   expect_snapshot(
@@ -83,7 +87,11 @@ test_that("mcc() validates the method argument correctly", {
 })
 
 test_that("mcc() correctly validates time_precision", {
-  df <- data.frame(id = 1, time = 5, cause = 1)
+  df <- data.frame(
+    id = c(1, 1),
+    time = c(5, 6),
+    cause = c(1, 0)
+  )
 
   # Invalid time_precision values
   expect_snapshot(
@@ -143,10 +151,10 @@ test_that("mcc() correctly validates time_precision", {
 
 test_that("mcc() validates tstart_var compatibility with method", {
   df <- data.frame(
-    id = c(1, 2),
-    time = c(5, 8),
-    cause = c(1, 0),
-    tstart = c(1, 2)
+    id = c(1, 1, 2),
+    time = c(5, 6, 8),
+    cause = c(1, 0, 0),
+    tstart = c(1, 5, 2)
   )
 
   # tstart_var should error with equation method
@@ -176,7 +184,11 @@ test_that("mcc() validates tstart_var compatibility with method", {
 })
 
 test_that("mcc() validates adjust_times correctly", {
-  df <- data.frame(id = 1, time = 5, cause = 1)
+  df <- data.frame(
+    id = c(1, 1),
+    time = c(5, 6),
+    cause = c(1, 0)
+  )
 
   # Invalid adjust_times values
   expect_snapshot(
@@ -237,9 +249,9 @@ test_that("mcc() validates adjust_times correctly", {
 test_that("mcc() handles variable names with spaces and special characters", {
   # Create test data with unusual column names
   df <- data.frame(
-    patient_id = c(1, 2, 3),
-    followup_time = c(5, 8, 12),
-    event_status = c(1, 0, 2)
+    patient_id = c(1, 1, 2, 3),
+    followup_time = c(5, 6, 8, 12),
+    event_status = c(1, 0, 0, 2)
   )
 
   # Test with strings
@@ -270,9 +282,9 @@ test_that("mcc() handles variable names with spaces and special characters", {
 
   # Now test with more complex names (but without spaces)
   df2 <- data.frame(
-    patient.id = c(1, 2, 3),
-    followup.time = c(5, 8, 12),
-    event.status = c(1, 0, 2)
+    patient.id = c(1, 1, 2, 3),
+    followup.time = c(5, 6, 8, 12),
+    event.status = c(1, 0, 0, 2)
   )
 
   expect_no_error(
@@ -290,9 +302,9 @@ test_that("mcc() handles variable names with spaces and special characters", {
 test_that("mcc() works with data.frames and tibbles", {
   # Create test data
   df <- data.frame(
-    id = c(1, 2, 3),
-    time = c(5, 8, 12),
-    cause = c(1, 0, 2)
+    id = c(1, 1, 2, 3),
+    time = c(5, 6, 8, 12),
+    cause = c(1, 0, 0, 2)
   )
 
   # Convert to tibble
@@ -320,9 +332,9 @@ test_that("mcc() works with data.frames and tibbles", {
 
 test_that("mcc() handles method parameter with partial matching", {
   df <- data.frame(
-    id = c(1, 2, 3),
-    time = c(5, 8, 12),
-    cause = c(1, 0, 2)
+    id = c(1, 1, 2, 3),
+    time = c(5, 6, 8, 12),
+    cause = c(1, 0, 0, 2)
   )
 
   # Test with partial method names that should match
@@ -374,14 +386,15 @@ test_that("mcc() handles edge cases correctly", {
     cause = 1
   )
 
-  # Test with single row - should work correctly
-  expect_no_error(
+  # Test with single row - should work correctly and warn about last observation
+  expect_warning(
     single_result <- mcc(
       data = single_row_df,
       id_var = "id",
       time_var = "time",
       cause_var = "cause"
-    )
+    ),
+    "Found 1.*where last observation is an event of interest"
   )
 
   expect_true(nrow(single_result$mcc_final) > 0)
@@ -392,14 +405,14 @@ test_that("mcc() can handle nested tibbles without error", {
 
   # Create data with a nested column
   df <- data.frame(
-    id = c(1, 2, 3),
-    time = c(5, 8, 12),
-    cause = c(1, 0, 2)
+    id = c(1, 1, 2, 3),
+    time = c(5, 6, 8, 12),
+    cause = c(1, 0, 0, 2)
   )
 
   # Add a nested column
   nested_df <- tibble::as_tibble(df) |>
-    dplyr::mutate(extra = list(1:3, 4:6, 7:9))
+    dplyr::mutate(extra = list(1:3, 4:6, 7:9, 10:12))
 
   # Should still work with nested data structure
   expect_no_error(
@@ -417,9 +430,9 @@ test_that("mcc() can handle nested tibbles without error", {
 test_that("mcc() end-to-end functionality through snapshots", {
   # Create representative test dataset
   df <- data.frame(
-    id = c(1, 1, 2, 2, 3, 4, 4),
-    time = c(5, 10, 8, 13, 12, 6, 15),
-    cause = c(1, 0, 1, 2, 0, 1, 1)
+    id = c(1, 1, 2, 2, 3, 4, 4, 4),
+    time = c(5, 10, 8, 13, 12, 6, 15, 16),
+    cause = c(1, 0, 1, 2, 0, 1, 1, 0)
   )
 
   # Test with equation method
@@ -453,21 +466,20 @@ test_that("mcc() end-to-end functionality through snapshots", {
   })
 })
 
-
 test_that("mcc() produces equivalent results from both methods", {
   # First dataset - simultaneous events at time=3 for id=5
   df1 <- data.frame(
-    id = c(1, 2, 3, 4, 4, 4, 5, 5),
-    time = c(8, 1, 5, 2, 6, 7, 3, 3),
-    cause = c(0, 0, 2, 1, 1, 1, 1, 2)
+    id = c(1, 2, 3, 4, 4, 4, 4, 5, 5),
+    time = c(8, 1, 5, 2, 6, 7, 8, 3, 3),
+    cause = c(0, 0, 2, 1, 1, 1, 0, 1, 2)
   ) |>
     dplyr::arrange(id, time)
 
   # Second dataset - no simultaneous events (time=4 instead of 3 for id=5)
   df2 <- data.frame(
-    id = c(1, 2, 3, 4, 4, 4, 5, 5),
-    time = c(8, 1, 5, 2, 6, 7, 3, 4),
-    cause = c(0, 0, 2, 1, 1, 1, 1, 2)
+    id = c(1, 2, 3, 4, 4, 4, 4, 5, 5),
+    time = c(8, 1, 5, 2, 6, 7, 8, 3, 4),
+    cause = c(0, 0, 2, 1, 1, 1, 0, 1, 2)
   ) |>
     dplyr::arrange(id, time)
 
@@ -507,7 +519,6 @@ test_that("mcc() produces equivalent results from both methods", {
   sci_mcc2 <- mcc_sci2$sci_table$SumCIs
 
   # Compare outputs between methods for each dataset
-
   # Create comparison dataframes by time point
   compare1 <- merge(
     mcc_eq1$mcc_table[, c("time", "mcc")],
@@ -583,12 +594,11 @@ test_that("mcc() produces equivalent results from both methods", {
   expect_equal(final_mcc_sci1, final_mcc_sci2, tolerance = 1e-6)
 })
 
-
 test_that("mcc() correctly passes include_details parameter to implementation functions", {
   df <- data.frame(
-    id = c(1, 2, 3, 4),
-    time = c(5, 8, 12, 15),
-    cause = c(1, 0, 2, 1)
+    id = c(1, 1, 2, 3, 4),
+    time = c(5, 6, 8, 12, 15),
+    cause = c(1, 0, 0, 2, 0)
   )
 
   # Test with equation method
@@ -653,9 +663,9 @@ test_that("mcc() correctly passes include_details parameter to implementation fu
 
 test_that("mcc() validates include_details parameter", {
   df <- data.frame(
-    id = c(1, 2, 3),
-    time = c(5, 8, 10),
-    cause = c(1, 0, 2)
+    id = c(1, 1, 2, 3),
+    time = c(5, 6, 8, 10),
+    cause = c(1, 0, 0, 2)
   )
 
   # Test with invalid include_details value
@@ -711,14 +721,14 @@ test_that("mcc() with include_details=FALSE is suitable for bootstrapping", {
     boot_data <- data[indices, ]
 
     # Calculate MCC with simplified output
-    result <- mcc(
+    result <- suppressWarnings(mcc(
       data = boot_data,
       id_var = "id",
       time_var = "time",
       cause_var = "cause",
       method = "equation",
       include_details = FALSE
-    )
+    ))
 
     # Return maximum MCC value
     max_mcc <- max(result$mcc_final$mcc)
@@ -748,9 +758,9 @@ test_that("mcc() with include_details=FALSE is suitable for bootstrapping", {
 test_that("mcc() documentation example works with include_details=FALSE", {
   # Create the sample data from the documentation example
   df <- data.frame(
-    id = c(1, 2, 3, 4, 4, 4, 5, 5),
-    time = c(8, 1, 5, 2, 6, 7, 3, 3),
-    cause = c(0, 0, 2, 1, 1, 1, 1, 2)
+    id = c(1, 2, 3, 4, 4, 4, 4, 5, 5),
+    time = c(8, 1, 5, 2, 6, 7, 8, 3, 3),
+    cause = c(0, 0, 2, 1, 1, 1, 0, 1, 2)
   ) |>
     dplyr::arrange(id, time)
 
@@ -782,10 +792,10 @@ test_that("mcc() documentation example works with include_details=FALSE", {
 test_that("by argument basic functionality works", {
   # Create simple test data
   df <- data.frame(
-    id = c(1, 2, 3, 4, 5, 6),
-    time = c(5, 8, 12, 15, 10, 20),
-    cause = c(1, 0, 2, 1, 1, 0),
-    group = c("A", "A", "A", "B", "B", "B")
+    id = c(1, 1, 2, 3, 4, 5, 6),
+    time = c(5, 6, 8, 12, 15, 10, 20),
+    cause = c(1, 0, 0, 2, 0, 0, 0),
+    group = c("A", "A", "A", "A", "B", "B", "B")
   )
 
   # Test that by argument works without error
@@ -809,9 +819,9 @@ test_that("by argument basic functionality works", {
 test_that("backward compatibility maintained", {
   # Create simple test data
   df <- data.frame(
-    id = c(1, 2, 3, 4),
-    time = c(5, 8, 12, 15),
-    cause = c(1, 0, 2, 1)
+    id = c(1, 1, 2, 3, 4, 4),
+    time = c(5, 6, 8, 12, 15, 16),
+    cause = c(1, 0, 0, 2, 1, 0)
   )
 
   # Test that existing behavior is unchanged
@@ -835,10 +845,10 @@ test_that("backward compatibility maintained", {
 
 test_that("mcc() validates by argument correctly", {
   df <- data.frame(
-    id = c(1, 2, 3),
-    time = c(5, 8, 10),
-    cause = c(1, 0, 2),
-    group = c("A", "B", "A")
+    id = c(1, 1, 2, 3),
+    time = c(5, 6, 8, 10),
+    cause = c(1, 0, 0, 2),
+    group = c("A", "A", "B", "A")
   )
 
   # Test with invalid by argument types
@@ -878,10 +888,10 @@ test_that("mcc() validates by argument correctly", {
 
   # Test with all NA values in by column
   df_na <- data.frame(
-    id = c(1, 2, 3),
-    time = c(5, 8, 10),
-    cause = c(1, 0, 2),
-    group = c(NA, NA, NA)
+    id = c(1, 1, 2, 3),
+    time = c(5, 6, 8, 10),
+    cause = c(1, 0, 0, 2),
+    group = c(NA, NA, NA, NA)
   )
 
   expect_snapshot(
@@ -899,10 +909,10 @@ test_that("mcc() validates by argument correctly", {
 test_that("mcc() with by argument handles various group scenarios", {
   # Test with single group (after filtering)
   df_single <- data.frame(
-    id = c(1, 2, 3),
-    time = c(5, 8, 10),
-    cause = c(1, 0, 2),
-    treatment = c("Active", "Active", "Active")
+    id = c(1, 1, 2, 3),
+    time = c(5, 6, 8, 10),
+    cause = c(1, 0, 0, 2),
+    treatment = c("Active", "Active", "Active", "Active")
   )
 
   expect_no_error(
@@ -920,10 +930,17 @@ test_that("mcc() with by argument handles various group scenarios", {
 
   # Test with mixed NA and valid values
   df_mixed_na <- data.frame(
-    id = c(1, 2, 3, 4),
-    time = c(5, 8, 10, 12),
-    cause = c(1, 0, 2, 1),
-    site = c("Hospital_A", NA, "Hospital_B", "Hospital_A")
+    id = c(1, 1, 2, 3, 4, 4),
+    time = c(5, 6, 8, 10, 12, 13),
+    cause = c(1, 0, 0, 2, 1, 0),
+    site = c(
+      "Hospital_A",
+      "Hospital_A",
+      NA,
+      "Hospital_B",
+      "Hospital_A",
+      "Hospital_A"
+    )
   )
 
   expect_no_error(
@@ -944,10 +961,10 @@ test_that("mcc() with by argument handles various group scenarios", {
 
   # Test with numeric grouping variable
   df_numeric <- data.frame(
-    id = c(1, 2, 3, 4),
-    time = c(5, 8, 10, 12),
-    cause = c(1, 0, 2, 1),
-    dose = c(10, 10, 20, 20)
+    id = c(1, 1, 2, 3, 4, 4),
+    time = c(5, 6, 8, 10, 12, 13),
+    cause = c(1, 0, 0, 2, 1, 0),
+    dose = c(10, 10, 10, 20, 20, 20)
   )
 
   expect_no_error(
@@ -965,10 +982,10 @@ test_that("mcc() with by argument handles various group scenarios", {
 
 test_that("mcc() with by argument works with both methods", {
   df <- data.frame(
-    id = c(1, 1, 2, 2, 3, 4),
-    time = c(5, 10, 8, 12, 15, 20),
-    cause = c(1, 1, 0, 2, 1, 0),
-    treatment = c("A", "A", "A", "A", "B", "B")
+    id = c(1, 1, 1, 2, 2, 3, 3, 4),
+    time = c(5, 10, 11, 8, 12, 15, 16, 20),
+    cause = c(1, 1, 0, 0, 2, 1, 0, 0),
+    treatment = c("A", "A", "A", "A", "A", "B", "B", "B")
   )
 
   # Test equation method with by
@@ -1005,11 +1022,11 @@ test_that("mcc() with by argument works with both methods", {
 test_that("mcc() with by argument and tstart_var works", {
   # Separate test for tstart_var functionality
   df_tstart <- data.frame(
-    id = c(1, 2, 3, 4),
-    time = c(5, 8, 10, 12),
-    cause = c(1, 0, 2, 1),
-    treatment = c("A", "A", "B", "B"),
-    tstart = c(0, 1, 0, 2)
+    id = c(1, 1, 2, 3, 4, 4),
+    time = c(5, 6, 8, 10, 12, 13),
+    cause = c(1, 0, 0, 2, 1, 0),
+    treatment = c("A", "A", "A", "B", "B", "B"),
+    tstart = c(0, 5, 1, 0, 2, 12)
   )
 
   # Test sci method with by and tstart_var
@@ -1032,10 +1049,10 @@ test_that("mcc() with by argument and tstart_var works", {
 
 test_that("mcc() with by argument preserves group information in all components", {
   df <- data.frame(
-    id = c(1, 1, 2, 3, 3),
-    time = c(5, 10, 8, 12, 15),
-    cause = c(1, 1, 0, 2, 1),
-    treatment = c("A", "A", "A", "B", "B")
+    id = c(1, 1, 1, 2, 3, 3, 3),
+    time = c(5, 10, 11, 8, 12, 15, 16),
+    cause = c(1, 1, 0, 0, 2, 1, 0),
+    treatment = c("A", "A", "A", "A", "B", "B", "B")
   )
 
   # Test with SCI method to check all_cis handling (without tstart_var)
@@ -1071,10 +1088,17 @@ test_that("mcc() with by argument preserves group information in all components"
 
 test_that("mcc() with by argument and include_details parameter", {
   df <- data.frame(
-    id = c(1, 2, 3, 4),
-    time = c(5, 8, 10, 12),
-    cause = c(1, 0, 2, 1),
-    group = c("Control", "Control", "Treatment", "Treatment")
+    id = c(1, 1, 2, 3, 4, 4),
+    time = c(5, 6, 8, 10, 12, 13),
+    cause = c(1, 0, 0, 2, 1, 0),
+    group = c(
+      "Control",
+      "Control",
+      "Control",
+      "Treatment",
+      "Treatment",
+      "Treatment"
+    )
   )
 
   # Test with include_details = TRUE
@@ -1110,10 +1134,10 @@ test_that("mcc() with by argument and include_details parameter", {
 test_that("mcc_by_group() handles empty groups gracefully", {
   # Create data where one group becomes empty after filtering
   df <- data.frame(
-    id = c(1, 2, 3),
-    time = c(5, 8, 10),
-    cause = c(1, 0, 2),
-    group = c("A", "B", "C")
+    id = c(1, 1, 2, 3),
+    time = c(5, 6, 8, 10),
+    cause = c(1, 0, 0, 2),
+    group = c("A", "A", "B", "C")
   )
 
   # Mock a scenario where group B has no data (simulate empty group)
@@ -1134,12 +1158,11 @@ test_that("mcc_by_group() handles empty groups gracefully", {
 
 test_that("mcc_by_group() handles all empty groups scenario", {
   # Create a scenario that would result in all groups being empty
-  # This is hard to simulate directly, so we test the error handling
   df_all_na <- data.frame(
-    id = c(1, 2, 3),
-    time = c(5, 8, 10),
-    cause = c(1, 0, 2),
-    group = c(NA, NA, NA)
+    id = c(1, 1, 2, 3),
+    time = c(5, 6, 8, 10),
+    cause = c(1, 0, 0, 2),
+    group = c(NA, NA, NA, NA)
   )
 
   expect_snapshot(
@@ -1156,10 +1179,10 @@ test_that("mcc_by_group() handles all empty groups scenario", {
 
 test_that("mcc() with by argument preserves group information in all components", {
   df <- data.frame(
-    id = c(1, 1, 2, 3, 3),
-    time = c(5, 10, 8, 12, 15),
-    cause = c(1, 1, 0, 2, 1),
-    treatment = c("A", "A", "A", "B", "B")
+    id = c(1, 1, 1, 2, 3, 3, 3),
+    time = c(5, 10, 11, 8, 12, 15, 16),
+    cause = c(1, 1, 0, 0, 2, 1, 0),
+    treatment = c("A", "A", "A", "A", "B", "B", "B")
   )
 
   # Test with SCI method to check all_cis handling (without tstart_var)
@@ -1195,11 +1218,11 @@ test_that("mcc() with by argument preserves group information in all components"
 
 test_that("mcc() with by argument handles factor grouping variables", {
   df <- data.frame(
-    id = c(1, 2, 3, 4),
-    time = c(5, 8, 10, 12),
-    cause = c(1, 0, 2, 1),
+    id = c(1, 1, 2, 3, 4, 4),
+    time = c(5, 6, 8, 10, 12, 13),
+    cause = c(1, 0, 0, 2, 1, 0),
     stage = factor(
-      c("Early", "Late", "Early", "Late"),
+      c("Early", "Early", "Late", "Early", "Late", "Late"),
       levels = c("Early", "Late")
     )
   )
@@ -1221,12 +1244,22 @@ test_that("mcc() with by argument handles factor grouping variables", {
 
 test_that("mcc() with by argument warning for many groups", {
   # Create data with many groups to trigger warning
-  many_groups_df <- data.frame(
+  many_groups_df1 <- data.frame(
     id = 1:25,
     time = rep(10, 25),
     cause = rep(1, 25),
     group = paste0("group_", 1:25)
   )
+
+  many_groups_df2 <- data.frame(
+    id = 1:25,
+    time = rep(11, 25),
+    cause = rep(0, 25), # All censored to avoid last obs warnings
+    group = paste0("group_", 1:25)
+  )
+
+  many_groups_df <- dplyr::bind_rows(many_groups_df1, many_groups_df2) |>
+    dplyr::arrange(id, time)
 
   expect_snapshot(
     result <- mcc(
@@ -1302,10 +1335,10 @@ test_that("combine_group_results() handles mismatched structures", {
 
 test_that("mcc() output structure is consistent between single and grouped analysis", {
   df <- data.frame(
-    id = c(1, 2, 3, 4),
-    time = c(5, 8, 10, 12),
-    cause = c(1, 0, 2, 1),
-    treatment = c("A", "A", "A", "A") # All same group
+    id = c(1, 1, 2, 3, 4, 4),
+    time = c(5, 6, 8, 10, 12, 13),
+    cause = c(1, 0, 0, 2, 1, 0),
+    treatment = c("A", "A", "A", "A", "A", "A") # All same group
   )
 
   # Single group analysis (by = NULL)

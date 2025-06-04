@@ -1,9 +1,9 @@
 test_that("mcc_equation() correctly calculates MCC with basic data", {
   # Create a simple dataset with no simultaneous events
   df <- data.frame(
-    id = c(1, 2, 3, 4),
-    time = c(5, 8, 12, 15),
-    cause = c(1, 0, 2, 1)
+    id = c(1, 1, 2, 3, 4, 4),
+    time = c(5, 6, 8, 12, 15, 16),
+    cause = c(1, 0, 0, 2, 1, 0)
   )
 
   # Run the function
@@ -34,9 +34,9 @@ test_that("mcc_equation() correctly calculates MCC with basic data", {
 test_that("mcc_equation() handles simultaneous events correctly", {
   # Dataset with simultaneous events
   df <- data.frame(
-    id = c(1, 1, 2, 3),
-    time = c(5, 5, 8, 10),
-    cause = c(1, 2, 0, 1)
+    id = c(1, 1, 2, 3, 3),
+    time = c(5, 5, 8, 10, 11),
+    cause = c(1, 2, 0, 1, 0)
   )
 
   # With adjustment
@@ -76,9 +76,9 @@ test_that("mcc_equation() handles simultaneous events correctly", {
 test_that("mcc_equation() correctly handles last event records", {
   # Dataset where last record for an ID is an event
   df <- data.frame(
-    id = c(1, 2, 2, 3),
-    time = c(5, 8, 10, 12),
-    cause = c(0, 1, 1, 2) # ID 2's last record is an event
+    id = c(1, 2, 2, 2, 3),
+    time = c(5, 8, 10, 11, 12),
+    cause = c(0, 1, 1, 0, 2) # ID 2's last record is an event
   )
 
   result <- mcc_equation(
@@ -99,9 +99,9 @@ test_that("mcc_equation() correctly handles last event records", {
 test_that("mcc_equation() maintains correct number of risk", {
   # Test case to verify number at risk calculations
   df <- data.frame(
-    id = c(1, 2, 3, 4, 5),
-    time = c(5, 8, 8, 12, 15),
-    cause = c(1, 0, 2, 1, 0)
+    id = c(1, 1, 2, 3, 4, 4, 5),
+    time = c(5, 6, 8, 8, 12, 13, 15),
+    cause = c(1, 0, 0, 2, 1, 0, 0)
   )
 
   result <- mcc_equation(
@@ -128,9 +128,9 @@ test_that("mcc_equation() calculates MCC values correctly", {
   # Standard test case with known outcome
   # This example was calculated manually to verify correctness
   df <- data.frame(
-    id = c(1, 2, 3),
-    time = c(10, 20, 30),
-    cause = c(1, 2, 0)
+    id = c(1, 1, 2, 3),
+    time = c(10, 11, 20, 30),
+    cause = c(1, 0, 2, 0)
   )
 
   result <- mcc_equation(
@@ -263,9 +263,9 @@ test_that("mcc_equation() correctly processes data with all competing risks", {
 test_that("mcc_equation() respects include_details=FALSE parameter", {
   # Create a simple dataset
   df <- data.frame(
-    id = c(1, 2, 3, 4, 4),
-    time = c(5, 8, 12, 10, 15),
-    cause = c(1, 0, 2, 1, 1)
+    id = c(1, 1, 2, 3, 4, 4, 4),
+    time = c(5, 6, 8, 12, 10, 15, 16),
+    cause = c(1, 0, 0, 2, 1, 1, 0)
   )
 
   # Run with default include_details=TRUE
@@ -301,9 +301,9 @@ test_that("mcc_equation() respects include_details=FALSE parameter", {
 test_that("mcc_equation() with include_details=FALSE works with various scenarios", {
   # 1. With simultaneous events
   df_sim <- data.frame(
-    id = c(1, 1, 2, 3),
-    time = c(5, 5, 8, 10),
-    cause = c(1, 2, 0, 1)
+    id = c(1, 1, 2, 3, 3),
+    time = c(5, 5, 8, 10, 11),
+    cause = c(1, 2, 0, 1, 0)
   )
 
   result_sim <- mcc_equation(
@@ -319,9 +319,9 @@ test_that("mcc_equation() with include_details=FALSE works with various scenario
 
   # 2. With last records being events
   df_last <- data.frame(
-    id = c(1, 2, 2, 3),
-    time = c(5, 8, 10, 12),
-    cause = c(0, 1, 1, 2) # ID 2's last record is an event
+    id = c(1, 2, 2, 2, 3),
+    time = c(5, 8, 10, 11, 12),
+    cause = c(0, 1, 1, 0, 2) # ID 2's last record is an event
   )
 
   result_last <- mcc_equation(
@@ -407,9 +407,9 @@ test_that("mcc_equation() with include_details=FALSE does not include adjusted_d
 test_that("mcc_equation() with include_details=FALSE provides sufficient data for bootstrapping", {
   # Create dataset with multiple events
   df <- data.frame(
-    id = c(1, 2, 3, 4, 4),
-    time = c(5, 8, 12, 10, 15),
-    cause = c(1, 0, 2, 1, 1)
+    id = c(1, 1, 2, 3, 4, 4, 4),
+    time = c(5, 6, 8, 12, 10, 15, 16),
+    cause = c(1, 0, 0, 2, 1, 1, 0)
   )
 
   # Run with simplified output

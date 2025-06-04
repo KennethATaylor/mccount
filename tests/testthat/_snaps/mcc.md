@@ -10,14 +10,16 @@
       1     5     1
       
       $mcc_table
-      # A tibble: 1 x 8
+      # A tibble: 2 x 8
          time nrisk censor event cmprk overall_surv_previous ave_events   mcc
         <dbl> <dbl>  <dbl> <dbl> <dbl>                 <dbl>      <dbl> <dbl>
-      1     5     1      1     1     0                     1          1     1
+      1     5     1      0     1     0                     1          1     1
+      2     6     1      1     0     0                     1          0     1
       
       $original_data
         id tstart time cause
       1  1      0    5     1
+      2  1      0    6     0
       
       $method
       [1] "equation"
@@ -36,10 +38,11 @@
       2     5      1
       
       $sci_table
-      # A tibble: 1 x 3
+      # A tibble: 2 x 3
          time   CI1 SumCIs
         <dbl> <dbl>  <dbl>
       1     5     1      1
+      2     6     1      1
       
       $all_cis
       $all_cis[[1]]
@@ -64,6 +67,7 @@
       $original_data
         id tstart time cause
       1  1      0    5     1
+      2  1      0    6     0
       
       $method
       [1] "sci"
@@ -118,14 +122,16 @@
       1     5     1
       
       $mcc_table
-      # A tibble: 1 x 8
+      # A tibble: 2 x 8
          time nrisk censor event cmprk overall_surv_previous ave_events   mcc
         <dbl> <dbl>  <dbl> <dbl> <dbl>                 <dbl>      <dbl> <dbl>
-      1     5     1      1     1     0                     1          1     1
+      1     5     1      0     1     0                     1          1     1
+      2     6     1      1     0     0                     1          0     1
       
       $original_data
         id tstart time cause
       1  1      0    5     1
+      2  1      0    6     0
       
       $method
       [1] "equation"
@@ -143,14 +149,16 @@
       1     5     1
       
       $mcc_table
-      # A tibble: 1 x 8
+      # A tibble: 2 x 8
          time nrisk censor event cmprk overall_surv_previous ave_events   mcc
         <dbl> <dbl>  <dbl> <dbl> <dbl>                 <dbl>      <dbl> <dbl>
-      1     5     1      1     1     0                     1          1     1
+      1     5     1      0     1     0                     1          1     1
+      2     6     1      1     0     0                     1          0     1
       
       $original_data
         id tstart time cause
       1  1      0    5     1
+      2  1      0    6     0
       
       $method
       [1] "equation"
@@ -180,11 +188,12 @@
       1     5    0.5
       
       $sci_table
-      # A tibble: 2 x 3
+      # A tibble: 3 x 3
          time   CI1 SumCIs
         <dbl> <dbl>  <dbl>
       1     5   0.5    0.5
-      2     8   0.5    0.5
+      2     6   0.5    0.5
+      3     8   0.5    0.5
       
       $all_cis
       $all_cis[[1]]
@@ -203,7 +212,8 @@
       $original_data
         id tstart time cause
       1  1      1    5     1
-      2  2      2    8     0
+      2  1      5    6     0
+      3  2      2    8     0
       
       $method
       [1] "sci"
@@ -249,14 +259,16 @@
       1     5     1
       
       $mcc_table
-      # A tibble: 1 x 8
+      # A tibble: 2 x 8
          time nrisk censor event cmprk overall_surv_previous ave_events   mcc
         <dbl> <dbl>  <dbl> <dbl> <dbl>                 <dbl>      <dbl> <dbl>
-      1     5     1      1     1     0                     1          1     1
+      1     5     1      0     1     0                     1          1     1
+      2     6     1      1     0     0                     1          0     1
       
       $original_data
         id tstart time cause
       1  1      0    5     1
+      2  1      0    6     0
       
       $method
       [1] "equation"
@@ -274,14 +286,16 @@
       1     5     1
       
       $mcc_table
-      # A tibble: 1 x 8
+      # A tibble: 2 x 8
          time nrisk censor event cmprk overall_surv_previous ave_events   mcc
         <dbl> <dbl>  <dbl> <dbl> <dbl>                 <dbl>      <dbl> <dbl>
-      1     5     1      1     1     0                     1          1     1
+      1     5     1      0     1     0                     1          1     1
+      2     6     1      1     0     0                     1          0     1
       
       $original_data
         id tstart time cause
       1  1      0    5     1
+      2  1      0    6     0
       
       $method
       [1] "equation"
