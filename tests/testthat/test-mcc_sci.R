@@ -1,9 +1,9 @@
 test_that("mcc_sci() correctly calculates MCC with basic data", {
   # Create a simple dataset with no simultaneous events
   df <- data.frame(
-    id = c(1, 2, 3, 4),
-    time = c(5, 8, 12, 15),
-    cause = c(1, 0, 2, 1)
+    id = c(1, 1, 2, 3, 4, 4),
+    time = c(5, 6, 8, 12, 15, 16),
+    cause = c(1, 0, 0, 2, 1, 0)
   )
 
   # Run the function
@@ -41,10 +41,10 @@ test_that("mcc_sci() correctly calculates MCC with basic data", {
 test_that("mcc_sci() handles tstart_var correctly", {
   # Create dataset with tstart values
   df <- data.frame(
-    id = c(1, 2, 3, 4),
-    time = c(5, 8, 12, 15),
-    cause = c(1, 0, 2, 1),
-    tstart = c(1, 2, 3, 5)
+    id = c(1, 1, 2, 3, 4, 4),
+    time = c(5, 6, 8, 12, 15, 16),
+    cause = c(1, 0, 0, 2, 1, 0),
+    tstart = c(1, 5, 2, 3, 5, 15)
   )
 
   # Run with tstart_var
@@ -81,10 +81,10 @@ test_that("mcc_sci() correctly handles left-truncated data", {
 
   # Dataset with left truncation
   df <- data.frame(
-    id = c(1, 2, 3, 4),
-    time = c(10, 15, 20, 25),
-    cause = c(1, 2, 1, 0),
-    tstart = c(5, 8, 10, 12) # All observations start after time 0
+    id = c(1, 1, 2, 3, 3, 4),
+    time = c(10, 11, 15, 20, 21, 25),
+    cause = c(1, 0, 2, 1, 0, 0),
+    tstart = c(5, 10, 8, 10, 20, 12) # All observations start after time 0
   )
 
   # Calculate MCC
@@ -133,9 +133,9 @@ test_that("mcc_sci() handles data with no events of interest", {
 test_that("mcc_sci() correctly handles simultaneous events", {
   # Dataset with simultaneous events
   df <- data.frame(
-    id = c(1, 1, 2, 3),
-    time = c(5, 5, 8, 10),
-    cause = c(1, 2, 0, 1)
+    id = c(1, 1, 2, 3, 3),
+    time = c(5, 5, 8, 10, 11),
+    cause = c(1, 2, 0, 1, 0)
   )
 
   # With adjustment
@@ -167,9 +167,9 @@ test_that("mcc_sci() correctly handles simultaneous events", {
 test_that("mcc_sci() generates correct CI columns", {
   # Create dataset with multiple events per ID
   df <- data.frame(
-    id = c(1, 1, 2, 2, 3),
-    time = c(5, 10, 8, 15, 12),
-    cause = c(1, 1, 1, 0, 2)
+    id = c(1, 1, 1, 2, 2, 3),
+    time = c(5, 10, 11, 8, 15, 12),
+    cause = c(1, 1, 0, 1, 0, 2)
   )
 
   result <- mcc_sci(
@@ -193,9 +193,9 @@ test_that("mcc_sci() generates correct CI columns", {
 test_that("mcc_sci() processes multiple recurrent events correctly", {
   # Create dataset with multiple events per ID
   df <- data.frame(
-    id = c(1, 1, 1, 2, 2, 3),
-    time = c(5, 10, 15, 8, 12, 7),
-    cause = c(1, 1, 1, 1, 0, 2)
+    id = c(1, 1, 1, 1, 2, 2, 3),
+    time = c(5, 10, 15, 16, 8, 12, 7),
+    cause = c(1, 1, 1, 0, 1, 0, 2)
   )
 
   result <- mcc_sci(
@@ -220,9 +220,9 @@ test_that("mcc_sci() processes multiple recurrent events correctly", {
 test_that("mcc_sci() handles recurrent events with competing risks", {
   # Create complex dataset with recurrent events and competing risks
   df <- data.frame(
-    id = c(1, 1, 2, 2, 3, 3, 4),
-    time = c(5, 10, 8, 12, 6, 15, 9),
-    cause = c(1, 2, 1, 1, 0, 1, 2)
+    id = c(1, 1, 2, 2, 2, 3, 3, 3, 4),
+    time = c(5, 10, 8, 12, 13, 6, 15, 16, 9),
+    cause = c(1, 2, 1, 1, 0, 0, 1, 0, 2)
   )
 
   result <- mcc_sci(
@@ -322,9 +322,9 @@ test_that("mcc_sci() handles the special case of no events after processing", {
 test_that("mcc_sci() works with snapshot testing for complex cases", {
   # Create a realistic dataset with multiple recurrent events
   df <- data.frame(
-    id = c(1, 1, 1, 2, 2, 3, 4, 4),
-    time = c(5, 10, 15, 7, 12, 8, 6, 14),
-    cause = c(1, 1, 0, 1, 2, 0, 1, 1)
+    id = c(1, 1, 1, 2, 2, 3, 4, 4, 4),
+    time = c(5, 10, 15, 7, 12, 8, 6, 14, 15),
+    cause = c(1, 1, 0, 1, 2, 0, 1, 1, 0)
   )
 
   expect_snapshot({
@@ -351,9 +351,9 @@ test_that("mcc_sci() works with snapshot testing for complex cases", {
 test_that("mcc_sci() respects include_details=FALSE parameter", {
   # Create a simple dataset
   df <- data.frame(
-    id = c(1, 2, 3, 4, 4),
-    time = c(5, 8, 12, 10, 15),
-    cause = c(1, 0, 2, 1, 1)
+    id = c(1, 1, 2, 3, 4, 4, 4),
+    time = c(5, 6, 8, 12, 10, 15, 16),
+    cause = c(1, 0, 0, 2, 1, 1, 0)
   )
 
   # Run with default include_details=TRUE
@@ -389,9 +389,9 @@ test_that("mcc_sci() respects include_details=FALSE parameter", {
 test_that("mcc_sci() with include_details=FALSE works with all key scenarios", {
   # 1. With simultaneous events
   df_sim <- data.frame(
-    id = c(1, 1, 2, 3),
-    time = c(5, 5, 8, 10),
-    cause = c(1, 2, 0, 1)
+    id = c(1, 1, 2, 3, 3),
+    time = c(5, 5, 8, 10, 11),
+    cause = c(1, 2, 0, 1, 0)
   )
 
   result_sim <- mcc_sci(
@@ -410,10 +410,10 @@ test_that("mcc_sci() with include_details=FALSE works with all key scenarios", {
   skip_if_not_installed("survival")
 
   df_trunc <- data.frame(
-    id = c(1, 2, 3, 4),
-    time = c(10, 15, 20, 25),
-    cause = c(1, 2, 1, 0),
-    tstart = c(5, 8, 10, 12)
+    id = c(1, 1, 2, 3, 3, 4),
+    time = c(10, 11, 15, 20, 21, 25),
+    cause = c(1, 0, 2, 1, 0, 0),
+    tstart = c(5, 10, 8, 10, 20, 12)
   )
 
   result_trunc <- mcc_sci(
@@ -453,9 +453,9 @@ test_that("mcc_sci() with include_details=FALSE works with all key scenarios", {
 test_that("mcc_sci() with include_details=FALSE provides sufficient data for bootstrapping", {
   # Create dataset with multiple recurrent events
   df <- data.frame(
-    id = c(1, 1, 1, 2, 2, 3, 4, 4),
-    time = c(5, 10, 15, 7, 12, 8, 6, 14),
-    cause = c(1, 1, 0, 1, 2, 0, 1, 1)
+    id = c(1, 1, 1, 2, 2, 3, 4, 4, 4),
+    time = c(5, 10, 15, 7, 12, 8, 6, 14, 15),
+    cause = c(1, 1, 0, 1, 2, 0, 1, 1, 0)
   )
 
   # Run with simplified output
@@ -524,9 +524,9 @@ test_that("mcc_sci() with include_details=FALSE provides sufficient data for boo
 test_that("mcc_sci cleans up time precision adjustments in output", {
   # Create data with events at time 0 (will trigger time adjustment)
   test_data <- data.frame(
-    id = c(1, 1, 2, 3),
-    time = c(0, 5, 10, 0), # Events at time 0
-    cause = c(1, 1, 0, 2) # Mix of events and competing risks at time 0
+    id = c(1, 1, 1, 2, 3),
+    time = c(0, 5, 6, 10, 0), # Events at time 0
+    cause = c(1, 1, 0, 0, 2) # Mix of events and competing risks at time 0
   )
 
   result <- mcc_sci(
@@ -605,10 +605,10 @@ test_that("mcc_sci handles case with no events of interest gracefully", {
 test_that("grouped mcc fills missing CI columns with 0, not NA", {
   # Create data where groups have different numbers of recurrent events
   test_data <- data.frame(
-    id = c(1, 1, 1, 2, 2, 3, 3, 3, 3, 3),
-    time = c(1, 5, 10, 2, 8, 3, 6, 9, 12, 15),
-    cause = c(1, 1, 1, 1, 0, 1, 1, 1, 1, 0), # Group A: 3 events, Group B: 4 events
-    treatment = c("A", "A", "A", "A", "A", "B", "B", "B", "B", "B")
+    id = c(1, 1, 1, 1, 2, 2, 3, 3, 3, 3, 3),
+    time = c(1, 5, 10, 11, 2, 8, 3, 6, 9, 12, 15),
+    cause = c(1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0), # Group A: 3 events, Group B: 4 events
+    treatment = c("A", "A", "A", "A", "A", "A", "B", "B", "B", "B", "B")
   )
 
   result <- mcc(
@@ -635,9 +635,9 @@ test_that("grouped mcc fills missing CI columns with 0, not NA", {
 
 test_that("mcc_sci uses time_precision parameter consistently", {
   test_data <- data.frame(
-    id = c(1, 2),
-    time = c(0, 5), # Event at time 0 will trigger adjustment
-    cause = c(1, 1)
+    id = c(1, 1, 2, 2),
+    time = c(0, 1, 5, 6), # Event at time 0 will trigger adjustment
+    cause = c(1, 0, 1, 0)
   )
 
   # Test with custom time_precision
@@ -659,9 +659,9 @@ test_that("mcc_sci uses time_precision parameter consistently", {
 
 test_that("mcc_sci handles mixed events at time 0 correctly", {
   test_data <- data.frame(
-    id = c(1, 2, 3, 4, 4),
-    time = c(0, 0, 0, 0, 5), # Multiple events at time 0
-    cause = c(1, 2, 0, 1, 1) # Event, competing risk, censoring at time 0
+    id = c(1, 1, 1, 2, 3, 4, 4, 4),
+    time = c(0, 1, 2, 0, 0, 0, 5, 6), # Multiple events at time 0
+    cause = c(1, 1, 0, 2, 0, 1, 1, 0) # Event, competing risk, censoring at time 0
   )
 
   result <- mcc_sci(
@@ -679,9 +679,9 @@ test_that("mcc_sci handles mixed events at time 0 correctly", {
 
 test_that("both methods show consistent time values for events at time 0", {
   test_data <- data.frame(
-    id = c(1, 1, 2),
-    time = c(0, 5, 0),
-    cause = c(1, 1, 2)
+    id = c(1, 1, 1, 2),
+    time = c(0, 5, 6, 0),
+    cause = c(1, 1, 0, 2)
   )
 
   result_eq <- mcc(
@@ -708,10 +708,10 @@ test_that("both methods show consistent time values for events at time 0", {
 
 test_that("CI column names are consistent across groups with different max events", {
   test_data <- data.frame(
-    id = c(1, 1, 2, 2, 2, 3),
-    time = c(1, 5, 2, 6, 10, 3),
-    cause = c(1, 1, 1, 1, 1, 1), # Group A: 2 events, Group B: 3 events, Group C: 1 event
-    group = c("A", "A", "B", "B", "B", "C")
+    id = c(1, 1, 1, 2, 2, 2, 2, 3, 3),
+    time = c(1, 5, 6, 2, 6, 10, 11, 3, 4),
+    cause = c(1, 1, 0, 1, 1, 1, 0, 1, 0), # Group A: 2 events, Group B: 3 events, Group C: 1 event
+    group = c("A", "A", "A", "B", "B", "B", "B", "C", "C")
   )
 
   result <- mcc(
