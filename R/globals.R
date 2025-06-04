@@ -28,6 +28,7 @@ utils::globalVariables(c(
   "cumI",
   "MCC",
   "SumCIs",
+  "weight_per_person",
 
   # Lifetable variables
   "count",

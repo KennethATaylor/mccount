@@ -232,9 +232,11 @@ calculate_unweighted_mcc <- function(dt, include_details) {
 #' @keywords internal
 #' @noRd
 calculate_weighted_mcc <- function(dt, include_details) {
-  # Total weighted number of participants at the origin
-  n_total_weighted <- dt[, sum(weights), by = id][, sum(V1)]
-
+  # Each person should contribute their weight once, not once per record
+  # Take the first weight for each ID (assuming weights are constant within ID)
+  n_total_weighted <- dt[, .(weight_per_person = weights[1]), by = id][, sum(
+    weight_per_person
+  )]
   # Calculate weighted event counts by time and cause
   freq_cause_weighted <- dt[, .(count = sum(weights)), by = .(time, cause)]
 
