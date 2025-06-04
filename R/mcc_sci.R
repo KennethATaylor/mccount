@@ -51,6 +51,9 @@ mcc_sci <- function(
   # Standardize the data
   data_std <- standardize_data(data, id_var, time_var, cause_var, tstart_var)
 
+  # Validate last row for each `id_var`
+  validate_last_observation(data_std)
+
   # If no events of interest, return default value
   if (sum(data_std$cause == 1) == 0) {
     max_time <- max(data_std$time, na.rm = TRUE)

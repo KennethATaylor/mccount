@@ -40,6 +40,9 @@ mcc_equation <- function(
   # Standardize the data
   data_std <- standardize_data(data, id_var, time_var, cause_var)
 
+  # Validate last row for each `id_var`
+  validate_last_observation(data_std)
+
   # Handle simultaneous events
   sim_events_result <- handle_simultaneous_events(
     data_std,

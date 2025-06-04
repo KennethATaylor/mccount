@@ -276,3 +276,165 @@ test_that("standardize_data() column ordering and values", {
   expect_equal(result_no_tstart$time, 4:6)
   expect_equal(result_no_tstart$cause, 7:9)
 })
+
+test_that("validate_last_observation() works with no problematic cases", {
+  # Data where all last observations are censoring or competing risks
+  data_std <- data.frame(
+    id = c(1, 1, 2, 2, 3, 3),
+    tstart = c(0, 0, 0, 0, 0, 0),
+    time = c(5, 10, 8, 12, 6, 15),
+    cause = c(1, 0, 1, 2, 1, 0) # Last obs for each ID: 0, 2, 0
+  )
+
+  expect_no_warning(
+    result <- validate_last_observation(data_std)
+  )
+
+  expect_true(result)
+})
+
+test_that("validate_last_observation() warns for single problematic case", {
+  # Data where one participant's last observation is an event
+  data_std <- data.frame(
+    id = c(1, 1, 2, 2, 3),
+    tstart = c(0, 0, 0, 0, 0),
+    time = c(5, 10, 8, 12, 15),
+    cause = c(1, 0, 1, 1, 2) # ID 2's last obs is cause = 1
+  )
+
+  expect_warning(
+    result <- validate_last_observation(data_std),
+    "Found 1.*where last observation is an event of interest"
+  )
+
+  expect_true(result)
+})
+
+test_that("validate_last_observation() warns for multiple problematic cases", {
+  # Data where multiple participants' last observations are events
+  data_std <- data.frame(
+    id = c(1, 1, 2, 3, 4, 5),
+    tstart = c(0, 0, 0, 0, 0, 0),
+    time = c(5, 10, 8, 15, 12, 20),
+    cause = c(1, 1, 1, 1, 0, 2) # IDs 1, 2, 3 have last obs as cause = 1
+  )
+
+  expect_warning(
+    result <- validate_last_observation(data_std),
+    "Found 3.*where last observation is an event of interest"
+  )
+
+  expect_true(result)
+})
+
+test_that("validate_last_observation() handles many problematic cases", {
+  # Data with many participants having problematic last observations
+  data_std <- data.frame(
+    id = 1:10,
+    tstart = rep(0, 10),
+    time = 1:10,
+    cause = c(1, 1, 1, 1, 1, 1, 1, 0, 2, 0) # 7 participants with cause = 1
+  )
+
+  expect_warning(
+    result <- validate_last_observation(data_std),
+    "Found 7.*where last observation is an event of interest"
+  )
+
+  # Should mention "First 5 participant IDs" when more than 5
+  expect_warning(
+    validate_last_observation(data_std),
+    "First 5 participant IDs"
+  )
+
+  expect_true(result)
+})
+
+test_that("validate_last_observation() works with unsorted data", {
+  # Data not sorted by time
+  data_std <- data.frame(
+    id = c(1, 1, 1, 2, 2),
+    tstart = c(0, 0, 0, 0, 0),
+    time = c(10, 5, 15, 8, 3), # Unsorted times
+    cause = c(0, 1, 1, 2, 1) # ID 1's actual last obs (time=15) is cause=1
+  )
+
+  expect_warning(
+    result <- validate_last_observation(data_std),
+    "Found 1.*where last observation is an event of interest"
+  )
+
+  expect_true(result)
+})
+
+test_that("validate_last_observation() works with single observation per ID", {
+  # Test where each participant has only one observation
+  data_std <- data.frame(
+    id = c(1, 2, 3, 4),
+    tstart = c(0, 0, 0, 0),
+    time = c(5, 8, 12, 15),
+    cause = c(1, 2, 0, 1) # IDs 1 and 4 have single obs with cause = 1
+  )
+
+  expect_warning(
+    result <- validate_last_observation(data_std),
+    "Found 2.*where last observation is an event of interest"
+  )
+
+  expect_true(result)
+})
+
+test_that("validate_last_observation() handles empty data", {
+  # Test with empty data frame
+  data_std <- data.frame(
+    id = numeric(0),
+    tstart = numeric(0),
+    time = numeric(0),
+    cause = numeric(0)
+  )
+
+  expect_no_warning(
+    result <- validate_last_observation(data_std)
+  )
+
+  expect_true(result)
+})
+
+test_that("validate_last_observation() handles duplicate times correctly", {
+  # Test with participants having multiple observations at the same time
+  # (the last chronological observation should be checked)
+  data_std <- data.frame(
+    id = c(1, 1, 1, 2, 2),
+    tstart = c(0, 0, 0, 0, 0),
+    time = c(5, 10, 10, 8, 8), # Duplicate times
+    cause = c(1, 1, 0, 1, 2) # For ties, should check the last row
+  )
+
+  # Since we're checking the last row for each ID after sorting,
+  # ID 1's last observation is cause = 0, ID 2's is cause = 2
+  expect_no_warning(
+    result <- validate_last_observation(data_std)
+  )
+
+  expect_true(result)
+})
+
+test_that("validate_last_observation() warning message content", {
+  # Test the specific content of warning messages
+  data_std <- data.frame(
+    id = c(1, 2, 3),
+    tstart = c(0, 0, 0),
+    time = c(5, 8, 12),
+    cause = c(1, 1, 0) # IDs 1 and 2 have problematic last obs
+  )
+
+  expect_warning(
+    validate_last_observation(data_std),
+    "implicitly assumes"
+  )
+
+  expect_warning(
+    validate_last_observation(data_std),
+    "add an additional row"
+  )
+})
