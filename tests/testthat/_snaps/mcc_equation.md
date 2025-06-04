@@ -35,3 +35,18 @@
         ..$ time: num(0) 
         ..$ mcc : num(0) 
 
+# weighted MCC handles edge cases correctly
+
+    Code
+      result <- mcc(test_data_zero, id_var = "id", time_var = "time", cause_var = "cause",
+        weights = "weights")
+    Condition
+      Warning:
+      Zero weights found in `weights` column
+      ! Found 2 zero weights in column 'weights'
+      i Observations with zero weights will not contribute to the analysis
+      Warning:
+      Zero weights found in `weights` column
+      ! Found 2 zero weights in column 'weights'
+      i Observations with zero weights will not contribute to the analysis
+

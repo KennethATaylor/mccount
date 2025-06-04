@@ -438,3 +438,193 @@ test_that("validate_last_observation() warning message content", {
     "add an additional row"
   )
 })
+
+# Test validate_weights_variable function
+test_that("validate_weights_variable works correctly", {
+  # Create test data
+  test_data <- data.frame(
+    id = 1:5,
+    time = c(1, 2, 3, 4, 5),
+    cause = c(1, 0, 2, 1, 0),
+    good_weights = c(1.0, 2.0, 0.5, 1.5, 1.2),
+    zero_weights = c(1.0, 0.0, 0.5, 1.5, 1.2),
+    negative_weights = c(1.0, -0.5, 0.5, 1.5, 1.2),
+    missing_weights = c(1.0, NA, 0.5, 1.5, 1.2),
+    character_weights = c("1.0", "2.0", "0.5", "1.5", "1.2"),
+    extreme_weights = c(1.0, 100.0, 0.01, 1.5, 1.2)
+  )
+
+  # Test with NULL weights (should return TRUE)
+  expect_true(validate_weights_variable(test_data, NULL))
+
+  # Test with valid weights
+  expect_true(validate_weights_variable(test_data, "good_weights"))
+
+  # Test with non-character weights argument
+  expect_error(
+    validate_weights_variable(test_data, 123),
+    class = "rlang_error"
+  )
+  expect_error(
+    validate_weights_variable(test_data, c("weight1", "weight2")),
+    class = "rlang_error"
+  )
+
+  # Test with non-existent column
+  expect_error(
+    validate_weights_variable(test_data, "nonexistent_weights"),
+    class = "rlang_error"
+  )
+
+  # Test with missing values
+  expect_error(
+    validate_weights_variable(test_data, "missing_weights"),
+    class = "rlang_error"
+  )
+
+  # Test with non-numeric values
+  expect_error(
+    validate_weights_variable(test_data, "character_weights"),
+    class = "rlang_error"
+  )
+
+  # Test with negative values
+  expect_error(
+    validate_weights_variable(test_data, "negative_weights"),
+    class = "rlang_error"
+  )
+
+  # Test with zero weights (should warn but not error)
+  expect_warning(
+    validate_weights_variable(test_data, "zero_weights"),
+    class = "rlang_warning"
+  )
+
+  # Test with extreme weights (should warn but not error)
+  expect_warning(
+    validate_weights_variable(test_data, "extreme_weights"),
+    class = "rlang_warning"
+  )
+})
+
+test_that("validate_weights_variable error messages are informative", {
+  test_data <- data.frame(
+    id = 1:3,
+    weights_with_na = c(1.0, NA, 1.5),
+    negative_weights = c(1.0, -0.5, 1.5),
+    character_weights = c("a", "b", "c")
+  )
+
+  # Test missing values error message
+  expect_error(
+    validate_weights_variable(test_data, "weights_with_na"),
+    "Missing values found"
+  )
+
+  # Test negative values error message
+  expect_error(
+    validate_weights_variable(test_data, "negative_weights"),
+    "Negative values found"
+  )
+
+  # Test non-numeric error message
+  expect_error(
+    validate_weights_variable(test_data, "character_weights"),
+    "must contain numeric values"
+  )
+
+  # Test non-existent column error message
+  expect_error(
+    validate_weights_variable(test_data, "missing_col"),
+    "not found in"
+  )
+})
+
+# Test updated validate_column_existence function with weights
+test_that("validate_column_existence works with weights parameter", {
+  test_data <- data.frame(
+    id = 1:3,
+    time = c(1, 2, 3),
+    cause = c(1, 0, 2),
+    weights = c(1.0, 1.5, 0.8)
+  )
+
+  # Test with valid weights column
+  expect_true(validate_column_existence(
+    test_data,
+    rlang::sym("id"),
+    rlang::sym("time"),
+    rlang::sym("cause"),
+    weights = "weights"
+  ))
+
+  # Test with non-existent weights column
+  expect_error(
+    validate_column_existence(
+      test_data,
+      rlang::sym("id"),
+      rlang::sym("time"),
+      rlang::sym("cause"),
+      weights = "nonexistent_weights"
+    ),
+    class = "rlang_error"
+  )
+
+  # Test with NULL weights (should work)
+  expect_true(validate_column_existence(
+    test_data,
+    rlang::sym("id"),
+    rlang::sym("time"),
+    rlang::sym("cause"),
+    weights = NULL
+  ))
+})
+
+# Test updated standardize_data function with weights
+test_that("standardize_data works with weights parameter", {
+  test_data <- data.frame(
+    participant = 1:3,
+    follow_time = c(1, 2, 3),
+    event_type = c(1, 0, 2),
+    start_time = c(0, 0.5, 0),
+    wt = c(1.0, 1.5, 0.8)
+  )
+
+  # Test with weights and tstart
+  result <- standardize_data(
+    test_data,
+    rlang::sym("participant"),
+    rlang::sym("follow_time"),
+    rlang::sym("event_type"),
+    rlang::sym("start_time"),
+    weights = "wt"
+  )
+
+  expect_equal(names(result), c("id", "tstart", "time", "cause", "weights"))
+  expect_equal(result$weights, c(1.0, 1.5, 0.8))
+  expect_equal(result$tstart, c(0, 0.5, 0))
+
+  # Test with weights but no tstart
+  result2 <- standardize_data(
+    test_data,
+    rlang::sym("participant"),
+    rlang::sym("follow_time"),
+    rlang::sym("event_type"),
+    weights = "wt"
+  )
+
+  expect_equal(names(result2), c("id", "tstart", "time", "cause", "weights"))
+  expect_equal(result2$weights, c(1.0, 1.5, 0.8))
+  expect_equal(result2$tstart, c(0, 0, 0))
+
+  # Test without weights
+  result3 <- standardize_data(
+    test_data,
+    rlang::sym("participant"),
+    rlang::sym("follow_time"),
+    rlang::sym("event_type")
+  )
+
+  expect_equal(names(result3), c("id", "tstart", "time", "cause"))
+  expect_false("weights" %in% names(result3))
+})
