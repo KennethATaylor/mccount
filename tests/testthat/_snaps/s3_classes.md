@@ -154,3 +154,54 @@
       v Final values are close
       Maximum difference in final values: 0
 
+# compare_mcc works correctly
+
+    Code
+      print(comp_same)
+    Message
+      
+      -- MCC Object Comparison -------------------------------------------------------
+      v Objects are equivalent within tolerance
+      
+      -- Comparison Details --
+      
+      v Methods match
+      v Weighted status matches
+      v Grouping status matches
+      v Grouping variables match
+      v Final values are close
+      Maximum difference in final values: 0
+
+---
+
+    Code
+      print(comp_diff)
+    Message
+      
+      -- MCC Object Comparison -------------------------------------------------------
+      ! Objects differ in one or more aspects
+      
+      -- Comparison Details --
+      
+      x Methods match
+      v Weighted status matches
+      v Grouping status matches
+      v Grouping variables match
+      v Final values are close
+      Maximum difference in final values: 0
+
+# S3 methods handle edge cases correctly
+
+    Code
+      summary(mcc_minimal)
+    Message
+      
+      -- Summary of Mean Cumulative Count Results ------------------------------------
+      i Method: Dong-Yasui Equation Method
+      
+      -- Summary Statistics --
+      
+      Number of time points: 1
+      Time range: [1, 1]
+      Final MCC: 0
+
