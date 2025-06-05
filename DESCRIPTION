@@ -25,12 +25,16 @@ Imports:
     cmprsk,
     data.table,
     dplyr,
+    ggplot2,
     glue,
     lifecycle,
     mstate,
+    patchwork,
     rlang,
+    stringr,
     survival,
-    tibble
+    tibble,
+    tidyr
 Suggests: 
     boot,
     spelling,

@@ -11,6 +11,19 @@
 #' calculations, while the `"sci"` method derives MCC by summing the cumulative
 #' incidence functions for each recurrent event. The two approaches yield
 #' equivalent results in certain circumstances. When they do not, the choice
+#' between methods depe#' Calculate Mean Cumulative Count (MCC)
+#'
+#' @description
+#' Calculates the Mean Cumulative Count (MCC), which estimates the expected
+#' cumulative number of events per person over time, while accounting for
+#' potential competing risks and censoring. This function provides a unified
+#' interface to two different estimation approaches: the `"equation"` method and
+#' the sum of cumulative incidence (`"sci"`) method.
+#'
+#' The `"equation"` method calculates MCC directly through probability
+#' calculations, while the `"sci"` method derives MCC by summing the cumulative
+#' incidence functions for each recurrent event. The two approaches yield
+#' equivalent results in certain circumstances. When they do not, the choice
 #' between methods depends on the specific outcome, analysis needs, and data
 #' structure.
 #'
@@ -63,17 +76,15 @@
 #'     2023;192(5):830-839. doi: [10.1093/aje/kwad031](https://doi.org/10.1093/aje/kwad031)
 #'
 #' @returns
-#' When `by` is NULL (single group analysis):
+#' An S3 object of class `"mcc"` with method-specific subclasses. The object contains:
 #'
-#' When `include_details = TRUE` (default), a list with method-specific components:
+#' When `include_details = TRUE` (default):
 #'
 #' For `method = "equation"`:
 #' * `mcc_final`: A tibble with columns for `time` and `mcc`
 #' * `mcc_table`: A tibble with detailed calculation steps
 #' * `original_data`: The input `data` with standardized column names
 #' * `adjusted_data`: Present only if time adjustments were applied
-#' * `method`: The method used for calculation
-#' * `weighted`: Logical indicating whether weighted estimation was used
 #'
 #' For `method = "sci"`:
 #' * `mcc_final`: A tibble with columns for `time` and MCC (expressed as `SumCIs`)
@@ -82,20 +93,18 @@
 #' * `mcc_base`: A tibble with calculation details for the MCC
 #' * `original_data`: The input `data` with standardized column names
 #' * `adjusted_data`: Present only if time adjustments were applied
-#' * `method`: The `method` used for calculation
-#' * `weighted`: Logical indicating whether weighted estimation was used
 #'
-#' When `include_details = FALSE`, a simplified list containing only:
+#' When `include_details = FALSE`:
 #' * `mcc_final`: A tibble with columns for `time` and `mcc` (or `SumCIs` for `method = "sci"`)
+#'
+#' All objects include metadata:
 #' * `method`: The method used for calculation
 #' * `weighted`: Logical indicating whether weighted estimation was used
+#' * `by_group`: Name of grouping variable (for grouped analyses)
+#' * `call`: The original function call
 #'
-#' When `by` is specified (grouped analysis):
-#'
-#' A list with the same structure as above, but with an additional `by_group`
-#' component and all tibbles containing an additional column with the grouping
-#' variable values. The `by_group` component contains the name of the grouping
-#' variable for reference.
+#' When `by` is specified, all tibbles contain an additional column with the
+#' grouping variable values, and the object has the additional class `"mcc_grouped"`.
 #'
 #' @examples
 #' # Attach dplyr
@@ -115,12 +124,17 @@
 #' # Calculate MCC using the equation method (default)
 #' mcc_eq <- mcc(df, id_var = "id", time_var = "time", cause_var = "cause")
 #'
-#' # MCC table
-#' mcc_eq$mcc_table
+#' # Print the S3 object (uses print.mcc method)
+#' mcc_eq
 #'
-#' # MCC estimates
-#' mcc_eq$mcc_final
+#' # Get summary (uses summary.mcc method)
+#' summary(mcc_eq)
 #'
+#' # Extract MCC estimates
+#' mcc_estimates(mcc_eq)
+#'
+#' # Extract calculation details
+#' mcc_details(mcc_eq)
 #'
 #' # Calculate MCC using the sum of cumulative incidence method
 #' mcc_sci <- mcc(
@@ -131,11 +145,8 @@
 #'   method = "sci"
 #' )
 #'
-#' # MCC (SCI) table
-#' mcc_sci$sci_table
-#'
-#' # MCC estimates
-#' mcc_sci$mcc_final
+#' # Print the S3 object
+#' mcc_sci
 #'
 #' # Clean up
 #' rm(df)
@@ -156,6 +167,9 @@ mcc <- function(
   time_precision = 1e-6,
   include_details = TRUE
 ) {
+  # Capture the call for the S3 object
+  call <- match.call()
+
   # Match and validate method argument
   method <- match.arg(method)
 
@@ -246,9 +260,14 @@ mcc <- function(
       )
     }
 
-    # Add method and weighted indicator to the result
-    result$method <- method
-    result$weighted <- !is.null(weights)
+    # Create S3 object
+    mcc_obj <- mcc_object(
+      result = result,
+      method = method,
+      weighted = !is.null(weights),
+      by_group = NULL,
+      call = call
+    )
   } else {
     # Grouped analysis
     result <- mcc_by_group(
@@ -264,9 +283,18 @@ mcc <- function(
       time_precision = time_precision,
       include_details = include_details
     )
+
+    # Create S3 object for grouped analysis
+    mcc_obj <- mcc_object(
+      result = result,
+      method = method,
+      weighted = !is.null(weights),
+      by_group = by,
+      call = call
+    )
   }
 
-  return(result)
+  return(mcc_obj)
 }
 
 #' Calculate MCC by group (internal function)
@@ -378,11 +406,8 @@ mcc_by_group <- function(
   # Combine results from all groups
   combined_result <- combine_group_results(group_results, by, include_details)
 
-  # Add method, weighted indicator, and by_group to the result
-  combined_result$method <- method
-  combined_result$weighted <- !is.null(weights)
-  combined_result$by_group <- by
-
+  # Note: method, weighted, and by_group will be added by the S3 constructor
+  # in the main mcc() function, so we don't add them here
   return(combined_result)
 }
 

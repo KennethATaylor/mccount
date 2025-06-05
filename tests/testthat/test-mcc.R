@@ -36,7 +36,12 @@ test_that("mcc() dispatches to the correct implementation based on method", {
   expect_equal(result_sci$method, "sci")
 
   # Check that default is equation method
-  expect_equal(result_default, result_equation)
+  expect_equal(result_default$mcc_final, result_equation$mcc_final)
+  expect_equal(result_default$mcc_table, result_equation$mcc_table)
+  expect_equal(result_default$original_data, result_equation$original_data)
+  expect_equal(result_default$method, result_equation$method)
+  expect_equal(result_default$weighted, result_equation$weighted)
+  expect_equal(result_default$by_group, result_equation$by_group)
 
   # Check that different methods give different result structures
   expect_true("mcc_table" %in% names(result_equation))
@@ -625,7 +630,7 @@ test_that("mcc() correctly passes include_details parameter to implementation fu
   expect_true("original_data" %in% names(result_eq_full))
 
   # Verify that include_details=FALSE only returns mcc_final and method
-  expect_named(result_eq_simple, c("mcc_final", "method", "weighted"))
+  expect_named(result_eq_simple, c("mcc_final", "method", "weighted", "call"))
 
   # mcc_final should be identical regardless of include_details
   expect_equal(result_eq_full$mcc_final, result_eq_simple$mcc_final)
@@ -655,7 +660,7 @@ test_that("mcc() correctly passes include_details parameter to implementation fu
   expect_true("original_data" %in% names(result_sci_full))
 
   # Verify that include_details=FALSE only returns mcc_final and method
-  expect_named(result_sci_simple, c("mcc_final", "method", "weighted"))
+  expect_named(result_sci_simple, c("mcc_final", "method", "weighted", "call"))
 
   # mcc_final should be identical regardless of include_details
   expect_equal(result_sci_full$mcc_final, result_sci_simple$mcc_final)
@@ -785,8 +790,8 @@ test_that("mcc() documentation example works with include_details=FALSE", {
   })
 
   # Verify structure of simplified output
-  expect_named(mcc_eq, c("mcc_final", "method", "weighted"))
-  expect_named(mcc_sci, c("mcc_final", "method", "weighted"))
+  expect_named(mcc_eq, c("mcc_final", "method", "weighted", "call"))
+  expect_named(mcc_sci, c("mcc_final", "method", "weighted", "call"))
 })
 
 test_that("by argument basic functionality works", {
@@ -1126,7 +1131,10 @@ test_that("mcc() with by argument and include_details parameter", {
     include_details = FALSE
   )
 
-  expect_named(result_simple, c("mcc_final", "method", "weighted", "by_group"))
+  expect_named(
+    result_simple,
+    c("mcc_final", "method", "weighted", "by_group", "call")
+  )
   expect_false("mcc_table" %in% names(result_simple))
   expect_false("original_data" %in% names(result_simple))
 })
