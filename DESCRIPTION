@@ -4,16 +4,15 @@ Version: 0.0.0.9000
 Authors@R: 
     person("Kenneth A.", "Taylor", , "kenneth.taylor.dpt@gmail.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-3205-9280"))
-Description: Provides tools for estimating the Mean Cumulative Count
-    (MCC), a statistical method for quantifying the burden of recurrent
-    events in the presence of competing risks. The package implements two
-    complementary estimation approaches: the direct probability-based
-    'equation' method and the 'sum of cumulative incidence' method. Both
-    approaches handle right censoring, with additional support for left
-    truncation in the latter. Features include automatic adjustment for
-    simultaneous events, detailed calculation tables, and utilities for
-    bootstrapping confidence intervals. Methods are implemented following
-    Dong et al. (2015) <doi:10.1093/aje/kwu289>.
+Description: Calculates mean cumulative count (MCC) to estimate the expected 
+    cumulative number of recurrent events per person over time in the presence of 
+    competing risks and censoring. Implements both the Dong-Yasui equation method 
+    and sum of cumulative incidence method described in Dong et al. (2015) 
+    <doi:10.1093/aje/kwu289>. Supports inverse probability weighting for causal 
+    inference as outlined in Gaber et al. (2023) <doi:10.1093/aje/kwad031>. 
+    Provides S3 classes with methods for printing, summarizing, plotting, and 
+    extracting results. Handles grouped analyses and integrates with 'ggplot2' 
+    for visualization.
 License: MIT + file LICENSE
 URL: https://github.com/KennethATaylor/mccount,
     https://kennethataylor.github.io/mccount/
@@ -25,7 +24,7 @@ Imports:
     cmprsk,
     data.table,
     dplyr,
-    ggplot2,
+    ggplot2 (>= 3.5.0),
     glue,
     lifecycle,
     mstate,

@@ -4,7 +4,7 @@
 \alias{autoplot.mcc}
 \title{Auto-plot method for MCC objects}
 \usage{
-autoplot.mcc(x, ...)
+\method{autoplot}{mcc}(x, ...)
 }
 \arguments{
 \item{x}{An MCC object}

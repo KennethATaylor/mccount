@@ -23,9 +23,10 @@ an event, MCC accounts for multiple occurrences of the same event type
 per individual, providing a more informative measure of the total burden
 of recurrent events in a population.
 
-`mccount` provides an interface to estimate the MCC using either the
-Dong-Yasui estimator of the MCC or the sum of cumulative incidences,
-based on the work of Dong, *et al*.[^1]
+Available MCC methods in this package include the Dong-Yasui or the sum
+of cumulative incidences estimators, based on the work of Dong, *et
+al*.[^1] Users can also estimate the MCC using the weighted Dong-Yasui
+estimator.[^2]
 
 ## Installation
 
@@ -56,7 +57,7 @@ The MCC:
 ## Citation
 
 If you use `mccount` in your research, please cite the package in
-addition to the original methodology paper.[^2]
+addition to the relevant original methodology paper(s).
 
 ``` r
 citation("mccount")
@@ -68,8 +69,8 @@ citation("mccount")
     Epidemiol*. 2015 Apr 1;181(7):532-40. doi:
     [10.1093/aje/kwu289](https://doi.org/10.1093/aje/kwu289)
 
-[^2]: Dong H, Robison LL, Leisenring WM, Martin LJ, Armstrong GT, Yasui
-    Y. Estimating the burden of recurrent events in the presence of
-    competing risks: the method of mean cumulative count. *Am J
-    Epidemiol*. 2015 Apr 1;181(7):532-40. doi:
-    [10.1093/aje/kwu289](https://doi.org/10.1093/aje/kwu289)
+[^2]: Gaber CE, Edwards JK, Lund JL, Peery AF, Richardson DB, Kinlaw AC.
+    Inverse Probability Weighting to Estimate Exposure Effects on the
+    Burden of Recurrent Outcomes in the Presence of Competing Events.
+    *Am J Epidemiol*. 2023;192(5):830-839. doi:
+    [10.1093/aje/kwad031](https://doi.org/10.1093/aje/kwad031)
