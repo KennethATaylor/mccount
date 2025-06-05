@@ -110,7 +110,10 @@ plot_mcc_estimates <- function(
   # Add lines/points based on grouping
   if (inherits(x, "mcc_grouped")) {
     p <- p +
-      ggplot2::geom_step(ggplot2::aes(color = .data[[x$by_group]]), size = 1)
+      ggplot2::geom_step(
+        ggplot2::aes(color = .data[[x$by_group]]),
+        linewidth = 1
+      )
 
     # Custom colors if provided
     if (!is.null(colors)) {
@@ -122,7 +125,7 @@ plot_mcc_estimates <- function(
   } else {
     color <- if (!is.null(colors)) colors[1] else "#2E86AB"
     p <- p +
-      ggplot2::geom_step(color = color, size = 1)
+      ggplot2::geom_step(color = color, linewidth = 1)
   }
 
   # Add confidence intervals if requested and available
@@ -231,7 +234,7 @@ plot_equation_details <- function(x, groups, colors, title, subtitle, ...) {
         color = .data[[x$by_group]]
       )
     ) +
-      ggplot2::geom_step(size = 1) +
+      ggplot2::geom_step(linewidth = 1) +
       ggplot2::labs(
         title = "Average Events per Time Point",
         y = "Average Events",
@@ -247,7 +250,7 @@ plot_equation_details <- function(x, groups, colors, title, subtitle, ...) {
         color = .data[[x$by_group]]
       )
     ) +
-      ggplot2::geom_step(size = 1) +
+      ggplot2::geom_step(linewidth = 1) +
       ggplot2::labs(
         title = "Overall Survival",
         y = "Survival Probability",
@@ -262,7 +265,7 @@ plot_equation_details <- function(x, groups, colors, title, subtitle, ...) {
       plot_data,
       ggplot2::aes(x = .data$time, y = .data$ave_events)
     ) +
-      ggplot2::geom_step(color = color, size = 1) +
+      ggplot2::geom_step(color = color, linewidth = 1) +
       ggplot2::labs(
         title = "Average Events per Time Point",
         y = "Average Events"
@@ -273,7 +276,7 @@ plot_equation_details <- function(x, groups, colors, title, subtitle, ...) {
       plot_data,
       ggplot2::aes(x = .data$time, y = .data$overall_surv_previous)
     ) +
-      ggplot2::geom_step(color = color, size = 1) +
+      ggplot2::geom_step(color = color, linewidth = 1) +
       ggplot2::labs(title = "Overall Survival", y = "Survival Probability") +
       ggplot2::theme_minimal()
   }
@@ -351,7 +354,7 @@ plot_sci_details <- function(x, groups, colors, title, subtitle, ...) {
           color = factor(.data$event_number),
           linetype = .data[[x$by_group]]
         ),
-        size = 1
+        linewidth = 1
       ) +
       ggplot2::labs(
         color = "Event Number",
@@ -367,7 +370,7 @@ plot_sci_details <- function(x, groups, colors, title, subtitle, ...) {
         color = factor(.data$event_number)
       )
     ) +
-      ggplot2::geom_step(size = 1) +
+      ggplot2::geom_step(linewidth = 1) +
       ggplot2::labs(color = "Event Number", y = "Cumulative Incidence")
   }
 
@@ -382,14 +385,14 @@ plot_sci_details <- function(x, groups, colors, title, subtitle, ...) {
           color = "Sum",
           linetype = .data[[x$by_group]]
         ),
-        size = 1.5
+        linewidth = 1.5
       )
   } else {
     p <- p +
       ggplot2::geom_step(
         data = plot_data,
         ggplot2::aes(x = .data$time, y = .data$SumCIs, color = "Sum"),
-        size = 1.5
+        linewidth = 1.5
       )
   }
 
@@ -449,7 +452,12 @@ create_subtitle <- function(x) {
 #' @param ... Additional arguments passed to plot.mcc
 #'
 #' @returns A ggplot2 object
-#' @export
 autoplot.mcc <- function(x, ...) {
   plot.mcc(x, ...)
 }
+
+# nocov start
+register_all_s3_methods <- function() {
+  s3_register("ggplot2::autoplot", "mcc")
+}
+# nocov end
