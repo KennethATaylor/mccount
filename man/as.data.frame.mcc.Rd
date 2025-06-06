@@ -19,3 +19,32 @@ Extracts the MCC estimates from an MCC object and returns them as a
 standard data.frame. This is useful for further analysis or when working
 with packages that expect standard data.frame objects.
 }
+\examples{
+# Create sample data
+library(dplyr)
+df <- data.frame(
+  id = c(1, 2, 3, 4, 4, 4, 5, 5),
+  time = c(8, 1, 5, 2, 6, 7, 3, 3),
+  cause = c(0, 0, 2, 1, 1, 1, 1, 2)
+) |>
+  arrange(id, time)
+
+# Calculate MCC
+mcc_result <- mcc(df, "id", "time", "cause")
+
+# Convert to data.frame
+mcc_df <- as.data.frame(mcc_result)
+print(mcc_df)
+class(mcc_df)  # "data.frame"
+
+# This is equivalent to extracting mcc_final
+identical(mcc_df, as.data.frame(mcc_result$mcc_final))
+
+# Useful for further analysis with base R functions
+summary(mcc_df)
+plot(mcc_df$time, mcc_df$mcc, type = "s")
+
+# Clean up
+rm(df, mcc_result, mcc_df)
+
+}

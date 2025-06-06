@@ -2,12 +2,12 @@
 % Please edit documentation in R/s3_classes.R
 \name{print.mcc}
 \alias{print.mcc}
-\title{Print method for MCC objects}
+\title{Print method for \code{mcc} objects}
 \usage{
 \method{print}{mcc}(x, ...)
 }
 \arguments{
-\item{x}{An MCC object}
+\item{x}{An \code{mcc} object}
 
 \item{...}{Additional arguments (currently unused)}
 }
@@ -15,5 +15,38 @@
 x invisibly
 }
 \description{
-Print method for MCC objects
+Print method for \code{mcc} objects
+}
+\examples{
+# Attach dplyr
+library(dplyr)
+# Create sample data with recurrent events
+df <- data.frame(
+  id = c(1, 2, 3, 4, 4, 4, 5, 5),
+  time = c(8, 1, 5, 2, 6, 7, 3, 3), # Times will be adjusted for id = 5
+  cause = c(0, 0, 2, 1, 1, 1, 1, 2)
+ ) |>
+  arrange(id, time)  # Sort the data by id and time
+
+# Calculate MCC using the equation method (default)
+mcc_eq <- mcc(df, id_var = "id", time_var = "time", cause_var = "cause")
+
+# Print the S3 object (uses print.mcc method)
+mcc_eq
+
+# Calculate MCC using the sum of cumulative incidence method
+mcc_sci <- mcc(
+  df,
+  id_var = "id",
+  time_var = "time",
+  cause_var = "cause",
+  method = "sci"
+)
+
+# Print the S3 object
+mcc_sci
+
+# Clean up
+rm(df, mcc_eq, mcc_sci)
+
 }

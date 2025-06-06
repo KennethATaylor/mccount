@@ -15,3 +15,34 @@ Logical indicating whether weighted estimation was used
 \description{
 Check if MCC object uses weighted estimation
 }
+\examples{
+# Create sample data
+library(dplyr)
+df <- data.frame(
+  id = c(1, 2, 3, 4, 4, 4, 5, 5),
+  time = c(8, 1, 5, 2, 6, 7, 3, 3),
+  cause = c(0, 0, 2, 1, 1, 1, 1, 2)
+) |>
+  arrange(id, time)
+
+# Calculate unweighted MCC
+mcc_unweighted <- mcc(df, "id", "time", "cause")
+is_weighted(mcc_unweighted)  # FALSE
+
+# Create weighted data
+df_weighted <- df |>
+  group_by(id) |>
+  slice(1) |>
+  ungroup() |>
+  mutate(weights = runif(n(), 0.5, 2.0)) |>
+  select(id, weights) |>
+  right_join(df, by = "id") |>
+  arrange(id, time)
+
+# Calculate weighted MCC
+mcc_weighted <- mcc(df_weighted, "id", "time", "cause", weights = "weights")
+is_weighted(mcc_weighted)  # TRUE
+
+# Clean up
+rm(df, df_weighted, mcc_unweighted, mcc_weighted)
+}

@@ -2,12 +2,12 @@
 % Please edit documentation in R/s3_classes.R
 \name{as_mcc}
 \alias{as_mcc}
-\title{Convert objects to \verb{<mcc>} class}
+\title{Convert objects to \code{mcc} class}
 \usage{
 as_mcc(x, method, weighted = FALSE, by_group = NULL, call = NULL, ...)
 }
 \arguments{
-\item{x}{Object to convert to MCC}
+\item{x}{Object to convert to \code{mcc}}
 
 \item{method}{Method used for calculation ("equation" or "sci")}
 
@@ -20,9 +20,48 @@ as_mcc(x, method, weighted = FALSE, by_group = NULL, call = NULL, ...)
 \item{...}{Additional arguments (currently unused)}
 }
 \value{
-An MCC S3 object
+An \code{mcc} S3 object
 }
 \description{
 Converts objects to MCC class. This is useful when you have calculation
 results from other sources that you want to treat as MCC objects.
+}
+\examples{
+# Convert a data.frame to MCC object
+library(dplyr)
+
+# Create a simple data.frame with MCC results
+mcc_data <- data.frame(
+  time = c(1, 2, 3, 4, 5),
+  mcc = c(0.1, 0.3, 0.5, 0.7, 1.0)
+)
+
+# Convert to MCC object (equation method)
+mcc_obj <- as_mcc(mcc_data, method = "equation")
+print(mcc_obj)
+is_mcc(mcc_obj)  # TRUE
+
+# Convert for SCI method (requires SumCIs column)
+sci_data <- data.frame(
+  time = c(1, 2, 3, 4, 5),
+  SumCIs = c(0.1, 0.3, 0.5, 0.7, 1.0)
+)
+
+mcc_sci_obj <- as_mcc(sci_data, method = "sci")
+print(mcc_sci_obj)
+
+# Convert a list to MCC object
+mcc_list <- list(
+  mcc_final = data.frame(
+    time = c(1, 2, 3),
+    mcc = c(0.2, 0.5, 0.8)
+  )
+)
+
+mcc_from_list <- as_mcc(mcc_list, method = "equation")
+print(mcc_from_list)
+
+# Clean up
+rm(mcc_data, sci_data, mcc_list, mcc_obj, mcc_sci_obj, mcc_from_list)
+
 }

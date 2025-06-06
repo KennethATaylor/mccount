@@ -15,3 +15,26 @@ Character vector of unique group values, or NULL if not grouped
 \description{
 Extract unique groups from grouped MCC object
 }
+\examples{
+# Create sample data with groups
+library(dplyr)
+df <- data.frame(
+  id = c(1, 2, 3, 4, 4, 4, 5, 5, 6, 7, 8),
+  time = c(8, 1, 5, 2, 6, 7, 3, 3, 4, 9, 2),
+  cause = c(0, 0, 2, 1, 1, 1, 1, 2, 1, 0, 2),
+  treatment = c("Control", "Control", "Treatment", "Treatment",
+                "Treatment", "Treatment", "Control", "Control",
+                "Placebo", "Placebo", "Placebo")
+) |>
+  arrange(id, time)
+
+# Grouped analysis
+mcc_grouped <- mcc(df, "id", "time", "cause", by = "treatment")
+
+# Get all unique groups
+mcc_groups(mcc_grouped)  # "Control", "Placebo", "Treatment"
+
+# Clean up
+rm(df, mcc_grouped)
+
+}

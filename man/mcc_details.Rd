@@ -2,12 +2,12 @@
 % Please edit documentation in R/s3_classes.R
 \name{mcc_details}
 \alias{mcc_details}
-\title{Extract calculation details from \verb{<mcc>} objects}
+\title{Extract calculation details from \code{mcc} objects}
 \usage{
 mcc_details(x, ...)
 }
 \arguments{
-\item{x}{An MCC object}
+\item{x}{An \code{mcc} object}
 
 \item{...}{Additional arguments (currently unused)}
 }
@@ -15,5 +15,30 @@ mcc_details(x, ...)
 A tibble with calculation details, or NULL if not available
 }
 \description{
-Extract calculation details from \verb{<mcc>} objects
+Extract calculation details from \code{mcc} objects
+}
+\examples{
+# Create sample data
+library(dplyr)
+df <- data.frame(
+  id = c(1, 2, 3, 4, 4, 4, 5, 5),
+  time = c(8, 1, 5, 2, 6, 7, 3, 3),
+  cause = c(0, 0, 2, 1, 1, 1, 1, 2)
+) |>
+  arrange(id, time)
+
+# Calculate MCC with details
+mcc_eq <- mcc(df, "id", "time", "cause", method = "equation")
+mcc_sci <- mcc(df, "id", "time", "cause", method = "sci")
+
+# Extract calculation details
+details_eq <- mcc_details(mcc_eq)   # Returns mcc_table
+details_sci <- mcc_details(mcc_sci) # Returns sci_table
+
+print(details_eq)
+print(details_sci)
+
+# Clean up
+rm(df, mcc_eq, mcc_sci, details_eq, details_sci)
+
 }

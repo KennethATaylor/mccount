@@ -2,12 +2,12 @@
 % Please edit documentation in R/s3_classes.R
 \name{print.summary.mcc}
 \alias{print.summary.mcc}
-\title{Print method for MCC summary objects}
+\title{Print method for \code{mcc} summary objects}
 \usage{
 \method{print}{summary.mcc}(x, ...)
 }
 \arguments{
-\item{x}{A summary.mcc object}
+\item{x}{A \code{summary.mcc} object}
 
 \item{...}{Additional arguments (currently unused)}
 }
@@ -15,5 +15,5 @@
 x invisibly
 }
 \description{
-Print method for MCC summary objects
+Print method for \code{mcc} summary objects
 }

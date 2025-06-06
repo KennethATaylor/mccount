@@ -2,12 +2,12 @@
 % Please edit documentation in R/s3_classes.R
 \name{mcc_estimates}
 \alias{mcc_estimates}
-\title{Extract MCC estimates from \verb{<mcc>} objects}
+\title{Extract MCC estimates from \code{mcc} objects}
 \usage{
 mcc_estimates(x, ...)
 }
 \arguments{
-\item{x}{An MCC object}
+\item{x}{An \code{mcc} object}
 
 \item{...}{Additional arguments (currently unused)}
 }
@@ -15,5 +15,34 @@ mcc_estimates(x, ...)
 A tibble with MCC estimates
 }
 \description{
-Extract MCC estimates from \verb{<mcc>} objects
+Extract MCC estimates from \code{mcc} objects
+}
+\examples{
+# Create sample data
+library(dplyr)
+df <- data.frame(
+  id = c(1, 2, 3, 4, 4, 4, 5, 5),
+  time = c(8, 1, 5, 2, 6, 7, 3, 3),
+  cause = c(0, 0, 2, 1, 1, 1, 1, 2)
+) |>
+  arrange(id, time)
+
+# Calculate MCC
+mcc_result <- mcc(df, "id", "time", "cause")
+
+# Extract MCC estimates
+estimates <- mcc_estimates(mcc_result)
+print(estimates)
+
+# For grouped analysis
+df_grouped <- df |>
+  mutate(group = c("A", "A", "B", "B", "B", "B", "A", "A"))
+
+mcc_grouped <- mcc(df_grouped, "id", "time", "cause", by = "group")
+estimates_grouped <- mcc_estimates(mcc_grouped)
+print(estimates_grouped)
+
+# Clean up
+rm(df, df_grouped, mcc_result, mcc_grouped, estimates, estimates_grouped)
+
 }

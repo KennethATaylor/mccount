@@ -69,4 +69,45 @@ mcc_grouped <- mcc(df, "id", "time", "cause", by = "group")
 plot(mcc_grouped)
 }
 
+# Create sample data
+library(dplyr)
+df <- data.frame(
+  id = c(1, 2, 3, 4, 4, 4, 5, 5),
+  time = c(8, 1, 5, 2, 6, 7, 3, 3),
+  cause = c(0, 0, 2, 1, 1, 1, 1, 2),
+  group = c("A", "A", "B", "B", "B", "B", "A", "A")
+) |>
+  arrange(id, time)
+
+# Basic MCC plot (ungrouped)
+mcc_result <- mcc(df, "id", "time", "cause")
+plot(mcc_result)
+
+# Plot calculation details
+plot(mcc_result, type = "details")
+
+# Grouped analysis with custom colors
+mcc_grouped <- mcc(df, "id", "time", "cause", by = "group")
+plot(mcc_grouped)
+
+# Customize the grouped plot
+plot(mcc_grouped,
+     colors = c("red", "blue"),
+     title = "MCC by Treatment Group",
+     subtitle = "Comparison of Event Burden")
+
+# Plot details for grouped analysis
+plot(mcc_grouped, type = "details")
+
+# Plot only specific groups
+plot(mcc_grouped, groups = c("A"))
+
+# Compare different methods
+mcc_sci <- mcc(df, "id", "time", "cause", method = "sci")
+plot(mcc_sci)
+plot(mcc_sci, type = "details")
+
+# Clean up
+rm(df, mcc_result, mcc_grouped, mcc_sci)
+
 }

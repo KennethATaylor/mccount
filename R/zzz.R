@@ -1,3 +1,4 @@
+# nocov start
 .onAttach <- function(libname, pkgname) {
   # https://stackoverflow.com/questions/53941218
   # ggplot2 has its own startup messages, and loading it like this suppresses them (instead of just adding ggplot2 to depends)
@@ -14,3 +15,4 @@
 .onLoad <- function(...) {
   register_all_s3_methods()
 }
+# nocov end

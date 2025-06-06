@@ -146,13 +146,13 @@ df <- data.frame(
 print("Hypothetical dataset from Dong et al. (2015):")
 print(df)
 
-# Calculate MCC using the equation method (default)
+# Calculate MCC using the equation method
 mcc_eq <- mcc(df, id_var = "id", time_var = "time", cause_var = "cause")
 
-# Print the S3 object (uses print.mcc method)
+# Print the S3 object
 mcc_eq
 
-# Get summary (uses summary.mcc method)
+# Get summary
 summary(mcc_eq)
 
 # Extract MCC estimates
@@ -170,13 +170,10 @@ mcc_sci <- mcc(
   method = "sci"
 )
 
-# Print the S3 object
 mcc_sci
 
 # Clean up
-rm(df)
-rm(mcc_eq)
-rm(mcc_sci)
+rm(df, mcc_eq, mcc_sci)
 
 }
 \references{

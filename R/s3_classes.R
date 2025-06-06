@@ -176,6 +176,45 @@ mcc_object <- function(
 #'
 #' @returns An `mcc` S3 object
 #' @export
+#'
+#' @examples
+#' # Convert a data.frame to MCC object
+#' library(dplyr)
+#'
+#' # Create a simple data.frame with MCC results
+#' mcc_data <- data.frame(
+#'   time = c(1, 2, 3, 4, 5),
+#'   mcc = c(0.1, 0.3, 0.5, 0.7, 1.0)
+#' )
+#'
+#' # Convert to MCC object (equation method)
+#' mcc_obj <- as_mcc(mcc_data, method = "equation")
+#' print(mcc_obj)
+#' is_mcc(mcc_obj)  # TRUE
+#'
+#' # Convert for SCI method (requires SumCIs column)
+#' sci_data <- data.frame(
+#'   time = c(1, 2, 3, 4, 5),
+#'   SumCIs = c(0.1, 0.3, 0.5, 0.7, 1.0)
+#' )
+#'
+#' mcc_sci_obj <- as_mcc(sci_data, method = "sci")
+#' print(mcc_sci_obj)
+#'
+#' # Convert a list to MCC object
+#' mcc_list <- list(
+#'   mcc_final = data.frame(
+#'     time = c(1, 2, 3),
+#'     mcc = c(0.2, 0.5, 0.8)
+#'   )
+#' )
+#'
+#' mcc_from_list <- as_mcc(mcc_list, method = "equation")
+#' print(mcc_from_list)
+#'
+#' # Clean up
+#' rm(mcc_data, sci_data, mcc_list, mcc_obj, mcc_sci_obj, mcc_from_list)
+#'
 as_mcc <- function(
   x,
   method,
@@ -271,6 +310,26 @@ as_mcc.data.frame <- function(
 #'
 #' @returns TRUE if x is an `mcc` object, FALSE otherwise
 #' @export
+#'
+#' @examples
+#' # Create sample data
+#' library(dplyr)
+#' df <- data.frame(
+#'   id = c(1, 2, 3, 4, 4, 4, 5, 5),
+#'   time = c(8, 1, 5, 2, 6, 7, 3, 3),
+#'   cause = c(0, 0, 2, 1, 1, 1, 1, 2)
+#' ) |>
+#'   arrange(id, time)
+#'
+#' # Calculate MCC
+#' mcc_result <- mcc(df, "id", "time", "cause")
+#'
+#' # Test if it's an MCC object
+#' is_mcc(mcc_result)  # TRUE
+#'
+#' # Clean up
+#' rm(df, mcc_result)
+#'
 is_mcc <- function(x) {
   inherits(x, "mcc")
 }
@@ -282,6 +341,39 @@ is_mcc <- function(x) {
 #'
 #' @returns x invisibly
 #' @export
+#'
+#' @examples
+#' # Attach dplyr
+#' library(dplyr)
+#' # Create sample data with recurrent events
+#' df <- data.frame(
+#'   id = c(1, 2, 3, 4, 4, 4, 5, 5),
+#'   time = c(8, 1, 5, 2, 6, 7, 3, 3), # Times will be adjusted for id = 5
+#'   cause = c(0, 0, 2, 1, 1, 1, 1, 2)
+#'  ) |>
+#'   arrange(id, time)  # Sort the data by id and time
+#'
+#' # Calculate MCC using the equation method (default)
+#' mcc_eq <- mcc(df, id_var = "id", time_var = "time", cause_var = "cause")
+#'
+#' # Print the S3 object (uses print.mcc method)
+#' mcc_eq
+#'
+#' # Calculate MCC using the sum of cumulative incidence method
+#' mcc_sci <- mcc(
+#'   df,
+#'   id_var = "id",
+#'   time_var = "time",
+#'   cause_var = "cause",
+#'   method = "sci"
+#' )
+#'
+#' # Print the S3 object
+#' mcc_sci
+#'
+#' # Clean up
+#' rm(df, mcc_eq, mcc_sci)
+#'
 print.mcc <- function(x, ...) {
   cli::cli_h1("Mean Cumulative Count Results")
 
@@ -353,6 +445,37 @@ print.mcc <- function(x, ...) {
 #'
 #' @returns A summary object with class `summary.mcc`
 #' @export
+#'
+#' @examples
+#' # Attach dplyr
+#' library(dplyr)
+#' # Create sample data with recurrent events
+#' df <- data.frame(
+#'   id = c(1, 2, 3, 4, 4, 4, 5, 5),
+#'   time = c(8, 1, 5, 2, 6, 7, 3, 3), # Times will be adjusted for id = 5
+#'   cause = c(0, 0, 2, 1, 1, 1, 1, 2)
+#'  ) |>
+#'   arrange(id, time)  # Sort the data by id and time
+#'
+#' # Calculate MCC using the equation method (default)
+#' mcc_eq <- mcc(df, id_var = "id", time_var = "time", cause_var = "cause")
+#'
+#' summary(mcc_eq)
+#'
+#' # Calculate MCC using the sum of cumulative incidence method
+#' mcc_sci <- mcc(
+#'   df,
+#'   id_var = "id",
+#'   time_var = "time",
+#'   cause_var = "cause",
+#'   method = "sci"
+#' )
+#'
+#' summary(mcc_sci)
+#'
+#' # Clean up
+#' rm(df, mcc_eq, mcc_sci)
+#'
 summary.mcc <- function(object, ...) {
   # Extract key information
   mcc_col <- if (object$method == "equation") "mcc" else "SumCIs"
@@ -437,6 +560,35 @@ print.summary.mcc <- function(x, ...) {
 #'
 #' @returns A tibble with MCC estimates
 #' @export
+#'
+#' @examples
+#' # Create sample data
+#' library(dplyr)
+#' df <- data.frame(
+#'   id = c(1, 2, 3, 4, 4, 4, 5, 5),
+#'   time = c(8, 1, 5, 2, 6, 7, 3, 3),
+#'   cause = c(0, 0, 2, 1, 1, 1, 1, 2)
+#' ) |>
+#'   arrange(id, time)
+#'
+#' # Calculate MCC
+#' mcc_result <- mcc(df, "id", "time", "cause")
+#'
+#' # Extract MCC estimates
+#' estimates <- mcc_estimates(mcc_result)
+#' print(estimates)
+#'
+#' # For grouped analysis
+#' df_grouped <- df |>
+#'   mutate(group = c("A", "A", "B", "B", "B", "B", "A", "A"))
+#'
+#' mcc_grouped <- mcc(df_grouped, "id", "time", "cause", by = "group")
+#' estimates_grouped <- mcc_estimates(mcc_grouped)
+#' print(estimates_grouped)
+#'
+#' # Clean up
+#' rm(df, df_grouped, mcc_result, mcc_grouped, estimates, estimates_grouped)
+#'
 mcc_estimates <- function(x, ...) {
   if (!is_mcc(x)) {
     cli::cli_abort("{.arg x} must be an {.cls mcc} object")
@@ -452,6 +604,31 @@ mcc_estimates <- function(x, ...) {
 #'
 #' @returns A tibble with calculation details, or NULL if not available
 #' @export
+#'
+#' @examples
+#' # Create sample data
+#' library(dplyr)
+#' df <- data.frame(
+#'   id = c(1, 2, 3, 4, 4, 4, 5, 5),
+#'   time = c(8, 1, 5, 2, 6, 7, 3, 3),
+#'   cause = c(0, 0, 2, 1, 1, 1, 1, 2)
+#' ) |>
+#'   arrange(id, time)
+#'
+#' # Calculate MCC with details
+#' mcc_eq <- mcc(df, "id", "time", "cause", method = "equation")
+#' mcc_sci <- mcc(df, "id", "time", "cause", method = "sci")
+#'
+#' # Extract calculation details
+#' details_eq <- mcc_details(mcc_eq)   # Returns mcc_table
+#' details_sci <- mcc_details(mcc_sci) # Returns sci_table
+#'
+#' print(details_eq)
+#' print(details_sci)
+#'
+#' # Clean up
+#' rm(df, mcc_eq, mcc_sci, details_eq, details_sci)
+#'
 mcc_details <- function(x, ...) {
   if (!is_mcc(x)) {
     cli::cli_abort("{.arg x} must be an {.cls mcc} object")
