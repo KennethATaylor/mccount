@@ -2,18 +2,18 @@
 % Please edit documentation in R/s3_utilities.R
 \name{is_grouped}
 \alias{is_grouped}
-\title{Check if MCC object is from grouped analysis}
+\title{Check if \code{mcc} object is from grouped analysis}
 \usage{
 is_grouped(x)
 }
 \arguments{
-\item{x}{An MCC object}
+\item{x}{An \code{mcc} object}
 }
 \value{
 Logical indicating whether the analysis was grouped
 }
 \description{
-Check if MCC object is from grouped analysis
+Check if \code{mcc} object is from grouped analysis
 }
 \examples{
 # Create sample data

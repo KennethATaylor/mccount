@@ -2,18 +2,18 @@
 % Please edit documentation in R/s3_utilities.R
 \name{is_weighted}
 \alias{is_weighted}
-\title{Check if MCC object uses weighted estimation}
+\title{Check if \code{mcc} object uses weighted estimation}
 \usage{
 is_weighted(x)
 }
 \arguments{
-\item{x}{An MCC object}
+\item{x}{An \code{mcc} object}
 }
 \value{
 Logical indicating whether weighted estimation was used
 }
 \description{
-Check if MCC object uses weighted estimation
+Check if \code{mcc} object uses weighted estimation
 }
 \examples{
 # Create sample data

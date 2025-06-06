@@ -2,18 +2,18 @@
 % Please edit documentation in R/s3_utilities.R
 \name{mcc_grouping_var}
 \alias{mcc_grouping_var}
-\title{Get grouping variable name from grouped MCC object}
+\title{Get grouping variable name from grouped \code{mcc} object}
 \usage{
 mcc_grouping_var(x)
 }
 \arguments{
-\item{x}{An MCC object}
+\item{x}{An \code{mcc} object}
 }
 \value{
 Character string with grouping variable name, or NULL if not grouped
 }
 \description{
-Get grouping variable name from grouped MCC object
+Get grouping variable name from grouped \code{mcc} object
 }
 \examples{
 # Create sample data with groups

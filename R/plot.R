@@ -2,10 +2,10 @@
 #'
 #' @description
 #' Creates plots for Mean Cumulative Count (MCC) results. The plotting method
-#' automatically adapts based on the MCC object class and whether the analysis
+#' automatically adapts based on the `mcc` object class and whether the analysis
 #' was grouped.
 #'
-#' @param x An MCC object (class "mcc")
+#' @param x An `mcc` object
 #' @param type Character string specifying plot type. Options are:
 #'   - "mcc" (default): Plot MCC estimates over time
 #'   - "details": Plot calculation details (method-specific)
@@ -100,7 +100,7 @@ plot.mcc <- function(
   # Check if ggplot2 is available
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
     cli::cli_abort(c(
-      "Package {.pkg ggplot2} is required for plotting MCC objects",
+      "Package {.pkg ggplot2} is required for plotting {.cls mcc} objects",
       "i" = "Install it with: {.code install.packages('ggplot2')}"
     ))
   }
@@ -205,7 +205,9 @@ plot_mcc_estimates <- function(
         }
       }
     } else {
-      cli::cli_warn("Confidence interval data not available in MCC object")
+      cli::cli_warn(
+        "Confidence interval data not available in {.cls mcc} object"
+      )
     }
   }
 
@@ -460,7 +462,7 @@ plot_sci_details <- function(x, groups, colors, title, subtitle, ...) {
 
 #' Create automatic subtitle for plots
 #'
-#' @param x MCC object
+#' @param x `mcc` object
 #' @returns Character string for subtitle
 #' @keywords internal
 #' @noRd
@@ -485,13 +487,13 @@ create_subtitle <- function(x) {
   return(subtitle_parts)
 }
 
-#' Auto-plot method for MCC objects
+#' Auto-plot method for `mcc` objects
 #'
 #' @description
 #' Convenience function that automatically creates an appropriate plot
-#' for MCC objects. This is called when using the base R `plot()` function.
+#' for `mcc` objects. This is called when using the base R `plot()` function.
 #'
-#' @param x An MCC object
+#' @param x An `mcc` object
 #' @param ... Additional arguments passed to plot.mcc
 #'
 #' @returns A ggplot2 object

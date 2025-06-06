@@ -1,11 +1,11 @@
-#' Convert MCC object to data.frame
+#' Convert `mcc` object to data.frame
 #'
 #' @description
-#' Extracts the MCC estimates from an MCC object and returns them as a
+#' Extracts the MCC estimates from an `mcc` object and returns them as a
 #' standard data.frame. This is useful for further analysis or when working
 #' with packages that expect standard data.frame objects.
 #'
-#' @param x An MCC object
+#' @param x An `mcc` object
 #' @param ... Additional arguments (currently unused)
 #'
 #' @returns A data.frame with MCC estimates
@@ -49,7 +49,7 @@ as.data.frame.mcc <- function(x, ...) {
 
 #' Get the method used for MCC calculation
 #'
-#' @param x An MCC object
+#' @param x An `mcc` object
 #'
 #' @returns Character string indicating the method ("equation" or "sci")
 #' @export
@@ -81,9 +81,9 @@ mcc_method <- function(x) {
   return(x$method)
 }
 
-#' Check if MCC object uses weighted estimation
+#' Check if `mcc` object uses weighted estimation
 #'
-#' @param x An MCC object
+#' @param x An `mcc` object
 #'
 #' @returns Logical indicating whether weighted estimation was used
 #' @export
@@ -126,9 +126,9 @@ is_weighted <- function(x) {
   return(x$weighted)
 }
 
-#' Check if MCC object is from grouped analysis
+#' Check if `mcc` object is from grouped analysis
 #'
-#' @param x An MCC object
+#' @param x An `mcc` object
 #'
 #' @returns Logical indicating whether the analysis was grouped
 #' @export
@@ -163,9 +163,9 @@ is_grouped <- function(x) {
   return(inherits(x, "mcc_grouped"))
 }
 
-#' Get grouping variable name from grouped MCC object
+#' Get grouping variable name from grouped `mcc` object
 #'
-#' @param x An MCC object
+#' @param x An `mcc` object
 #'
 #' @returns Character string with grouping variable name, or NULL if not grouped
 #' @export
@@ -203,9 +203,9 @@ mcc_grouping_var <- function(x) {
   return(x$by_group)
 }
 
-#' Extract unique groups from grouped MCC object
+#' Extract unique groups from grouped `mcc` object
 #'
-#' @param x An MCC object
+#' @param x An `mcc` object
 #'
 #' @returns Character vector of unique group values, or NULL if not grouped
 #' @export
@@ -244,17 +244,17 @@ mcc_groups <- function(x) {
   return(unique(x$mcc_final[[x$by_group]]))
 }
 
-#' Subset MCC object by groups
+#' Subset `mcc` object by groups
 #'
 #' @description
-#' For grouped MCC objects, extracts results for specified groups only.
+#' For grouped `mcc` objects, extracts results for specified groups only.
 #' This is useful for focusing on specific groups of interest or creating
 #' custom visualizations.
 #'
-#' @param x A grouped MCC object
+#' @param x A grouped `mcc` object
 #' @param groups Character vector of group names to include
 #'
-#' @returns An MCC object containing only the specified groups
+#' @returns An `mcc` object containing only the specified groups
 #' @export
 #'
 #' @examples
@@ -350,7 +350,7 @@ subset_mcc <- function(x, groups) {
 #' Extracts the final (maximum time) MCC value for each group in a grouped
 #' analysis, or the overall final MCC value for ungrouped analyses.
 #'
-#' @param x An MCC object
+#' @param x An `mcc` object
 #'
 #' @returns A named numeric vector with final MCC values
 #' @export
@@ -379,7 +379,7 @@ subset_mcc <- function(x, groups) {
 #'
 mcc_final_values <- function(x) {
   if (!is_mcc(x)) {
-    cli::cli_abort("{.arg x} must be an MCC object")
+    cli::cli_abort("{.arg x} must be an {.cls mcc} object")
   }
 
   mcc_col <- if (x$method == "equation") "mcc" else "SumCIs"
@@ -407,14 +407,14 @@ mcc_final_values <- function(x) {
   }
 }
 
-#' Compare MCC objects
+#' Compare `mcc` objects
 #'
 #' @description
-#' Compares two MCC objects and returns a summary of differences.
+#' Compares two `mcc` objects and returns a summary of differences.
 #' Useful for comparing results from different methods or parameter settings.
 #'
-#' @param x First MCC object
-#' @param y Second MCC object
+#' @param x First `mcc` object
+#' @param y Second `mcc` object
 #' @param tolerance Numeric tolerance for comparing MCC values (default: 1e-6)
 #'
 #' @returns A list summarizing the comparison

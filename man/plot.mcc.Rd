@@ -16,7 +16,7 @@
 )
 }
 \arguments{
-\item{x}{An MCC object (class "mcc")}
+\item{x}{An \code{mcc} object}
 
 \item{type}{Character string specifying plot type. Options are:
 \itemize{
@@ -42,7 +42,7 @@ A ggplot2 object
 }
 \description{
 Creates plots for Mean Cumulative Count (MCC) results. The plotting method
-automatically adapts based on the MCC object class and whether the analysis
+automatically adapts based on the \code{mcc} object class and whether the analysis
 was grouped.
 }
 \examples{

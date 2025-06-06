@@ -2,18 +2,18 @@
 % Please edit documentation in R/s3_utilities.R
 \name{mcc_groups}
 \alias{mcc_groups}
-\title{Extract unique groups from grouped MCC object}
+\title{Extract unique groups from grouped \code{mcc} object}
 \usage{
 mcc_groups(x)
 }
 \arguments{
-\item{x}{An MCC object}
+\item{x}{An \code{mcc} object}
 }
 \value{
 Character vector of unique group values, or NULL if not grouped
 }
 \description{
-Extract unique groups from grouped MCC object
+Extract unique groups from grouped \code{mcc} object
 }
 \examples{
 # Create sample data with groups

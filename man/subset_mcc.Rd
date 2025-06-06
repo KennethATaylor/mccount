@@ -2,20 +2,20 @@
 % Please edit documentation in R/s3_utilities.R
 \name{subset_mcc}
 \alias{subset_mcc}
-\title{Subset MCC object by groups}
+\title{Subset \code{mcc} object by groups}
 \usage{
 subset_mcc(x, groups)
 }
 \arguments{
-\item{x}{A grouped MCC object}
+\item{x}{A grouped \code{mcc} object}
 
 \item{groups}{Character vector of group names to include}
 }
 \value{
-An MCC object containing only the specified groups
+An \code{mcc} object containing only the specified groups
 }
 \description{
-For grouped MCC objects, extracts results for specified groups only.
+For grouped \code{mcc} objects, extracts results for specified groups only.
 This is useful for focusing on specific groups of interest or creating
 custom visualizations.
 }

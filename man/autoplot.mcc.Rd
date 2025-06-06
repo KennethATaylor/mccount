@@ -2,12 +2,12 @@
 % Please edit documentation in R/plot.R
 \name{autoplot.mcc}
 \alias{autoplot.mcc}
-\title{Auto-plot method for MCC objects}
+\title{Auto-plot method for \code{mcc} objects}
 \usage{
 \method{autoplot}{mcc}(x, ...)
 }
 \arguments{
-\item{x}{An MCC object}
+\item{x}{An \code{mcc} object}
 
 \item{...}{Additional arguments passed to plot.mcc}
 }
@@ -16,7 +16,7 @@ A ggplot2 object
 }
 \description{
 Convenience function that automatically creates an appropriate plot
-for MCC objects. This is called when using the base R \code{plot()} function.
+for \code{mcc} objects. This is called when using the base R \code{plot()} function.
 }
 \examples{
 # Create sample data

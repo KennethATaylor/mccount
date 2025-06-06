@@ -7,7 +7,7 @@
 mcc_final_values(x)
 }
 \arguments{
-\item{x}{An MCC object}
+\item{x}{An \code{mcc} object}
 }
 \value{
 A named numeric vector with final MCC values

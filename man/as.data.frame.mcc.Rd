@@ -2,12 +2,12 @@
 % Please edit documentation in R/s3_utilities.R
 \name{as.data.frame.mcc}
 \alias{as.data.frame.mcc}
-\title{Convert MCC object to data.frame}
+\title{Convert \code{mcc} object to data.frame}
 \usage{
 \method{as.data.frame}{mcc}(x, ...)
 }
 \arguments{
-\item{x}{An MCC object}
+\item{x}{An \code{mcc} object}
 
 \item{...}{Additional arguments (currently unused)}
 }
@@ -15,7 +15,7 @@
 A data.frame with MCC estimates
 }
 \description{
-Extracts the MCC estimates from an MCC object and returns them as a
+Extracts the MCC estimates from an \code{mcc} object and returns them as a
 standard data.frame. This is useful for further analysis or when working
 with packages that expect standard data.frame objects.
 }

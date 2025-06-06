@@ -7,7 +7,7 @@
 mcc_method(x)
 }
 \arguments{
-\item{x}{An MCC object}
+\item{x}{An \code{mcc} object}
 }
 \value{
 Character string indicating the method ("equation" or "sci")

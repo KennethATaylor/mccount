@@ -2,14 +2,14 @@
 % Please edit documentation in R/s3_utilities.R
 \name{compare_mcc}
 \alias{compare_mcc}
-\title{Compare MCC objects}
+\title{Compare \code{mcc} objects}
 \usage{
 compare_mcc(x, y, tolerance = 1e-06)
 }
 \arguments{
-\item{x}{First MCC object}
+\item{x}{First \code{mcc} object}
 
-\item{y}{Second MCC object}
+\item{y}{Second \code{mcc} object}
 
 \item{tolerance}{Numeric tolerance for comparing MCC values (default: 1e-6)}
 }
@@ -17,7 +17,7 @@ compare_mcc(x, y, tolerance = 1e-06)
 A list summarizing the comparison
 }
 \description{
-Compares two MCC objects and returns a summary of differences.
+Compares two \code{mcc} objects and returns a summary of differences.
 Useful for comparing results from different methods or parameter settings.
 }
 \examples{
