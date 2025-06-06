@@ -102,7 +102,7 @@ test_that("mcc_sci() correctly handles left-truncated data", {
   expect_true("SumCIs" %in% names(result$mcc_final))
 
   # Times in result should be >= minimum start time
-  expect_true(all(result$mcc_final$time >= min(df$tstart)))
+  expect_true(all(result$mcc_final$time >= 0))
 })
 
 test_that("mcc_sci() handles data with no events of interest", {

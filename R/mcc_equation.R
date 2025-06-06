@@ -195,6 +195,38 @@ calculate_unweighted_mcc <- function(dt, include_details) {
     mcc
   )]
 
+  # Ensure time = 0 row exists in mcc_table_dt first
+  if (nrow(mcc_table_dt) == 0 || !0 %in% mcc_table_dt$time) {
+    if (nrow(mcc_table_dt) == 0) {
+      # Create minimal time = 0 row when no data exists
+      time_zero_row <- data.table::data.table(
+        time = 0,
+        nrisk = n_total,
+        censor = 0,
+        event = 0,
+        cmprk = 0,
+        overall_surv_previous = 1,
+        ave_events = 0,
+        mcc = 0
+      )
+      mcc_table_dt <- time_zero_row
+    } else if (!0 %in% mcc_table_dt$time) {
+      # Add time = 0 row when data exists but no time 0
+      time_zero_row <- data.table::data.table(
+        time = 0,
+        nrisk = n_total,
+        censor = 0,
+        event = 0,
+        cmprk = 0,
+        overall_surv_previous = 1,
+        ave_events = 0,
+        mcc = 0
+      )
+      mcc_table_dt <- data.table::rbindlist(list(time_zero_row, mcc_table_dt))
+      data.table::setorder(mcc_table_dt, time)
+    }
+  }
+
   # Return only unique MCC values (first occurrence of each) efficiently
   mcc_final_dt <- mcc_table_dt[, .SD[1], by = mcc][, .(time, mcc)]
 
@@ -309,6 +341,38 @@ calculate_weighted_mcc <- function(dt, include_details) {
     ave_events,
     mcc
   )]
+
+  # Ensure time = 0 row exists in mcc_table_dt first
+  if (nrow(mcc_table_dt) == 0 || !0 %in% mcc_table_dt$time) {
+    if (nrow(mcc_table_dt) == 0) {
+      # Create minimal time = 0 row when no data exists
+      time_zero_row <- data.table::data.table(
+        time = 0,
+        nrisk = n_total_weighted,
+        censor = 0,
+        event = 0,
+        cmprk = 0,
+        overall_surv_previous = 1,
+        ave_events = 0,
+        mcc = 0
+      )
+      mcc_table_dt <- time_zero_row
+    } else if (!0 %in% mcc_table_dt$time) {
+      # Add time = 0 row when data exists but no time 0
+      time_zero_row <- data.table::data.table(
+        time = 0,
+        nrisk = n_total_weighted,
+        censor = 0,
+        event = 0,
+        cmprk = 0,
+        overall_surv_previous = 1,
+        ave_events = 0,
+        mcc = 0
+      )
+      mcc_table_dt <- data.table::rbindlist(list(time_zero_row, mcc_table_dt))
+      data.table::setorder(mcc_table_dt, time)
+    }
+  }
 
   # Return only unique MCC values (first occurrence of each) efficiently
   mcc_final_dt <- mcc_table_dt[, .SD[1], by = mcc][, .(time, mcc)]

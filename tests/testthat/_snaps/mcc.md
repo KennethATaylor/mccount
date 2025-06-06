@@ -10,10 +10,11 @@
       -- MCC Estimates --
       
     Output
-      # A tibble: 1 x 2
+      # A tibble: 2 x 2
          time   mcc
         <dbl> <dbl>
-      1     5     1
+      1     0     0
+      2     5     1
     Message
       -- Call --
       
@@ -92,10 +93,11 @@
       -- MCC Estimates --
       
     Output
-      # A tibble: 1 x 2
+      # A tibble: 2 x 2
          time   mcc
         <dbl> <dbl>
-      1     5     1
+      1     0     0
+      2     5     1
     Message
       -- Call --
       
@@ -114,10 +116,11 @@
       -- MCC Estimates --
       
     Output
-      # A tibble: 1 x 2
+      # A tibble: 2 x 2
          time   mcc
         <dbl> <dbl>
-      1     5     1
+      1     0     0
+      2     5     1
     Message
       -- Call --
       
@@ -148,10 +151,11 @@
       -- MCC Estimates --
       
     Output
-      # A tibble: 1 x 2
+      # A tibble: 2 x 2
          time SumCIs
         <dbl>  <dbl>
-      1     5    0.5
+      1     0    0  
+      2     5    0.5
     Message
       -- Call --
       
@@ -198,10 +202,11 @@
       -- MCC Estimates --
       
     Output
-      # A tibble: 1 x 2
+      # A tibble: 2 x 2
          time   mcc
         <dbl> <dbl>
-      1     5     1
+      1     0     0
+      2     5     1
     Message
       -- Call --
       
@@ -220,10 +225,11 @@
       -- MCC Estimates --
       
     Output
-      # A tibble: 1 x 2
+      # A tibble: 2 x 2
          time   mcc
         <dbl> <dbl>
-      1     5     1
+      1     0     0
+      2     5     1
     Message
       -- Call --
       
@@ -241,13 +247,14 @@
     Code
       print(result_eq$mcc_final)
     Output
-      # A tibble: 4 x 2
+      # A tibble: 5 x 2
          time   mcc
         <dbl> <dbl>
-      1     5  0.25
-      2     6  0.5 
-      3     8  0.75
-      4    15  1.25
+      1     0  0   
+      2     5  0.25
+      3     6  0.5 
+      4     8  0.75
+      5    15  1.25
 
 ---
 

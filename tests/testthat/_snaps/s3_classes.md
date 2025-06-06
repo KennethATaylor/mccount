@@ -13,7 +13,7 @@
       # A tibble: 4 x 2
          time   mcc
         <dbl> <dbl>
-      1     1 0    
+      1     0 0    
       2     2 0.333
       3     6 0.667
       4     7 1    
@@ -34,7 +34,7 @@
       -- Summary Statistics --
       
       Number of time points: 4
-      Time range: [1, 7]
+      Time range: [0, 7]
       Final MCC: 1
 
 # Print methods work for grouped objects
@@ -54,18 +54,19 @@
       # A tibble: 2 x 3
         group  time   mcc
         <chr> <dbl> <dbl>
-      1 A         1   0  
+      1 A         0   0  
       2 A         3   0.5
     Message
       
       -- Group: B 
     Output
-      # A tibble: 3 x 3
+      # A tibble: 4 x 3
         group  time   mcc
         <chr> <dbl> <dbl>
-      1 B         2   0.5
-      2 B         6   1  
-      3 B         7   1.5
+      1 B         0   0  
+      2 B         2   0.5
+      3 B         6   1  
+      4 B         7   1.5
     Message
       
       -- Call --
@@ -88,8 +89,8 @@
       # A tibble: 2 x 5
         group n_timepoints min_time max_time final_mcc
         <chr>        <int>    <dbl>    <dbl>     <dbl>
-      1 A                2        1        3       0.5
-      2 B                3        2        7       1.5
+      1 A                2        0        3       0.5
+      2 B                4        0        7       1.5
 
 # Print methods work for weighted objects
 
@@ -107,7 +108,7 @@
       # A tibble: 5 x 2
          time   mcc
         <dbl> <dbl>
-      1     1  0   
+      1     0  0   
       2     2  0.24
       3     3  0.64
       4     6  0.88
@@ -202,6 +203,6 @@
       -- Summary Statistics --
       
       Number of time points: 1
-      Time range: [1, 1]
+      Time range: [0, 0]
       Final MCC: 0
 

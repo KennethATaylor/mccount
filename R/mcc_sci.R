@@ -240,6 +240,14 @@ mcc_sci <- function(
     mcc_final_dt <- mcc_base_unique[, .(SumCIs = max(MCC)), by = Time]
     data.table::setnames(mcc_final_dt, "Time", "time")
     mcc_final_dt <- cleanup_output_times(mcc_final_dt, time_precision)
+
+    # Ensure time = 0 row exists
+    if (!0 %in% mcc_final_dt$time) {
+      time_zero_row <- data.table::data.table(time = 0, SumCIs = 0)
+      mcc_final_dt <- data.table::rbindlist(list(time_zero_row, mcc_final_dt))
+      data.table::setorder(mcc_final_dt, time)
+    }
+
     mcc_final <- tibble::as_tibble(mcc_final_dt)
 
     # Create SCItable
@@ -284,6 +292,18 @@ mcc_sci <- function(
     }
 
     sci_table_dt <- cleanup_output_times(sci_table_dt, time_precision)
+
+    # Add time = 0 row to sci_table if not present
+    if (!0 %in% sci_table_dt$time) {
+      zero_row_cols <- c("time", existing_ci_cols, "SumCIs")
+      zero_row_values <- c(0, rep(0, length(existing_ci_cols)), 0)
+      time_zero_row <- data.table::setDT(as.list(setNames(
+        zero_row_values,
+        zero_row_cols
+      )))
+      sci_table_dt <- data.table::rbindlist(list(time_zero_row, sci_table_dt))
+      data.table::setorder(sci_table_dt, time)
+    }
 
     sci_table <- tibble::as_tibble(sci_table_dt)
 
