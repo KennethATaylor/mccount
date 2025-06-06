@@ -1,4 +1,4 @@
-#' Create an `<mcc>` S3 object
+#' Create an `mcc` S3 object
 #'
 #' @param result List containing MCC calculation results
 #' @param method Method used for calculation ("equation" or "sci")
@@ -53,7 +53,7 @@ new_mcc <- function(
   return(result)
 }
 
-#' Validate `<mcc>` S3 objects
+#' Validate `mcc` S3 objects
 #'
 #' @param x An object to validate as an MCC result
 #'
@@ -134,7 +134,7 @@ validate_mcc <- function(x) {
   return(TRUE)
 }
 
-#' Construct an `<mcc>` S3 object (high-level constructor with validation)
+#' Construct an `mcc` S3 object (high-level constructor with validation)
 #'
 #' @param result List containing MCC calculation results
 #' @param method Method used for calculation
@@ -142,7 +142,7 @@ validate_mcc <- function(x) {
 #' @param by_group Optional name of grouping variable
 #' @param call The original function call
 #'
-#' @returns A validated MCC S3 object
+#' @returns A validated `mcc` S3 object
 #' @keywords internal
 #' @noRd
 mcc_object <- function(
@@ -161,20 +161,20 @@ mcc_object <- function(
   return(obj)
 }
 
-#' Convert objects to `<mcc>` class
+#' Convert objects to `mcc` class
 #'
 #' @description
 #' Converts objects to MCC class. This is useful when you have calculation
 #' results from other sources that you want to treat as MCC objects.
 #'
-#' @param x Object to convert to MCC
+#' @param x Object to convert to `mcc`
 #' @param method Method used for calculation ("equation" or "sci")
 #' @param weighted Logical indicating if weighted estimation was used
 #' @param by_group Optional name of grouping variable
 #' @param call Optional function call to store
 #' @param ... Additional arguments (currently unused)
 #'
-#' @returns An MCC S3 object
+#' @returns An `mcc` S3 object
 #' @export
 as_mcc <- function(
   x,
@@ -197,7 +197,7 @@ as_mcc.default <- function(
   ...
 ) {
   cli::cli_abort(c(
-    "Don't know how to convert object of class {.cls {class(x)}} to MCC",
+    "Don't know how to convert object of class {.cls {class(x)}} to {.cls mcc}",
     "i" = "Supported classes: {.cls list}, {.cls data.frame}"
   ))
 }
@@ -215,12 +215,12 @@ as_mcc.list <- function(
   if (!"mcc_final" %in% names(x)) {
     cli::cli_abort(c(
       "List must contain {.field mcc_final} component",
-      "i" = "This should be a data.frame with 'time' and MCC estimate columns"
+      "i" = "This should be a {.cls data.frame} with {.val time} and MCC estimate columns"
     ))
   }
 
   if (!inherits(x$mcc_final, "data.frame")) {
-    cli::cli_abort("{.field mcc_final} must be a data.frame or tibble")
+    cli::cli_abort("{.field mcc_final} must be a {.cls data.frame} or tibble")
   }
 
   # Create and validate the MCC object
@@ -265,19 +265,19 @@ as_mcc.data.frame <- function(
   return(mcc_obj)
 }
 
-#' Check if object is an `<mcc>` result
+#' Check if object is an `mcc` result
 #'
 #' @param x An object to test
 #'
-#' @returns TRUE if x is an MCC object, FALSE otherwise
+#' @returns TRUE if x is an `mcc` object, FALSE otherwise
 #' @export
 is_mcc <- function(x) {
   inherits(x, "mcc")
 }
 
-#' Print method for MCC objects
+#' Print method for `mcc` objects
 #'
-#' @param x An MCC object
+#' @param x An `mcc` object
 #' @param ... Additional arguments (currently unused)
 #'
 #' @returns x invisibly
@@ -346,12 +346,12 @@ print.mcc <- function(x, ...) {
   invisible(x)
 }
 
-#' Summary method for `<mcc>` objects
+#' Summary method for `mcc` objects
 #'
-#' @param object An MCC object
+#' @param object An `mcc` object
 #' @param ... Additional arguments (currently unused)
 #'
-#' @returns A summary object with class "summary.mcc"
+#' @returns A summary object with class `summary.mcc`
 #' @export
 summary.mcc <- function(object, ...) {
   # Extract key information
@@ -392,9 +392,9 @@ summary.mcc <- function(object, ...) {
   return(result)
 }
 
-#' Print method for MCC summary objects
+#' Print method for `mcc` summary objects
 #'
-#' @param x A summary.mcc object
+#' @param x A `summary.mcc` object
 #' @param ... Additional arguments (currently unused)
 #'
 #' @returns x invisibly
@@ -430,9 +430,9 @@ print.summary.mcc <- function(x, ...) {
   invisible(x)
 }
 
-#' Extract MCC estimates from `<mcc>` objects
+#' Extract MCC estimates from `mcc` objects
 #'
-#' @param x An MCC object
+#' @param x An `mcc` object
 #' @param ... Additional arguments (currently unused)
 #'
 #' @returns A tibble with MCC estimates
@@ -445,9 +445,9 @@ mcc_estimates <- function(x, ...) {
   return(x$mcc_final)
 }
 
-#' Extract calculation details from `<mcc>` objects
+#' Extract calculation details from `mcc` objects
 #'
-#' @param x An MCC object
+#' @param x An `mcc` object
 #' @param ... Additional arguments (currently unused)
 #'
 #' @returns A tibble with calculation details, or NULL if not available
