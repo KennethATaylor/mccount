@@ -620,7 +620,7 @@ test_that("Error messages are informative", {
   expect_error(mcc_estimates(df), "must be an.*mcc.*object")
   expect_error(mcc_details(df), "must be an.*mcc.*object")
   expect_error(subset_mcc(df, "A"), "must be an.*mcc.*object")
-  expect_error(mcc_final_values(df), "must be an MCC object")
+  expect_error(mcc_final_values(df), "must be an.*mcc.*object")
   expect_error(compare_mcc(df, df), "must be.*mcc.*objects")
   expect_error(as.data.frame.mcc(df), "must be an.*mcc.*object")
 })
