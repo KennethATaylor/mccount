@@ -297,7 +297,7 @@ mcc_sci <- function(
     if (!0 %in% sci_table_dt$time) {
       zero_row_cols <- c("time", existing_ci_cols, "SumCIs")
       zero_row_values <- c(0, rep(0, length(existing_ci_cols)), 0)
-      time_zero_row <- data.table::setDT(as.list(setNames(
+      time_zero_row <- data.table::setDT(as.list(stats::setNames(
         zero_row_values,
         zero_row_cols
       )))
