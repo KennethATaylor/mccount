@@ -2,82 +2,47 @@
 
     Code
       mcc(df, id_var = "id", time_var = "time", cause_var = "cause", method = "equation")
+    Message
+      
+      -- Mean Cumulative Count Results -----------------------------------------------
+      i Method: Dong-Yasui Equation Method
+      
+      -- MCC Estimates --
+      
     Output
-      $mcc_final
-      # A tibble: 1 x 2
+      # A tibble: 2 x 2
          time   mcc
         <dbl> <dbl>
-      1     5     1
+      1     0     0
+      2     5     1
+    Message
+      -- Call --
       
-      $mcc_table
-      # A tibble: 2 x 8
-         time nrisk censor event cmprk overall_surv_previous ave_events   mcc
-        <dbl> <dbl>  <dbl> <dbl> <dbl>                 <dbl>      <dbl> <dbl>
-      1     5     1      0     1     0                     1          1     1
-      2     6     1      1     0     0                     1          0     1
-      
-      $original_data
-        id tstart time cause
-      1  1      0    5     1
-      2  1      0    6     0
-      
-      $method
-      [1] "equation"
-      
-      $weighted
-      [1] FALSE
-      
+      mcc(data = df, id_var = "id", time_var = "time", cause_var = "cause", 
+          method = "equation")
 
 ---
 
     Code
       mcc(df, id_var = "id", time_var = "time", cause_var = "cause", method = "sci")
+    Message
+      
+      -- Mean Cumulative Count Results -----------------------------------------------
+      i Method: Sum of Cumulative Incidence Method
+      
+      -- MCC Estimates --
+      
     Output
-      $mcc_final
       # A tibble: 2 x 2
          time SumCIs
         <dbl>  <dbl>
       1     0      0
       2     5      1
+    Message
+      -- Call --
       
-      $sci_table
-      # A tibble: 2 x 3
-         time   CI1 SumCIs
-        <dbl> <dbl>  <dbl>
-      1     5     1      1
-      2     6     1      1
-      
-      $all_cis
-      $all_cis[[1]]
-      # A tibble: 4 x 2
-         time    ci
-        <dbl> <dbl>
-      1     0     0
-      2     5     0
-      3     5     1
-      4     5     1
-      
-      
-      $mcc_base
-      # A tibble: 4 x 4
-         time    cm  Deta  cumI
-        <dbl> <dbl> <dbl> <int>
-      1     0     0     0     1
-      2     5     0     0     1
-      3     5     1     1     1
-      4     5     1     0     1
-      
-      $original_data
-        id tstart time cause
-      1  1      0    5     1
-      2  1      0    6     0
-      
-      $method
-      [1] "sci"
-      
-      $weighted
-      [1] FALSE
-      
+      mcc(data = df, id_var = "id", time_var = "time", cause_var = "cause", 
+          method = "sci")
 
 ---
 
@@ -120,61 +85,47 @@
 
     Code
       mcc(df, id_var = "id", time_var = "time", cause_var = "cause", time_precision = 0.1)
+    Message
+      
+      -- Mean Cumulative Count Results -----------------------------------------------
+      i Method: Dong-Yasui Equation Method
+      
+      -- MCC Estimates --
+      
     Output
-      $mcc_final
-      # A tibble: 1 x 2
+      # A tibble: 2 x 2
          time   mcc
         <dbl> <dbl>
-      1     5     1
+      1     0     0
+      2     5     1
+    Message
+      -- Call --
       
-      $mcc_table
-      # A tibble: 2 x 8
-         time nrisk censor event cmprk overall_surv_previous ave_events   mcc
-        <dbl> <dbl>  <dbl> <dbl> <dbl>                 <dbl>      <dbl> <dbl>
-      1     5     1      0     1     0                     1          1     1
-      2     6     1      1     0     0                     1          0     1
-      
-      $original_data
-        id tstart time cause
-      1  1      0    5     1
-      2  1      0    6     0
-      
-      $method
-      [1] "equation"
-      
-      $weighted
-      [1] FALSE
-      
+      mcc(data = df, id_var = "id", time_var = "time", cause_var = "cause", 
+          time_precision = 0.1)
 
 ---
 
     Code
       mcc(df, id_var = "id", time_var = "time", cause_var = "cause", time_precision = 1e-10)
+    Message
+      
+      -- Mean Cumulative Count Results -----------------------------------------------
+      i Method: Dong-Yasui Equation Method
+      
+      -- MCC Estimates --
+      
     Output
-      $mcc_final
-      # A tibble: 1 x 2
+      # A tibble: 2 x 2
          time   mcc
         <dbl> <dbl>
-      1     5     1
+      1     0     0
+      2     5     1
+    Message
+      -- Call --
       
-      $mcc_table
-      # A tibble: 2 x 8
-         time nrisk censor event cmprk overall_surv_previous ave_events   mcc
-        <dbl> <dbl>  <dbl> <dbl> <dbl>                 <dbl>      <dbl> <dbl>
-      1     5     1      0     1     0                     1          1     1
-      2     6     1      1     0     0                     1          0     1
-      
-      $original_data
-        id tstart time cause
-      1  1      0    5     1
-      2  1      0    6     0
-      
-      $method
-      [1] "equation"
-      
-      $weighted
-      [1] FALSE
-      
+      mcc(data = df, id_var = "id", time_var = "time", cause_var = "cause", 
+          time_precision = 1e-10)
 
 # mcc() validates tstart_var compatibility with method
 
@@ -192,47 +143,24 @@
     Code
       mcc(df, id_var = "id", time_var = "time", cause_var = "cause", method = "sci",
         tstart_var = "tstart")
+    Message
+      
+      -- Mean Cumulative Count Results -----------------------------------------------
+      i Method: Sum of Cumulative Incidence Method
+      
+      -- MCC Estimates --
+      
     Output
-      $mcc_final
-      # A tibble: 1 x 2
+      # A tibble: 2 x 2
          time SumCIs
         <dbl>  <dbl>
-      1     5    0.5
+      1     0    0  
+      2     5    0.5
+    Message
+      -- Call --
       
-      $sci_table
-      # A tibble: 3 x 3
-         time   CI1 SumCIs
-        <dbl> <dbl>  <dbl>
-      1     5   0.5    0.5
-      2     6   0.5    0.5
-      3     8   0.5    0.5
-      
-      $all_cis
-      $all_cis[[1]]
-      # A tibble: 1 x 2
-         time    ci
-        <dbl> <dbl>
-      1     5   0.5
-      
-      
-      $mcc_base
-      # A tibble: 1 x 4
-         time    cm  Deta  cumI
-        <dbl> <dbl> <dbl> <int>
-      1     5   0.5   0.5     1
-      
-      $original_data
-        id tstart time cause
-      1  1      1    5     1
-      2  1      5    6     0
-      3  2      2    8     0
-      
-      $method
-      [1] "sci"
-      
-      $weighted
-      [1] FALSE
-      
+      mcc(data = df, id_var = "id", time_var = "time", cause_var = "cause", 
+          method = "sci", tstart_var = "tstart")
 
 # mcc() validates adjust_times correctly
 
@@ -266,61 +194,47 @@
 
     Code
       mcc(df, id_var = "id", time_var = "time", cause_var = "cause", adjust_times = TRUE)
+    Message
+      
+      -- Mean Cumulative Count Results -----------------------------------------------
+      i Method: Dong-Yasui Equation Method
+      
+      -- MCC Estimates --
+      
     Output
-      $mcc_final
-      # A tibble: 1 x 2
+      # A tibble: 2 x 2
          time   mcc
         <dbl> <dbl>
-      1     5     1
+      1     0     0
+      2     5     1
+    Message
+      -- Call --
       
-      $mcc_table
-      # A tibble: 2 x 8
-         time nrisk censor event cmprk overall_surv_previous ave_events   mcc
-        <dbl> <dbl>  <dbl> <dbl> <dbl>                 <dbl>      <dbl> <dbl>
-      1     5     1      0     1     0                     1          1     1
-      2     6     1      1     0     0                     1          0     1
-      
-      $original_data
-        id tstart time cause
-      1  1      0    5     1
-      2  1      0    6     0
-      
-      $method
-      [1] "equation"
-      
-      $weighted
-      [1] FALSE
-      
+      mcc(data = df, id_var = "id", time_var = "time", cause_var = "cause", 
+          adjust_times = TRUE)
 
 ---
 
     Code
       mcc(df, id_var = "id", time_var = "time", cause_var = "cause", adjust_times = FALSE)
+    Message
+      
+      -- Mean Cumulative Count Results -----------------------------------------------
+      i Method: Dong-Yasui Equation Method
+      
+      -- MCC Estimates --
+      
     Output
-      $mcc_final
-      # A tibble: 1 x 2
+      # A tibble: 2 x 2
          time   mcc
         <dbl> <dbl>
-      1     5     1
+      1     0     0
+      2     5     1
+    Message
+      -- Call --
       
-      $mcc_table
-      # A tibble: 2 x 8
-         time nrisk censor event cmprk overall_surv_previous ave_events   mcc
-        <dbl> <dbl>  <dbl> <dbl> <dbl>                 <dbl>      <dbl> <dbl>
-      1     5     1      0     1     0                     1          1     1
-      2     6     1      1     0     0                     1          0     1
-      
-      $original_data
-        id tstart time cause
-      1  1      0    5     1
-      2  1      0    6     0
-      
-      $method
-      [1] "equation"
-      
-      $weighted
-      [1] FALSE
-      
+      mcc(data = df, id_var = "id", time_var = "time", cause_var = "cause", 
+          adjust_times = FALSE)
 
 # mcc() end-to-end functionality through snapshots
 
@@ -333,13 +247,14 @@
     Code
       print(result_eq$mcc_final)
     Output
-      # A tibble: 4 x 2
+      # A tibble: 5 x 2
          time   mcc
         <dbl> <dbl>
-      1     5  0.25
-      2     6  0.5 
-      3     8  0.75
-      4    15  1.25
+      1     0  0   
+      2     5  0.25
+      3     6  0.5 
+      4     8  0.75
+      5    15  1.25
 
 ---
 

@@ -15,3 +15,44 @@ repo:
 
 template:
   bootstrap: 5
+
+reference:
+  - title: Calculate MCC
+  - desc: Main function for Mean Cumulative Count analysis
+  - contents:
+      - mcc
+
+  - title: Examine Results
+  - desc: View and summarize MCC results
+  - contents:
+      - print.mcc
+      - summary.mcc
+      - print.summary.mcc
+
+  - title: Visualize Results
+  - desc: Plot MCC curves and calculation components
+  - contents:
+      - plot.mcc
+      - autoplot.mcc
+
+  - title: S3 Object Utilities
+  - subtitle: Extract results
+  - contents:
+      - mcc_details
+      - mcc_estimates
+      - mcc_final_values
+      - mcc_method
+  - subtitle: Test, convert, and compare MCC objects
+  - contents:
+      - as_mcc
+      - as.data.frame.mcc
+      - is_mcc
+      - is_weighted
+      - compare_mcc
+      - print.mcc_comparison
+  - subtitle: Group/strata related
+  - contents:
+      - is_grouped
+      - mcc_groups
+      - mcc_grouping_var
+      - subset_mcc

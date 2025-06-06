@@ -2,12 +2,133 @@
 % Please edit documentation in R/mccount-package.R
 \docType{package}
 \name{mccount-package}
-\alias{mccount}
 \alias{mccount-package}
+\alias{mccount}
 \title{mccount: Estimate Recurrent Event Burden with Competing Risks}
 \description{
-Provides tools for estimating the Mean Cumulative Count (MCC), a statistical method for quantifying the burden of recurrent events in the presence of competing risks. The package implements two complementary estimation approaches: the direct probability-based 'equation' method and the 'sum of cumulative incidence' method. Both approaches handle right censoring, with additional support for left truncation in the latter. Features include automatic adjustment for simultaneous events, detailed calculation tables, and utilities for bootstrapping confidence intervals. Methods are implemented following Dong et al. (2015) \doi{10.1093/aje/kwu289}.
+\if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
+
+Calculates mean cumulative count (MCC) to estimate the expected cumulative number of recurrent events per person over time in the presence of competing risks and censoring. Implements both the Dong-Yasui equation method and sum of cumulative incidence method described in Dong et al. (2015) \doi{10.1093/aje/kwu289}. Supports inverse probability weighting for causal inference as outlined in Gaber et al. (2023) \doi{10.1093/aje/kwad031}. Provides S3 classes with methods for printing, summarizing, plotting, and extracting results. Handles grouped analyses and integrates with 'ggplot2' for visualization.
 }
+\section{Main Function}{
+
+\itemize{
+\item \code{\link[=mcc]{mcc()}} - estimates the MCC
+}
+}
+
+\section{S3 Object System}{
+
+The package uses S3 classes to provide a consistent, extensible interface:
+
+\strong{Base Class:}
+\itemize{
+\item \code{mcc} - All MCC results inherit from this class
+}
+
+\strong{Method-Specific Classes:}
+\itemize{
+\item \code{mcc_equation} - Results from Dong-Yasui estimator
+\item \code{mcc_sci} - Results from the Sum of Cumulative Incidence estimator
+}
+
+\strong{Analysis-Type Classes:}
+\itemize{
+\item \code{mcc_weighted} - Results using weighting
+\item \code{mcc_grouped} - Results from grouped/stratified analysis
+}
+
+Classes combine hierarchically (e.g., \code{c("mcc_grouped", "mcc_weighted", "mcc_equation", "mcc")}).
+}
+
+\section{Available Methods}{
+
+
+\strong{Generic S3 Methods:}
+\itemize{
+\item \code{\link[=print.mcc]{print.mcc()}} - Formatted display of results
+\item \code{\link[=summary.mcc]{summary.mcc()}} - Statistical summaries
+\item \code{\link[=plot.mcc]{plot.mcc()}} - Visualization with ggplot2
+\item \code{\link[=autoplot.mcc]{autoplot.mcc()}} - ggplot2-style plotting (when ggplot2 loaded)
+\item \code{\link[=as.data.frame.mcc]{as.data.frame.mcc()}} - Convert to standard data.frame
+\item \code{\link[=as_mcc]{as_mcc()}} - Convert other objects to MCC class
+}
+
+\strong{Utility Functions:}
+\itemize{
+\item \code{\link[=is_mcc]{is_mcc()}} - Test if object is MCC result
+\item \code{\link[=mcc_estimates]{mcc_estimates()}} - Extract main results table
+\item \code{\link[=mcc_details]{mcc_details()}} - Extract calculation details
+\item \code{\link[=mcc_method]{mcc_method()}} - Get calculation method used
+\item \code{\link[=is_weighted]{is_weighted()}}, \code{\link[=is_grouped]{is_grouped()}} - Check analysis properties
+\item \code{\link[=mcc_groups]{mcc_groups()}}, \code{\link[=mcc_grouping_var]{mcc_grouping_var()}} - Access grouping information
+\item \code{\link[=subset_mcc]{subset_mcc()}} - Filter grouped results
+\item \code{\link[=mcc_final_values]{mcc_final_values()}} - Extract final MCC values
+\item \code{\link[=compare_mcc]{compare_mcc()}} - Compare two MCC objects
+}
+}
+
+\section{Basic Usage}{
+
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{# Calculate MCC
+result <- mcc(data, "id", "time", "cause")
+
+# Examine results
+result              # Uses print.mcc()
+summary(result)     # Uses summary.mcc()
+plot(result)        # Uses plot.mcc()
+
+# Extract components
+estimates <- mcc_estimates(result)
+details <- mcc_details(result)
+final_values <- mcc_final_values(result)
+
+# Grouped analysis
+grouped_result <- mcc(data, "id", "time", "cause", by = "treatment")
+plot(grouped_result)
+subset_mcc(grouped_result, "Treatment A")
+}\if{html}{\out{</div>}}
+}
+
+\section{Plotting}{
+
+The package provides flexible plotting through S3 methods that automatically
+adapt to analysis type:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{# Basic plotting
+plot(mcc_result)                    # MCC over time
+plot(mcc_result, type = "details")  # Calculation components
+
+# Customization
+plot(mcc_result, colors = c("red", "blue"), title = "Custom Title")
+
+# ggplot2 integration
+library(ggplot2)
+autoplot(mcc_result) + theme_classic()
+
+# Further customization
+plot(mcc_result) +
+  geom_hline(yintercept = 1, linetype = "dashed") +
+  labs(caption = "Dashed line at MCC = 1")
+}\if{html}{\out{</div>}}
+}
+
+\section{References}{
+
+
+\strong{Core Methods:}
+Dong H, Robison LL, Leisenring WM, Martin LJ, Armstrong GT, Yasui Y.
+Estimating the burden of recurrent events in the presence of competing risks:
+the method of mean cumulative count. \emph{Am J Epidemiol}. 2015;181(7):532-40.
+
+\strong{Weighted Extension:}
+Gaber CE, Edwards JK, Lund JL, Peery AF, Richardson DB, Kinlaw AC.
+Inverse Probability Weighting to Estimate Exposure Effects on the Burden of
+Recurrent Outcomes in the Presence of Competing Events. \emph{Am J Epidemiol}.
+2023;192(5):830-839.
+}
+
 \seealso{
 Useful links:
 \itemize{

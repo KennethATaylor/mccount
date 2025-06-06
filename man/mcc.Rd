@@ -67,9 +67,9 @@ Setting to \code{FALSE} returns only the final MCC estimates, making the
 function more efficient for bootstrapping}
 }
 \value{
-When \code{by} is NULL (single group analysis):
+An S3 object of class \code{"mcc"} with method-specific subclasses. The object contains:
 
-When \code{include_details = TRUE} (default), a list with method-specific components:
+When \code{include_details = TRUE} (default):
 
 For \code{method = "equation"}:
 \itemize{
@@ -77,8 +77,6 @@ For \code{method = "equation"}:
 \item \code{mcc_table}: A tibble with detailed calculation steps
 \item \code{original_data}: The input \code{data} with standardized column names
 \item \code{adjusted_data}: Present only if time adjustments were applied
-\item \code{method}: The method used for calculation
-\item \code{weighted}: Logical indicating whether weighted estimation was used
 }
 
 For \code{method = "sci"}:
@@ -89,25 +87,37 @@ For \code{method = "sci"}:
 \item \code{mcc_base}: A tibble with calculation details for the MCC
 \item \code{original_data}: The input \code{data} with standardized column names
 \item \code{adjusted_data}: Present only if time adjustments were applied
-\item \code{method}: The \code{method} used for calculation
-\item \code{weighted}: Logical indicating whether weighted estimation was used
 }
 
-When \code{include_details = FALSE}, a simplified list containing only:
+When \code{include_details = FALSE}:
 \itemize{
 \item \code{mcc_final}: A tibble with columns for \code{time} and \code{mcc} (or \code{SumCIs} for \code{method = "sci"})
+}
+
+All objects include metadata:
+\itemize{
 \item \code{method}: The method used for calculation
 \item \code{weighted}: Logical indicating whether weighted estimation was used
+\item \code{by_group}: Name of grouping variable (for grouped analyses)
+\item \code{call}: The original function call
 }
 
-When \code{by} is specified (grouped analysis):
-
-A list with the same structure as above, but with an additional \code{by_group}
-component and all tibbles containing an additional column with the grouping
-variable values. The \code{by_group} component contains the name of the grouping
-variable for reference.
+When \code{by} is specified, all tibbles contain an additional column with the
+grouping variable values, and the object has the additional class \code{"mcc_grouped"}.
 }
 \description{
+Calculates the Mean Cumulative Count (MCC), which estimates the expected
+cumulative number of events per person over time, while accounting for
+potential competing risks and censoring. This function provides a unified
+interface to two different estimation approaches: the \code{"equation"} method and
+the sum of cumulative incidence (\code{"sci"}) method.
+
+The \code{"equation"} method calculates MCC directly through probability
+calculations, while the \code{"sci"} method derives MCC by summing the cumulative
+incidence functions for each recurrent event. The two approaches yield
+equivalent results in certain circumstances. When they do not, the choice
+between methods depe#' Calculate Mean Cumulative Count (MCC)
+
 Calculates the Mean Cumulative Count (MCC), which estimates the expected
 cumulative number of events per person over time, while accounting for
 potential competing risks and censoring. This function provides a unified
@@ -136,15 +146,20 @@ df <- data.frame(
 print("Hypothetical dataset from Dong et al. (2015):")
 print(df)
 
-# Calculate MCC using the equation method (default)
+# Calculate MCC using the equation method
 mcc_eq <- mcc(df, id_var = "id", time_var = "time", cause_var = "cause")
 
-# MCC table
-mcc_eq$mcc_table
+# Print the S3 object
+mcc_eq
 
-# MCC estimates
-mcc_eq$mcc_final
+# Get summary
+summary(mcc_eq)
 
+# Extract MCC estimates
+mcc_estimates(mcc_eq)
+
+# Extract calculation details
+mcc_details(mcc_eq)
 
 # Calculate MCC using the sum of cumulative incidence method
 mcc_sci <- mcc(
@@ -155,16 +170,10 @@ mcc_sci <- mcc(
   method = "sci"
 )
 
-# MCC (SCI) table
-mcc_sci$sci_table
-
-# MCC estimates
-mcc_sci$mcc_final
+mcc_sci
 
 # Clean up
-rm(df)
-rm(mcc_eq)
-rm(mcc_sci)
+rm(df, mcc_eq, mcc_sci)
 
 }
 \references{
