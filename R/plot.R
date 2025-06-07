@@ -6,9 +6,9 @@
 #' was grouped.
 #'
 #' @param x An `mcc` object
-#' @param type Character string specifying plot type. Options are:
+#' @param type Character string specifying plot type:
 #'   - "mcc" (default): Plot MCC estimates over time
-#'   - "details": Plot calculation details (method-specific)
+#'   - "components": Show individual cumulative incidence components (SCI method only)
 #' @param groups Character vector specifying which groups to include in grouped analyses.
 #'   If NULL (default), all groups are included
 #' @param conf_int Logical indicating whether to include confidence intervals if available
@@ -35,12 +35,9 @@
 #' # Plot MCC over time
 #' plot(mcc_result)
 #'
-#' # Plot calculation details
-#' plot(mcc_result, type = "details")
-#'
-#' # Grouped analysis
-#' mcc_grouped <- mcc(df, "id", "time", "cause", by = "group")
-#' plot(mcc_grouped)
+#' # SCI method with components plot
+#' mcc_sci <- mcc(df, "id", "time", "cause", method = "sci")
+#' plot(mcc_sci, type = "components")
 #' }
 #'
 #' @export
@@ -60,9 +57,6 @@
 #' mcc_result <- mcc(df, "id", "time", "cause")
 #' plot(mcc_result)
 #'
-#' # Plot calculation details
-#' plot(mcc_result, type = "details")
-#'
 #' # Grouped analysis with custom colors
 #' mcc_grouped <- mcc(df, "id", "time", "cause", by = "group")
 #' plot(mcc_grouped)
@@ -73,23 +67,24 @@
 #'      title = "MCC by Treatment Group",
 #'      subtitle = "Comparison of Event Burden")
 #'
-#' # Plot details for grouped analysis
-#' plot(mcc_grouped, type = "details")
-#'
 #' # Plot only specific groups
 #' plot(mcc_grouped, groups = c("A"))
 #'
-#' # Compare different methods
+#' # Compare different methods - equation method only shows MCC
+#' mcc_eq <- mcc(df, "id", "time", "cause", method = "equation")
+#' plot(mcc_eq)
+#'
+#' # SCI method can show components of cumulative incidence components
 #' mcc_sci <- mcc(df, "id", "time", "cause", method = "sci")
-#' plot(mcc_sci)
-#' plot(mcc_sci, type = "details")
+#' plot(mcc_sci)  # Shows main MCC plot
+#' plot(mcc_sci, type = "components")  # Shows CI components
 #'
 #' # Clean up
-#' rm(df, mcc_result, mcc_grouped, mcc_sci)
+#' rm(df, mcc_result, mcc_grouped, mcc_eq, mcc_sci)
 #'
 plot.mcc <- function(
   x,
-  type = c("mcc", "details"),
+  type = c("mcc", "components"),
   groups = NULL,
   conf_int = FALSE,
   colors = NULL,
@@ -107,11 +102,20 @@ plot.mcc <- function(
 
   type <- match.arg(type)
 
+  # Check if components plot is requested for equation method
+  if (type == "components" && x$method == "equation") {
+    cli::cli_abort(c(
+      "Details plots are only available for {.code method = \"sci\"}",
+      "i" = "Use {.code type = \"mcc\"} to plot the MCC estimates, or use {.code method = \"sci\"} for components plots"
+    ))
+  }
+
   # Dispatch to appropriate plotting method
   if (type == "mcc") {
     plot_mcc_estimates(x, groups, conf_int, colors, title, subtitle, ...)
-  } else if (type == "details") {
-    plot_mcc_details(x, groups, colors, title, subtitle, ...)
+  } else if (type == "components") {
+    # Only SCI method reaches here due to check above
+    plot_mcc_components(x, groups, colors, title, subtitle, ...)
   }
 }
 
@@ -234,127 +238,17 @@ plot_mcc_estimates <- function(
   return(p)
 }
 
-#' Plot MCC calculation details
+#' Plot MCC calculation components
 #'
 #' @inheritParams plot.mcc
 #' @keywords internal
 #' @noRd
-plot_mcc_details <- function(x, groups, colors, title, subtitle, ...) {
-  if (x$method == "equation") {
-    plot_equation_details(x, groups, colors, title, subtitle, ...)
-  } else if (x$method == "sci") {
-    plot_sci_details(x, groups, colors, title, subtitle, ...)
-  }
-}
-
-#' Plot details for equation method
-#'
-#' @inheritParams plot.mcc
-#' @keywords internal
-#' @noRd
-plot_equation_details <- function(x, groups, colors, title, subtitle, ...) {
-  # Check if detailed data is available
-  if (is.null(x$mcc_table)) {
-    cli::cli_abort(c(
-      "Calculation details not available",
-      "i" = "Run {.code mcc()} with {.code include_details = TRUE} to include calculation details"
-    ))
-  }
-
-  plot_data <- x$mcc_table
-
-  # Filter groups if specified
-  if (!is.null(groups) && inherits(x, "mcc_grouped")) {
-    plot_data <- plot_data[plot_data[[x$by_group]] %in% groups, ]
-  }
-
-  # Create a multi-panel plot showing key components
-  if (inherits(x, "mcc_grouped")) {
-    # Grouped analysis: show average events and survival by group
-    p1 <- ggplot2::ggplot(
-      plot_data,
-      ggplot2::aes(
-        x = .data$time,
-        y = .data$ave_events,
-        color = .data[[x$by_group]]
-      )
-    ) +
-      ggplot2::geom_step(linewidth = 1) +
-      ggplot2::labs(
-        title = "Average Events per Time Point",
-        y = "Average Events",
-        color = x$by_group
-      ) +
-      ggplot2::theme_minimal()
-
-    p2 <- ggplot2::ggplot(
-      plot_data,
-      ggplot2::aes(
-        x = .data$time,
-        y = .data$overall_surv_previous,
-        color = .data[[x$by_group]]
-      )
-    ) +
-      ggplot2::geom_step(linewidth = 1) +
-      ggplot2::labs(
-        title = "Overall Survival",
-        y = "Survival Probability",
-        color = x$by_group
-      ) +
-      ggplot2::theme_minimal()
-  } else {
-    # Ungrouped analysis
-    color <- if (!is.null(colors)) colors[1] else "#2E86AB"
-
-    p1 <- ggplot2::ggplot(
-      plot_data,
-      ggplot2::aes(x = .data$time, y = .data$ave_events)
-    ) +
-      ggplot2::geom_step(color = color, linewidth = 1) +
-      ggplot2::labs(
-        title = "Average Events per Time Point",
-        y = "Average Events"
-      ) +
-      ggplot2::theme_minimal()
-
-    p2 <- ggplot2::ggplot(
-      plot_data,
-      ggplot2::aes(x = .data$time, y = .data$overall_surv_previous)
-    ) +
-      ggplot2::geom_step(color = color, linewidth = 1) +
-      ggplot2::labs(title = "Overall Survival", y = "Survival Probability") +
-      ggplot2::theme_minimal()
-  }
-
-  # Combine plots if patchwork is available
-  if (requireNamespace("patchwork", quietly = TRUE)) {
-    combined_plot <- p1 /
-      p2 +
-      patchwork::plot_annotation(
-        title = title %||% "MCC Calculation Details (Equation Method)",
-        subtitle = subtitle %||% create_subtitle(x)
-      )
-    return(combined_plot)
-  } else {
-    # If patchwork not available, return the first plot with a message
-    cli::cli_inform(
-      "Install {.pkg patchwork} package to see combined detail plots"
-    )
-    return(p1)
-  }
-}
-
-#' Plot details for SCI method
-#'
-#' @inheritParams plot.mcc
-#' @keywords internal
-#' @noRd
-plot_sci_details <- function(x, groups, colors, title, subtitle, ...) {
+plot_mcc_components <- function(x, groups, colors, title, subtitle, ...) {
   # Check if detailed data is available
   if (is.null(x$sci_table)) {
     cli::cli_abort(c(
-      "Calculation details not available",
-      "i" = "Run {.code mcc()} with {.code include_details = TRUE} to include calculation details"
+      "Calculation components not available",
+      "i" = "Run {.code mcc()} with {.code include_details = TRUE} to include calculation components"
     ))
   }
 

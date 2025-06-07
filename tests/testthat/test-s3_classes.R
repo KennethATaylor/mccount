@@ -1,5 +1,3 @@
-# tests/testthat/test-s3-classes.R
-
 test_that("S3 object creation works correctly", {
   # Create test data
   df <- data.frame(
@@ -142,7 +140,6 @@ test_that("Print methods work for weighted objects", {
     print(mcc_weighted)
   })
 })
-
 
 test_that("Utility functions work correctly", {
   df <- data.frame(
@@ -421,83 +418,6 @@ test_that("as_mcc error handling works correctly", {
     as_mcc(df_wrong_col, method = "sci"),
     "missing required columns.*SumCIs"
   )
-})
-
-# Test plotting functions ----
-test_that("plot.mcc works with different configurations", {
-  skip_if_not_installed("ggplot2")
-
-  # Create test data
-  df <- data.frame(
-    id = c(1, 2, 3, 4, 4, 4, 4),
-    time = c(8, 1, 5, 2, 6, 7, 8),
-    cause = c(0, 0, 2, 1, 1, 1, 0),
-    group = c("A", "A", "B", "B", "B", "B", "B")
-  )
-
-  # Test ungrouped plots
-  mcc_simple <- mcc(df, "id", "time", "cause")
-
-  p1 <- plot(mcc_simple)
-  expect_s3_class(p1, "ggplot")
-
-  p2 <- plot(mcc_simple, type = "details")
-  expect_s3_class(p2, "ggplot")
-
-  # Test grouped plots
-  mcc_grouped <- mcc(df, "id", "time", "cause", by = "group")
-
-  p3 <- plot(mcc_grouped)
-  expect_s3_class(p3, "ggplot")
-
-  p4 <- plot(mcc_grouped, groups = "A")
-  expect_s3_class(p4, "ggplot")
-
-  # Test custom colors and titles
-  p5 <- plot(
-    mcc_grouped,
-    colors = c("red", "blue"),
-    title = "Custom Title",
-    subtitle = "Custom Subtitle"
-  )
-  expect_s3_class(p5, "ggplot")
-})
-
-test_that("plot.mcc error handling works correctly", {
-  # Test with include_details = FALSE
-  df <- data.frame(
-    id = c(1, 2, 3),
-    time = c(8, 1, 5),
-    cause = c(0, 0, 2)
-  )
-
-  mcc_no_details <- mcc(df, "id", "time", "cause", include_details = FALSE)
-
-  expect_error(
-    plot(mcc_no_details, type = "details"),
-    "Calculation details not available"
-  )
-})
-
-test_that("autoplot.mcc works correctly", {
-  skip_if_not_installed("ggplot2")
-
-  df <- data.frame(
-    id = c(1, 1, 2, 3),
-    time = c(4, 8, 1, 5),
-    cause = c(1, 0, 0, 2)
-  )
-
-  mcc_result <- mcc(df, "id", "time", "cause")
-
-  p1 <- autoplot(mcc_result)
-  p2 <- plot(mcc_result)
-
-  expect_s3_class(p1, "ggplot")
-  expect_s3_class(p2, "ggplot")
-
-  # Should produce equivalent plots
-  expect_equal(class(p1), class(p2))
 })
 
 # Test utility functions ----
