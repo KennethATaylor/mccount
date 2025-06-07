@@ -79,16 +79,12 @@ for <code>mcc</code> objects. This is called when using the base R <code><a href
 <span class="r-in"><span><span class="co"># Calculate MCC</span></span></span>
 <span class="r-in"><span><span class="va">mcc_result</span> <span class="op">&lt;-</span> <span class="fu"><a href="mcc.html">mcc</a></span><span class="op">(</span><span class="va">df</span>, <span class="st">"id"</span>, <span class="st">"time"</span>, <span class="st">"cause"</span>, by <span class="op">=</span> <span class="st">"treatment"</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Adjusted time points for events occurring simultaneously for the same subject.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Found 1 `id_var` where last observation is an event of interest (`cause_var` =</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> 1)</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Found 1 participant where last observation is an event of interest (`cause_var`</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> = 1)</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> ID: 4</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> `mcc()` implicitly assumes these `id_var`s are censored at the maximum</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span>   `time_var` This may impact MCC calculations if these participants were</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span>   actually censored or experienced competing risk before the maximum value of</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span>   `time_var`</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> If this implicit assumption is incorrect, estimates will be incorrect unless</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span>   you add an additional row after the current last row with the censoring or</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span>   competing risk event</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> `mcc()` assumes these participants are censored at their final `time_var`</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> If participants were actually censored or experienced competing risks after</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span>   their last event, add those observations to ensure correct estimates</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Use autoplot (ggplot2 style)</span></span></span>
 <span class="r-in"><span><span class="va">p</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">mcc_result</span><span class="op">)</span></span></span>
