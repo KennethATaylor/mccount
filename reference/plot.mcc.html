@@ -47,7 +47,7 @@ was grouped.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="co"># S3 method for class 'mcc'</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span></span>
 <span>  <span class="va">x</span>,</span>
-<span>  type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mcc"</span>, <span class="st">"details"</span><span class="op">)</span>,</span>
+<span>  type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"mcc"</span>, <span class="st">"components"</span><span class="op">)</span>,</span>
 <span>  groups <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  conf_int <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  colors <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -66,8 +66,8 @@ was grouped.</p>
 
 
 <dt id="arg-type">type<a class="anchor" aria-label="anchor" href="#arg-type"></a></dt>
-<dd><p>Character string specifying plot type. Options are:</p><ul><li><p>"mcc" (default): Plot MCC estimates over time</p></li>
-<li><p>"details": Plot calculation details (method-specific)</p></li>
+<dd><p>Character string specifying plot type:</p><ul><li><p>"mcc" (default): Plot MCC estimates over time</p></li>
+<li><p>"components": Show individual cumulative incidence components (SCI method only)</p></li>
 </ul></dd>
 
 
@@ -118,12 +118,9 @@ If NULL (default), all groups are included</p></dd>
 <span class="r-in"><span><span class="co"># Plot MCC over time</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">mcc_result</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Plot calculation details</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">mcc_result</span>, type <span class="op">=</span> <span class="st">"details"</span><span class="op">)</span></span></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Grouped analysis</span></span></span>
-<span class="r-in"><span><span class="va">mcc_grouped</span> <span class="op">&lt;-</span> <span class="fu"><a href="mcc.html">mcc</a></span><span class="op">(</span><span class="va">df</span>, <span class="st">"id"</span>, <span class="st">"time"</span>, <span class="st">"cause"</span>, by <span class="op">=</span> <span class="st">"group"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">mcc_grouped</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="co"># SCI method with components plot</span></span></span>
+<span class="r-in"><span><span class="va">mcc_sci</span> <span class="op">&lt;-</span> <span class="fu"><a href="mcc.html">mcc</a></span><span class="op">(</span><span class="va">df</span>, <span class="st">"id"</span>, <span class="st">"time"</span>, <span class="st">"cause"</span>, method <span class="op">=</span> <span class="st">"sci"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">mcc_sci</span>, type <span class="op">=</span> <span class="st">"components"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Create sample data</span></span></span>
@@ -152,10 +149,6 @@ If NULL (default), all groups are included</p></dd>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">mcc_result</span><span class="op">)</span></span></span>
 <span class="r-plt img"><img src="plot.mcc-1.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Plot calculation details</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">mcc_result</span>, type <span class="op">=</span> <span class="st">"details"</span><span class="op">)</span></span></span>
-<span class="r-plt img"><img src="plot.mcc-2.png" alt="" width="700" height="433"></span>
-<span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Grouped analysis with custom colors</span></span></span>
 <span class="r-in"><span><span class="va">mcc_grouped</span> <span class="op">&lt;-</span> <span class="fu"><a href="mcc.html">mcc</a></span><span class="op">(</span><span class="va">df</span>, <span class="st">"id"</span>, <span class="st">"time"</span>, <span class="st">"cause"</span>, by <span class="op">=</span> <span class="st">"group"</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Adjusted time points for events occurring simultaneously for the same subject.</span>
@@ -170,24 +163,36 @@ If NULL (default), all groups are included</p></dd>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span>   you add an additional row after the current last row with the censoring or</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span>   competing risk event</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">mcc_grouped</span><span class="op">)</span></span></span>
-<span class="r-plt img"><img src="plot.mcc-3.png" alt="" width="700" height="433"></span>
+<span class="r-plt img"><img src="plot.mcc-2.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Customize the grouped plot</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">mcc_grouped</span>,</span></span>
 <span class="r-in"><span>     colors <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"red"</span>, <span class="st">"blue"</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>     title <span class="op">=</span> <span class="st">"MCC by Treatment Group"</span>,</span></span>
 <span class="r-in"><span>     subtitle <span class="op">=</span> <span class="st">"Comparison of Event Burden"</span><span class="op">)</span></span></span>
-<span class="r-plt img"><img src="plot.mcc-4.png" alt="" width="700" height="433"></span>
-<span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Plot details for grouped analysis</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">mcc_grouped</span>, type <span class="op">=</span> <span class="st">"details"</span><span class="op">)</span></span></span>
-<span class="r-plt img"><img src="plot.mcc-5.png" alt="" width="700" height="433"></span>
+<span class="r-plt img"><img src="plot.mcc-3.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Plot only specific groups</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">mcc_grouped</span>, groups <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-plt img"><img src="plot.mcc-6.png" alt="" width="700" height="433"></span>
+<span class="r-plt img"><img src="plot.mcc-4.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># Compare different methods</span></span></span>
+<span class="r-in"><span><span class="co"># Compare different methods - equation method only shows MCC</span></span></span>
+<span class="r-in"><span><span class="va">mcc_eq</span> <span class="op">&lt;-</span> <span class="fu"><a href="mcc.html">mcc</a></span><span class="op">(</span><span class="va">df</span>, <span class="st">"id"</span>, <span class="st">"time"</span>, <span class="st">"cause"</span>, method <span class="op">=</span> <span class="st">"equation"</span><span class="op">)</span></span></span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Found 1 `id_var` where last observation is an event of interest (`cause_var` =</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> 1)</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> ID: 4</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> `mcc()` implicitly assumes these `id_var`s are censored at the maximum</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span>   `time_var` This may impact MCC calculations if these participants were</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span>   actually censored or experienced competing risk before the maximum value of</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span>   `time_var`</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> If this implicit assumption is incorrect, estimates will be incorrect unless</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span>   you add an additional row after the current last row with the censoring or</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span>   competing risk event</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Adjusted time points for events occurring simultaneously for the same subject.</span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">mcc_eq</span><span class="op">)</span></span></span>
+<span class="r-plt img"><img src="plot.mcc-5.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># SCI method can show components of cumulative incidence components</span></span></span>
 <span class="r-in"><span><span class="va">mcc_sci</span> <span class="op">&lt;-</span> <span class="fu"><a href="mcc.html">mcc</a></span><span class="op">(</span><span class="va">df</span>, <span class="st">"id"</span>, <span class="st">"time"</span>, <span class="st">"cause"</span>, method <span class="op">=</span> <span class="st">"sci"</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Found 1 `id_var` where last observation is an event of interest (`cause_var` =</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> 1)</span>
@@ -200,13 +205,13 @@ If NULL (default), all groups are included</p></dd>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span>   you add an additional row after the current last row with the censoring or</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span>   competing risk event</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Adjusted time points for events occurring simultaneously for the same subject.</span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">mcc_sci</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">mcc_sci</span><span class="op">)</span>  <span class="co"># Shows main MCC plot</span></span></span>
+<span class="r-plt img"><img src="plot.mcc-6.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">mcc_sci</span>, type <span class="op">=</span> <span class="st">"components"</span><span class="op">)</span>  <span class="co"># Shows CI components</span></span></span>
 <span class="r-plt img"><img src="plot.mcc-7.png" alt="" width="700" height="433"></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">mcc_sci</span>, type <span class="op">=</span> <span class="st">"details"</span><span class="op">)</span></span></span>
-<span class="r-plt img"><img src="plot.mcc-8.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Clean up</span></span></span>
-<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/rm.html" class="external-link">rm</a></span><span class="op">(</span><span class="va">df</span>, <span class="va">mcc_result</span>, <span class="va">mcc_grouped</span>, <span class="va">mcc_sci</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/rm.html" class="external-link">rm</a></span><span class="op">(</span><span class="va">df</span>, <span class="va">mcc_result</span>, <span class="va">mcc_grouped</span>, <span class="va">mcc_eq</span>, <span class="va">mcc_sci</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
