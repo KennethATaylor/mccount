@@ -318,6 +318,7 @@ standardize_data <- function(
   return(data_std)
 }
 
+#' Validate last observation for each participant
 #'
 #' Checks whether the final observation for each unique participant has an appropriate
 #' cause value (0 = censoring or 2 = competing risk). Issues a warning if any
@@ -348,34 +349,28 @@ validate_last_observation <- function(data_std) {
     problematic_ids <- last_obs$id[event_last_ids]
     n_problematic <- length(problematic_ids)
 
-    # Create informative warning message
+    # Create the ID display string
     if (n_problematic <= 5) {
-      # Show all IDs if 5 or fewer
-      id_list <- paste(problematic_ids, collapse = ", ")
-      cli::cli_warn(
-        c(
-          "Found {n_problematic} {.arg id_var}{?s} where last observation is an event of interest ({.arg cause_var} = 1)",
-          "!" = "ID{?s}: {id_list}",
-          "i" = "{.fn mcc} implicitly assumes these {.arg id_var}s are censored at the maximum {.arg time_var} This may impact MCC calculations if these participants were actually censored or experienced competing risk before the maximum value of {.arg time_var}",
-          "i" = "If this implicit assumption is incorrect, estimates will be incorrect unless you add an additional row after the current last row with the censoring or competing risk event"
-        ),
-        wrap = TRUE
-      )
+      id_display <- paste(problematic_ids, collapse = ", ")
+      id_info <- "ID{?s}: {id_display}"
     } else {
-      # Show first 5 IDs if more than 5
       sample_ids <- utils::head(problematic_ids, 5)
-      id_list <- paste(sample_ids, collapse = ", ")
-      cli::cli_warn(
-        c(
-          "Found {n_problematic} {.arg id_var}{?s} where last observation is an event of interest ({.arg cause_var} = 1)",
-          "!" = "First 5 participant IDs: {id_list}",
-          "!" = "Total affected: {n_problematic} participants",
-          "i" = "{.fn mcc} implicitly assumes these {.arg id_var}s are censored at the maximum {.arg time_var} This may impact MCC calculations if these participants were actually censored or experienced competing risk before the maximum value of {.arg time_var}",
-          "i" = "If this implicit assumption is incorrect, estimates will be incorrect unless you add an additional row after the current last row with the censoring or competing risk event"
-        ),
-        wrap = TRUE
+      id_display <- paste(sample_ids, collapse = ", ")
+      id_info <- c(
+        "First 5 IDs: {id_display}",
+        "Total affected: {n_problematic} participants"
       )
     }
+
+    cli::cli_warn(
+      c(
+        "Found {n_problematic} participant{?s} where last observation is an event of interest ({.arg cause_var} = 1)",
+        "!" = id_info,
+        "i" = "{.fn mcc} assumes these participants are censored at their final {.arg time_var}",
+        "i" = "If participants were actually censored or experienced competing risks after their last event, add those observations to ensure correct estimates"
+      ),
+      wrap = TRUE
+    )
   }
 
   return(TRUE)

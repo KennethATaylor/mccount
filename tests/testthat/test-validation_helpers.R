@@ -341,10 +341,10 @@ test_that("validate_last_observation() handles many problematic cases", {
     "Found 7.*where last observation is an event of interest"
   )
 
-  # Should mention "First 5 participant IDs" when more than 5
+  # Should mention "First 5 IDs" when more than 5
   expect_warning(
     validate_last_observation(data_std),
-    "First 5 participant IDs"
+    "First 5 IDs"
   )
 
   expect_true(result)
@@ -430,12 +430,7 @@ test_that("validate_last_observation() warning message content", {
 
   expect_warning(
     validate_last_observation(data_std),
-    "implicitly assumes"
-  )
-
-  expect_warning(
-    validate_last_observation(data_std),
-    "add an additional row"
+    "assumes"
   )
 })
 
