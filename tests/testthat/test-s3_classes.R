@@ -441,9 +441,6 @@ test_that("plot.mcc works with different configurations", {
   p1 <- plot(mcc_simple)
   expect_s3_class(p1, "ggplot")
 
-  p2 <- plot(mcc_simple, type = "details")
-  expect_s3_class(p2, "ggplot")
-
   # Test grouped plots
   mcc_grouped <- mcc(df, "id", "time", "cause", by = "group")
 
@@ -466,16 +463,23 @@ test_that("plot.mcc works with different configurations", {
 test_that("plot.mcc error handling works correctly", {
   # Test with include_details = FALSE
   df <- data.frame(
-    id = c(1, 2, 3),
-    time = c(8, 1, 5),
-    cause = c(0, 0, 2)
+    id = c(1, 1, 2, 3),
+    time = c(7, 8, 1, 5),
+    cause = c(1, 0, 0, 2)
   )
 
-  mcc_no_details <- mcc(df, "id", "time", "cause", include_details = FALSE)
+  mcc_no_details <- mcc(
+    df,
+    "id",
+    "time",
+    "cause",
+    method = "sci",
+    include_details = FALSE
+  )
 
   expect_error(
-    plot(mcc_no_details, type = "details"),
-    "Calculation details not available"
+    plot(mcc_no_details, type = "components"),
+    "Calculation components not available"
   )
 })
 

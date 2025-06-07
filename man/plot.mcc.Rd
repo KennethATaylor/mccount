@@ -6,7 +6,7 @@
 \usage{
 \method{plot}{mcc}(
   x,
-  type = c("mcc", "details"),
+  type = c("mcc", "components"),
   groups = NULL,
   conf_int = FALSE,
   colors = NULL,
@@ -18,10 +18,10 @@
 \arguments{
 \item{x}{An \code{mcc} object}
 
-\item{type}{Character string specifying plot type. Options are:
+\item{type}{Character string specifying plot type:
 \itemize{
 \item "mcc" (default): Plot MCC estimates over time
-\item "details": Plot calculation details (method-specific)
+\item "components": Show individual cumulative incidence components (SCI method only)
 }}
 
 \item{groups}{Character vector specifying which groups to include in grouped analyses.
@@ -61,12 +61,9 @@ mcc_result <- mcc(df, "id", "time", "cause")
 # Plot MCC over time
 plot(mcc_result)
 
-# Plot calculation details
-plot(mcc_result, type = "details")
-
-# Grouped analysis
-mcc_grouped <- mcc(df, "id", "time", "cause", by = "group")
-plot(mcc_grouped)
+# SCI method with components plot
+mcc_sci <- mcc(df, "id", "time", "cause", method = "sci")
+plot(mcc_sci, type = "components")
 }
 
 # Create sample data
@@ -83,9 +80,6 @@ df <- data.frame(
 mcc_result <- mcc(df, "id", "time", "cause")
 plot(mcc_result)
 
-# Plot calculation details
-plot(mcc_result, type = "details")
-
 # Grouped analysis with custom colors
 mcc_grouped <- mcc(df, "id", "time", "cause", by = "group")
 plot(mcc_grouped)
@@ -96,18 +90,19 @@ plot(mcc_grouped,
      title = "MCC by Treatment Group",
      subtitle = "Comparison of Event Burden")
 
-# Plot details for grouped analysis
-plot(mcc_grouped, type = "details")
-
 # Plot only specific groups
 plot(mcc_grouped, groups = c("A"))
 
-# Compare different methods
+# Compare different methods - equation method only shows MCC
+mcc_eq <- mcc(df, "id", "time", "cause", method = "equation")
+plot(mcc_eq)
+
+# SCI method can show components of cumulative incidence components
 mcc_sci <- mcc(df, "id", "time", "cause", method = "sci")
-plot(mcc_sci)
-plot(mcc_sci, type = "details")
+plot(mcc_sci)  # Shows main MCC plot
+plot(mcc_sci, type = "components")  # Shows CI components
 
 # Clean up
-rm(df, mcc_result, mcc_grouped, mcc_sci)
+rm(df, mcc_result, mcc_grouped, mcc_eq, mcc_sci)
 
 }
