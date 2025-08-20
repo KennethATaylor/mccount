@@ -9,6 +9,7 @@
 <url><loc>https://kennethataylor.github.io/mccount/reference/as_mcc.html</loc></url>
 <url><loc>https://kennethataylor.github.io/mccount/reference/autoplot.mcc.html</loc></url>
 <url><loc>https://kennethataylor.github.io/mccount/reference/compare_mcc.html</loc></url>
+<url><loc>https://kennethataylor.github.io/mccount/reference/filter_mcc.html</loc></url>
 <url><loc>https://kennethataylor.github.io/mccount/reference/index.html</loc></url>
 <url><loc>https://kennethataylor.github.io/mccount/reference/is_grouped.html</loc></url>
 <url><loc>https://kennethataylor.github.io/mccount/reference/is_mcc.html</loc></url>
@@ -27,7 +28,6 @@
 <url><loc>https://kennethataylor.github.io/mccount/reference/print.mcc.html</loc></url>
 <url><loc>https://kennethataylor.github.io/mccount/reference/print.mcc_comparison.html</loc></url>
 <url><loc>https://kennethataylor.github.io/mccount/reference/print.summary.mcc.html</loc></url>
-<url><loc>https://kennethataylor.github.io/mccount/reference/subset_mcc.html</loc></url>
 <url><loc>https://kennethataylor.github.io/mccount/reference/summary.mcc.html</loc></url>
 </urlset>
 
