@@ -24,18 +24,18 @@ Imports:
     cmprsk,
     data.table,
     dplyr,
-    ggplot2 (>= 3.5.0),
     glue,
     lifecycle,
-    mstate,
     rlang,
     stringr,
-    survival,
     tibble,
     tidyr
 Suggests: 
     boot,
+    ggplot2 (>= 3.5.0),
+    mstate,
     spelling,
+    survival,
     testthat (>= 3.0.0),
     withr
 Config/testthat/edition: 3

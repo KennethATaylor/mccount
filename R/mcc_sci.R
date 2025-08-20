@@ -45,6 +45,11 @@ mcc_sci <- function(
 
   # Additional validation for time vs. tstart value pairs
   if (!is.null(tstart_var)) {
+    rlang::check_installed(
+      c("mstate", "survival"),
+      reason = "for left-truncated data analysis"
+    )
+
     validate_time_tstart(data, time_var, tstart_var)
   }
 

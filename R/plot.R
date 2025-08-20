@@ -93,12 +93,7 @@ plot.mcc <- function(
   ...
 ) {
   # Check if ggplot2 is available
-  if (!requireNamespace("ggplot2", quietly = TRUE)) {
-    cli::cli_abort(c(
-      "Package {.pkg ggplot2} is required for plotting {.cls mcc} objects",
-      "i" = "Install it with: {.code install.packages('ggplot2')}"
-    ))
-  }
+  rlang::check_installed("ggplot2", reason = "for plotting MCC objects")
 
   type <- match.arg(type)
 
