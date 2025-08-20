@@ -189,8 +189,8 @@ combine_group_results <- function(group_results, by_name, include_details) {
           })
         }
 
-        # Combine all tibbles using rbind
-        combined_result[[component]] <- do.call(rbind, component_list)
+        # Combine all tibbles using rbindlist
+        combined_result[[component]] <- data.table::rbindlist(component_list)
       }
     }
   }

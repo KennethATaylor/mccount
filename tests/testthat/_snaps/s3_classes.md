@@ -51,22 +51,20 @@
       
       -- Group: A 
     Output
-      # A tibble: 2 x 3
-        group  time   mcc
-        <chr> <dbl> <dbl>
-      1 A         0   0  
-      2 A         3   0.5
+          group  time   mcc
+         <char> <num> <num>
+      1:      A     0   0.0
+      2:      A     3   0.5
     Message
       
       -- Group: B 
     Output
-      # A tibble: 4 x 3
-        group  time   mcc
-        <chr> <dbl> <dbl>
-      1 B         0   0  
-      2 B         2   0.5
-      3 B         6   1  
-      4 B         7   1.5
+          group  time   mcc
+         <char> <num> <num>
+      1:      B     0   0.0
+      2:      B     2   0.5
+      3:      B     6   1.0
+      4:      B     7   1.5
     Message
       
       -- Call --

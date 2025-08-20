@@ -162,14 +162,13 @@
     Code
       print(combined_detailed$mcc_final)
     Output
-      # A tibble: 5 x 3
-        treatment  time   mcc
-      * <chr>     <dbl> <dbl>
-      1 Control       5  0.1 
-      2 Control      10  0.25
-      3 Control      15  0.4 
-      4 Treatment     8  0.15
-      5 Treatment    12  0.35
+         treatment  time   mcc
+            <char> <num> <num>
+      1:   Control     5  0.10
+      2:   Control    10  0.25
+      3:   Control    15  0.40
+      4: Treatment     8  0.15
+      5: Treatment    12  0.35
     Code
       cat("\nMCC Table:\n")
     Output
@@ -178,14 +177,13 @@
     Code
       print(combined_detailed$mcc_table)
     Output
-      # A tibble: 5 x 5
-        treatment  time nrisk event   mcc
-      * <chr>     <dbl> <dbl> <dbl> <dbl>
-      1 Control       5    50     5  0.1 
-      2 Control      10    40     8  0.25
-      3 Control      15    30    10  0.4 
-      4 Treatment     8    45     7  0.15
-      5 Treatment    12    35     9  0.35
+         treatment  time nrisk event   mcc
+            <char> <num> <num> <num> <num>
+      1:   Control     5    50     5  0.10
+      2:   Control    10    40     8  0.25
+      3:   Control    15    30    10  0.40
+      4: Treatment     8    45     7  0.15
+      5: Treatment    12    35     9  0.35
     Code
       cat("\nOriginal Data:\n")
     Output
@@ -194,14 +192,13 @@
     Code
       print(combined_detailed$original_data)
     Output
-      # A tibble: 5 x 5
-        treatment    id tstart  time cause
-      * <chr>     <dbl>  <dbl> <dbl> <dbl>
-      1 Control       1      0     5     1
-      2 Control       2      0    10     1
-      3 Control       3      0    15     1
-      4 Treatment     4      0     8     1
-      5 Treatment     5      0    12     1
+         treatment    id tstart  time cause
+            <char> <num>  <num> <num> <num>
+      1:   Control     1      0     5     1
+      2:   Control     2      0    10     1
+      3:   Control     3      0    15     1
+      4: Treatment     4      0     8     1
+      5: Treatment     5      0    12     1
 
 ---
 
@@ -223,14 +220,13 @@
     Code
       print(combined_simple$mcc_final)
     Output
-      # A tibble: 5 x 3
-        treatment  time   mcc
-      * <chr>     <dbl> <dbl>
-      1 Control       5  0.1 
-      2 Control      10  0.25
-      3 Control      15  0.4 
-      4 Treatment     8  0.15
-      5 Treatment    12  0.35
+         treatment  time   mcc
+            <char> <num> <num>
+      1:   Control     5  0.10
+      2:   Control    10  0.25
+      3:   Control    15  0.40
+      4: Treatment     8  0.15
+      5: Treatment    12  0.35
 
 # combine_group_results() with SCI method snapshot
 
@@ -250,12 +246,11 @@
     Code
       print(combined_sci$mcc_final)
     Output
-      # A tibble: 3 x 3
-        group  time SumCIs
-      * <chr> <dbl>  <dbl>
-      1 A         5   0.1 
-      2 A        10   0.3 
-      3 B         8   0.15
+          group  time SumCIs
+         <char> <num>  <num>
+      1:      A     5   0.10
+      2:      A    10   0.30
+      3:      B     8   0.15
     Code
       cat("\nSCI Table:\n")
     Output
@@ -264,12 +259,11 @@
     Code
       print(combined_sci$sci_table)
     Output
-      # A tibble: 3 x 5
-        group  time   CI1   CI2 SumCIs
-      * <chr> <dbl> <dbl> <dbl>  <dbl>
-      1 A         5  0.08  0.02   0.1 
-      2 A        10  0.2   0.1    0.3 
-      3 B         8  0.15  0      0.15
+          group  time   CI1   CI2 SumCIs
+         <char> <num> <num> <num>  <num>
+      1:      A     5  0.08  0.02   0.10
+      2:      A    10  0.20  0.10   0.30
+      3:      B     8  0.15  0.00   0.15
     Code
       cat("\nMCC Base:\n")
     Output
@@ -278,12 +272,11 @@
     Code
       print(combined_sci$mcc_base)
     Output
-      # A tibble: 3 x 5
-        group  time    cm  Deta  cumI
-      * <chr> <dbl> <dbl> <dbl> <dbl>
-      1 A         5  0.08  0.08     1
-      2 A        10  0.2   0.12     1
-      3 B         8  0.15  0.15     1
+          group  time    cm  Deta  cumI
+         <char> <num> <num> <num> <num>
+      1:      A     5  0.08  0.08     1
+      2:      A    10  0.20  0.12     1
+      3:      B     8  0.15  0.15     1
     Code
       cat("\nAll CIs structure:\n")
     Output
