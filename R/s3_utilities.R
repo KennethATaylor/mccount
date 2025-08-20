@@ -244,7 +244,7 @@ mcc_groups <- function(x) {
   return(unique(x$mcc_final[[x$by_group]]))
 }
 
-#' Subset `mcc` object by groups
+#' Filter `mcc` object by groups
 #'
 #' @description
 #' For grouped `mcc` objects, extracts results for specified groups only.
@@ -276,17 +276,17 @@ mcc_groups <- function(x) {
 #' # Show all groups
 #' mcc_groups(mcc_full)
 #'
-#' # Subset to specific groups
-#' mcc_subset <- subset_mcc(mcc_full, c("Control", "Treatment"))
-#' mcc_groups(mcc_subset)  # Only "Control" and "Treatment"
+#' # Filter to specific groups
+#' mcc_filtered <- filter_mcc(mcc_full, c("Control", "Treatment"))
+#' mcc_groups(mcc_filtered)  # Only "Control" and "Treatment"
 #'
-#' # Plot the subset
-#' plot(mcc_subset)
+#' # Plot the filtered mcc object
+#' plot(mcc_filtered)
 #'
 #' # Clean up
-#' rm(df, mcc_full, mcc_subset)
+#' rm(df, mcc_full, mcc_filtered)
 #'
-subset_mcc <- function(x, groups) {
+filter_mcc <- function(x, groups) {
   if (!is_mcc(x)) {
     cli::cli_abort("{.arg x} must be an {.cls mcc} object")
   }

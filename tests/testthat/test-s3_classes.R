@@ -181,12 +181,12 @@ test_that("Grouped utility functions work correctly", {
 
   mcc_grouped <- mcc(df, "id", "time", "cause", by = "group")
 
-  # Test subset_mcc
-  subset_result <- subset_mcc(mcc_grouped, "A")
-  expect_s3_class(subset_result, "mcc")
-  expect_true(all(subset_result$mcc_final$group == "A"))
+  # Test filter_mcc
+  filter_result <- filter_mcc(mcc_grouped, "A")
+  expect_s3_class(filter_result, "mcc")
+  expect_true(all(filter_result$mcc_final$group == "A"))
 
-  expect_error(subset_mcc(mcc_grouped, "C"), "Groups not found")
+  expect_error(filter_mcc(mcc_grouped, "C"), "Groups not found")
 
   # Test mcc_final_values for grouped
   final_vals <- mcc_final_values(mcc_grouped)
@@ -237,7 +237,7 @@ test_that("Error handling works correctly", {
   expect_error(is_weighted(df), "must be an.*mcc.*object")
   expect_error(is_grouped(df), "must be an.*mcc.*object")
   expect_error(mcc_estimates(df), "must be an.*mcc.*object")
-  expect_error(subset_mcc(df, "A"), "must be an.*mcc.*object")
+  expect_error(filter_mcc(df, "A"), "must be an.*mcc.*object")
   expect_error(compare_mcc(df, df), "must be.*mcc.*objects")
 })
 
@@ -446,7 +446,7 @@ test_that("mcc_final_values works correctly", {
   expect_length(final_vals_grouped, 2)
 })
 
-test_that("subset_mcc works correctly", {
+test_that("filter_mcc works correctly", {
   df <- data.frame(
     id = c(1, 2, 3, 4, 4, 4, 4, 5, 5),
     time = c(8, 1, 5, 2, 6, 7, 8, 3, 3),
@@ -456,25 +456,25 @@ test_that("subset_mcc works correctly", {
 
   mcc_grouped <- mcc(df, "id", "time", "cause", by = "group")
 
-  # Test subsetting to single group
-  subset_a <- subset_mcc(mcc_grouped, "A")
-  expect_s3_class(subset_a, "mcc")
-  expect_true(all(subset_a$mcc_final$group == "A"))
+  # Test filtering to single group
+  filter_a <- filter_mcc(mcc_grouped, "A")
+  expect_s3_class(filter_a, "mcc")
+  expect_true(all(filter_a$mcc_final$group == "A"))
 
-  # Test subsetting to multiple groups
-  subset_ab <- subset_mcc(mcc_grouped, c("A", "B"))
-  expect_true(all(subset_ab$mcc_final$group %in% c("A", "B")))
-  expect_false(any(subset_ab$mcc_final$group == "C"))
+  # Test filtering to multiple groups
+  filter_ab <- filter_mcc(mcc_grouped, c("A", "B"))
+  expect_true(all(filter_ab$mcc_final$group %in% c("A", "B")))
+  expect_false(any(filter_ab$mcc_final$group == "C"))
 
   # Test error for non-existent group
-  expect_error(subset_mcc(mcc_grouped, "D"), "Groups not found")
+  expect_error(filter_mcc(mcc_grouped, "D"), "Groups not found")
 
   # Test error for ungrouped MCC
   mcc_simple <- mcc(df[1:3, ], "id", "time", "cause")
-  expect_error(subset_mcc(mcc_simple, "A"), "must be a grouped")
+  expect_error(filter_mcc(mcc_simple, "A"), "must be a grouped")
 
   # Test error for non-character groups
-  expect_error(subset_mcc(mcc_grouped, 1), "must be a character vector")
+  expect_error(filter_mcc(mcc_grouped, 1), "must be a character vector")
 })
 
 test_that("compare_mcc works correctly", {
@@ -539,7 +539,7 @@ test_that("Error messages are informative", {
   expect_error(mcc_groups(df), "must be an.*mcc.*object")
   expect_error(mcc_estimates(df), "must be an.*mcc.*object")
   expect_error(mcc_details(df), "must be an.*mcc.*object")
-  expect_error(subset_mcc(df, "A"), "must be an.*mcc.*object")
+  expect_error(filter_mcc(df, "A"), "must be an.*mcc.*object")
   expect_error(mcc_final_values(df), "must be an.*mcc.*object")
   expect_error(compare_mcc(df, df), "must be.*mcc.*objects")
   expect_error(as.data.frame.mcc(df), "must be an.*mcc.*object")
