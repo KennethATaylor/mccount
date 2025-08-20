@@ -45,7 +45,7 @@ NULL
 #' * [mcc_method()] - Get calculation method used
 #' * [is_weighted()], [is_grouped()] - Check analysis properties
 #' * [mcc_groups()], [mcc_grouping_var()] - Access grouping information
-#' * [subset_mcc()] - Filter grouped results
+#' * [filter_mcc()] - Filter grouped results
 #' * [mcc_final_values()] - Extract final MCC values
 #' * [compare_mcc()] - Compare two MCC objects
 #'
@@ -67,7 +67,7 @@ NULL
 #' # Grouped analysis
 #' grouped_result <- mcc(data, "id", "time", "cause", by = "treatment")
 #' plot(grouped_result)
-#' subset_mcc(grouped_result, "Treatment A")
+#' filter_mcc(grouped_result, "Treatment A")
 #' ```
 #'
 #' @section Plotting:

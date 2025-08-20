@@ -62,7 +62,7 @@ Classes combine hierarchically (e.g., \code{c("mcc_grouped", "mcc_weighted", "mc
 \item \code{\link[=mcc_method]{mcc_method()}} - Get calculation method used
 \item \code{\link[=is_weighted]{is_weighted()}}, \code{\link[=is_grouped]{is_grouped()}} - Check analysis properties
 \item \code{\link[=mcc_groups]{mcc_groups()}}, \code{\link[=mcc_grouping_var]{mcc_grouping_var()}} - Access grouping information
-\item \code{\link[=subset_mcc]{subset_mcc()}} - Filter grouped results
+\item \code{\link[=filter_mcc]{filter_mcc()}} - Filter grouped results
 \item \code{\link[=mcc_final_values]{mcc_final_values()}} - Extract final MCC values
 \item \code{\link[=compare_mcc]{compare_mcc()}} - Compare two MCC objects
 }
@@ -87,7 +87,7 @@ final_values <- mcc_final_values(result)
 # Grouped analysis
 grouped_result <- mcc(data, "id", "time", "cause", by = "treatment")
 plot(grouped_result)
-subset_mcc(grouped_result, "Treatment A")
+filter_mcc(grouped_result, "Treatment A")
 }\if{html}{\out{</div>}}
 }
 
