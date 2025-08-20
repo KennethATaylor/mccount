@@ -215,7 +215,7 @@ mcc_sci <- function(
       }
 
       # Store in all_cis list
-      all_cis[[j]] <- tibble::tibble(time = cm1$Time, ci = cm1$cm)
+      all_cis[[j]] <- data.table::data.table(time = cm1$Time, ci = cm1$cm)
 
       # Calculate incremental changes and add recurrence indicator
       cm1[, `:=`(
@@ -268,7 +268,7 @@ mcc_sci <- function(
       sci_table_dt[, (ci_col) := 0]
 
       if (length(all_cis[[j]]$time) > 0) {
-        ci_data_dt <- data.table::as.data.table(all_cis[[j]])
+        ci_data_dt <- all_cis[[j]]
         ci_data_dt <- ci_data_dt[time > 0]
 
         if (nrow(ci_data_dt) > 0) {
