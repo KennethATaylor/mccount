@@ -132,7 +132,7 @@ plot_mcc_estimates <- function(
   mcc_col <- if (x$method == "equation") "mcc" else "SumCIs"
 
   # Prepare data for plotting
-  plot_data <- x$mcc_final
+  plot_data <- x$mcc_table
 
   # Filter groups if specified
   if (!is.null(groups) && inherits(x, "mcc_grouped")) {
@@ -369,7 +369,7 @@ create_subtitle <- function(x) {
   }
 
   if (inherits(x, "mcc_grouped")) {
-    n_groups <- length(unique(x$mcc_final[[x$by_group]]))
+    n_groups <- length(unique(x$mcc_table[[x$by_group]]))
     subtitle_parts <- paste0(subtitle_parts, " - ", n_groups, " groups")
   }
 
