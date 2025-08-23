@@ -30,12 +30,19 @@
       
       -- Summary of Mean Cumulative Count Results ------------------------------------
       i Method: Dong-Yasui Equation Method
+      i Total participants: 4
       
       -- Summary Statistics --
       
-      Number of time points: 4
-      Time range: [0, 7]
-      Final MCC: 1
+      Observation period: "[0, 8]"
+      Time to MCC = 1.0: 7
+      Time to maximum MCC: 7
+      MCC at end of follow-up: 1
+      
+      -- Event Count Composition 
+      Events of interest: 3
+      Competing risk events: 1
+      Censoring events: 3
 
 # Print methods work for grouped objects
 
@@ -80,15 +87,31 @@
       
       -- Summary of Mean Cumulative Count Results ------------------------------------
       i Method: Dong-Yasui Equation Method
+      i Total participants: 5
+      i Overall observation period: "[0, 8]"
       
       -- Summary by Group (group) --
       
-    Output
-      # A tibble: 2 x 5
-        group n_timepoints min_time max_time final_mcc
-        <chr>        <int>    <dbl>    <dbl>     <dbl>
-      1 A                2        0        3       0.5
-      2 B                4        0        7       1.5
+      -- Group: "A" 
+      Participants in group: 3
+      Group observation period: "[0, 8]"
+      Time to MCC = 1.0: "Never reached"
+      Time to maximum MCC: 3
+      MCC at end of follow-up: 0.5
+      Events of interest: 1
+      Competing risk events: 1
+      Censoring events: 2
+      
+      
+      -- Group: "B" 
+      Participants in group: 2
+      Group observation period: "[0, 8]"
+      Time to MCC = 1.0: 6
+      Time to maximum MCC: 7
+      MCC at end of follow-up: 1.5
+      Events of interest: 3
+      Competing risk events: 1
+      Censoring events: 1
 
 # Print methods work for weighted objects
 
@@ -197,10 +220,17 @@
       
       -- Summary of Mean Cumulative Count Results ------------------------------------
       i Method: Dong-Yasui Equation Method
+      i Total participants: 1
       
       -- Summary Statistics --
       
-      Number of time points: 1
-      Time range: [0, 0]
-      Final MCC: 0
+      Observation period: "[0, 1]"
+      Time to MCC = 1.0: "Never reached"
+      Time to maximum MCC: 0
+      MCC at end of follow-up: 0
+      
+      -- Event Count Composition 
+      Events of interest: 0
+      Competing risk events: 0
+      Censoring events: 1
 
