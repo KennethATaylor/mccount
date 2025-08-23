@@ -636,3 +636,146 @@ test_that("validate_mcc catches various invalid objects", {
   class(bad_obj6) <- c("mcc_grouped", "mcc")
   expect_error(validate_mcc(bad_obj6), "must have a.*by_group.*component")
 })
+
+
+test_that("as_mcc.data.frame works correctly", {
+  # Test conversion from data.frame for equation method
+  df_eq <- data.frame(
+    time = c(1, 2, 3, 4, 5),
+    mcc = c(0.1, 0.3, 0.5, 0.7, 1.0)
+  )
+
+  mcc_obj <- as_mcc(df_eq, method = "equation")
+  expect_s3_class(mcc_obj, "mcc")
+  expect_s3_class(mcc_obj, "mcc_equation")
+  expect_equal(mcc_obj$method, "equation")
+
+  # Test conversion from data.frame for sci method
+  df_sci <- data.frame(
+    time = c(1, 2, 3, 4, 5),
+    SumCIs = c(0.1, 0.3, 0.5, 0.7, 1.0)
+  )
+
+  mcc_sci_obj <- as_mcc(df_sci, method = "sci")
+  expect_s3_class(mcc_sci_obj, "mcc")
+  expect_s3_class(mcc_sci_obj, "mcc_sci")
+  expect_equal(mcc_sci_obj$method, "sci")
+})
+
+test_that("as_mcc.list works correctly", {
+  # Test conversion from list
+  mcc_list <- list(
+    mcc_final = data.frame(
+      time = c(1, 2, 3),
+      mcc = c(0.2, 0.5, 0.8)
+    )
+  )
+
+  mcc_from_list <- as_mcc(mcc_list, method = "equation")
+  expect_s3_class(mcc_from_list, "mcc")
+  expect_equal(mcc_from_list$method, "equation")
+})
+
+test_that("as_mcc error handling works correctly", {
+  # Test error for unsupported class
+  expect_error(
+    as_mcc("character_string", method = "equation"),
+    "Don't know how to convert"
+  )
+
+  # Test error for missing required columns
+  bad_df <- data.frame(x = 1, y = 2)
+  expect_error(
+    as_mcc(bad_df, method = "equation"),
+    "missing required columns"
+  )
+
+  # Test error for wrong column name in sci method
+  wrong_col_df <- data.frame(time = 1:3, mcc = 1:3) # Should be SumCIs for sci
+  expect_error(
+    as_mcc(wrong_col_df, method = "sci"),
+    "missing required columns.*SumCIs"
+  )
+})
+
+test_that("validate_mcc handles various edge cases", {
+  # Test object with invalid mcc_final structure
+  bad_obj <- list(
+    mcc_final = data.frame(x = 1, y = 2), # Missing time column
+    method = "equation",
+    weighted = FALSE
+  )
+  class(bad_obj) <- "mcc"
+
+  expect_error(
+    validate_mcc(bad_obj),
+    "must contain a.*time.*column"
+  )
+
+  # Test object missing method
+  bad_obj2 <- list(
+    mcc_final = data.frame(time = 1, mcc = 1),
+    weighted = FALSE
+  )
+  class(bad_obj2) <- "mcc"
+
+  expect_error(
+    validate_mcc(bad_obj2),
+    "missing required components"
+  )
+})
+
+test_that("mcc_details correctly dispatches based on class", {
+  # Ensure all participants end with cause = 0 or 2 to avoid warnings
+  df <- data.frame(
+    id = c(1, 2, 3, 4, 4, 4, 4),
+    time = c(8, 1, 5, 2, 6, 7, 8),
+    cause = c(0, 0, 2, 1, 1, 1, 0) # ID 4 ends with cause = 0 (censoring)
+  )
+
+  # Test equation method returns mcc_table
+  mcc_eq <- mcc(df, "id", "time", "cause", method = "equation")
+  details_eq <- mcc_details(mcc_eq)
+  expect_s3_class(details_eq, "data.frame")
+  expect_true("mcc" %in% names(details_eq))
+
+  # Test SCI method returns sci_table
+  mcc_sci <- mcc(df, "id", "time", "cause", method = "sci")
+  details_sci <- mcc_details(mcc_sci)
+  expect_s3_class(details_sci, "data.frame")
+  expect_true("SumCIs" %in% names(details_sci))
+
+  # Test that different methods return different structures
+  expect_false(identical(names(details_eq), names(details_sci)))
+})
+
+test_that("create_subtitle function works correctly", {
+  # Ensure all participants end with cause = 0 or 2 to avoid warnings
+  df <- data.frame(
+    id = c(1, 2, 3, 4, 4, 4, 4),
+    time = c(8, 1, 5, 2, 6, 7, 8),
+    cause = c(0, 0, 2, 1, 1, 1, 0), # ID 4 ends with cause = 0 (censoring)
+    group = c("A", "A", "B", "B", "B", "B", "B"),
+    weights = c(1, 1, 1, 1, 1, 1, 1)
+  )
+
+  # Test subtitle for equation method
+  mcc_eq <- mcc(df, "id", "time", "cause", method = "equation")
+  subtitle_eq <- create_subtitle(mcc_eq)
+  expect_true(grepl("Dong-Yasui Equation Method", subtitle_eq))
+
+  # Test subtitle for SCI method
+  mcc_sci <- mcc(df, "id", "time", "cause", method = "sci")
+  subtitle_sci <- create_subtitle(mcc_sci)
+  expect_true(grepl("Sum of Cumulative Incidence Method", subtitle_sci))
+
+  # Test subtitle for weighted analysis
+  mcc_weighted <- mcc(df, "id", "time", "cause", weights = "weights")
+  subtitle_weighted <- create_subtitle(mcc_weighted)
+  expect_true(grepl("Weighted", subtitle_weighted))
+
+  # Test subtitle for grouped analysis
+  mcc_grouped <- mcc(df, "id", "time", "cause", by = "group")
+  subtitle_grouped <- create_subtitle(mcc_grouped)
+  expect_true(grepl("groups", subtitle_grouped))
+})
