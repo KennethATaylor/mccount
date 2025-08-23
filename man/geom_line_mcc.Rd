@@ -18,8 +18,9 @@ geom_line_mcc(
 )
 }
 \arguments{
-\item{mcc_object}{An object of class \code{mcc} containing MCC estimates.
-@param threshold numeric;determines MCC value threshold to use (default =
+\item{mcc_object}{An object of class \code{mcc} containing MCC estimates.}
+
+\item{threshold}{numeric;determines MCC value threshold to use (default =
 \code{1.0})}
 
 \item{linetype}{Line type for the reference lines. Default is \code{2} (dashed).

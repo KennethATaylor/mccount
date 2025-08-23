@@ -18,28 +18,6 @@
 #' @param ... Additional arguments passed to ggplot2 functions
 #'
 #' @returns A ggplot2 object
-#'
-#' @examples
-#' \dontrun{
-#' # Create sample data
-#' df <- data.frame(
-#'   id = c(1, 2, 3, 4, 4, 4, 5, 5),
-#'   time = c(8, 1, 5, 2, 6, 7, 3, 3),
-#'   cause = c(0, 0, 2, 1, 1, 1, 1, 2),
-#'   group = c("A", "A", "B", "B", "B", "B", "A", "A")
-#' )
-#'
-#' # Calculate MCC
-#' mcc_result <- mcc(df, "id", "time", "cause")
-#'
-#' # Plot MCC over time
-#' plot(mcc_result)
-#'
-#' # SCI method with components plot
-#' mcc_sci <- mcc(df, "id", "time", "cause", method = "sci")
-#' plot(mcc_sci, type = "components")
-#' }
-#'
 #' @export
 #'
 #' @examples
@@ -53,7 +31,7 @@
 #' ) |>
 #'   arrange(id, time)
 #'
-#' # Basic MCC plot (ungrouped)
+#' Basic MCC plot (ungrouped)
 #' mcc_result <- mcc(df, "id", "time", "cause")
 #' plot(mcc_result)
 #'
@@ -386,8 +364,8 @@ create_subtitle <- function(x) {
 #' grouped analyses, it creates separate reference lines for each group.
 #'
 #' @param mcc_object An object of class `mcc` containing MCC estimates.
-#'  @param threshold numeric;determines MCC value threshold to use (default =
-#'      `1.0`)
+#' @param threshold numeric;determines MCC value threshold to use (default =
+#'     `1.0`)
 #' @param linetype Line type for the reference lines. Default is `2` (dashed).
 #'   Can be numeric (1-6) or character ("solid", "dashed", "dotted", etc.).
 #' @param color Color for the reference lines. If `NULL` (default), uses gray.

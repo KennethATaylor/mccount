@@ -46,26 +46,6 @@ automatically adapts based on the \code{mcc} object class and whether the analys
 was grouped.
 }
 \examples{
-\dontrun{
-# Create sample data
-df <- data.frame(
-  id = c(1, 2, 3, 4, 4, 4, 5, 5),
-  time = c(8, 1, 5, 2, 6, 7, 3, 3),
-  cause = c(0, 0, 2, 1, 1, 1, 1, 2),
-  group = c("A", "A", "B", "B", "B", "B", "A", "A")
-)
-
-# Calculate MCC
-mcc_result <- mcc(df, "id", "time", "cause")
-
-# Plot MCC over time
-plot(mcc_result)
-
-# SCI method with components plot
-mcc_sci <- mcc(df, "id", "time", "cause", method = "sci")
-plot(mcc_sci, type = "components")
-}
-
 # Create sample data
 library(dplyr)
 df <- data.frame(
@@ -76,7 +56,7 @@ df <- data.frame(
 ) |>
   arrange(id, time)
 
-# Basic MCC plot (ungrouped)
+Basic MCC plot (ungrouped)
 mcc_result <- mcc(df, "id", "time", "cause")
 plot(mcc_result)
 
