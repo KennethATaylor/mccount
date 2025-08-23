@@ -31,7 +31,7 @@
 #' ) |>
 #'   arrange(id, time)
 #'
-#' Basic MCC plot (ungrouped)
+#' # Basic MCC plot (ungrouped)
 #' mcc_result <- mcc(df, "id", "time", "cause")
 #' plot(mcc_result)
 #'
@@ -109,8 +109,14 @@ plot_mcc_estimates <- function(
   # Get MCC column name based on method
   mcc_col <- if (x$method == "equation") "mcc" else "SumCIs"
 
-  # Prepare data for plotting
-  plot_data <- x$mcc_table
+  # Get the appropriate data table based on method
+  # Use the detailed data tables that contain all time points, not just mcc_final
+  if (x$method == "equation") {
+    plot_data <- x$mcc_table
+  } else {
+    # For SCI method, use sci_table which contains all time points
+    plot_data <- x$sci_table
+  }
 
   # Filter groups if specified
   if (!is.null(groups) && is_grouped(x)) {
@@ -347,7 +353,7 @@ create_subtitle <- function(x) {
   }
 
   if (is_grouped(x)) {
-    n_groups <- length(unique(x$mcc_table[[x$by_group]]))
+    n_groups <- length(unique(x$mcc_final[[x$by_group]]))
     subtitle_parts <- paste0(subtitle_parts, " - ", n_groups, " groups")
   }
 
