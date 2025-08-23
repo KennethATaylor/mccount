@@ -56,7 +56,7 @@ df <- data.frame(
 ) |>
   arrange(id, time)
 
-Basic MCC plot (ungrouped)
+# Basic MCC plot (ungrouped)
 mcc_result <- mcc(df, "id", "time", "cause")
 plot(mcc_result)
 

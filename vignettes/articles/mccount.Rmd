@@ -1,0 +1,184 @@
+---
+title: "Introduction to mccount"
+description: >
+  Learn how to get started with the basics of mccount.
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Introduction to mccount}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+
+library(mccount)
+library(dplyr)
+library(survival)
+```
+
+## Introduction
+
+When studying diseases and medical interventions, patients often experience events that can occur multiple times (e.g., hospitalizations, infections, or tumor recurrences). Traditional survival analysis methods typically focus on time to the *first* event, potentially missing important information about the total disease burden.
+
+Many patients experience events that can occur multiple times—like hospital readmissions, infections, or tumor recurrences. Traditional survival analysis is only concerned with the first event and does not account for competing risks like death. Alternatively, the Mean Cumulative Count (MCC) provides a more complete picture by estimating the expected number of events per person by a given time, properly accounting for:
+
+-   Multiple occurrences of the same event (recurrent events)
+-   Events that prevent future occurrences (competing risks like death)
+-   Incomplete follow-up (censoring)
+
+```{r setup, eval = FALSE}
+library(mccount)
+library(dplyr)
+library(survival)
+```
+
+## Clinical Example: Bladder Cancer Recurrences
+
+We'll use the `bladder1` dataset from the [`survival`](https://github.com/therneau/survival) package, which contains data on bladder cancer recurrences from a randomized trial comparing three treatments: placebo, pyridoxine, and thiotepa.
+
+The `bladder1` dataset contains `r length(unique(bladder1$id))` patients followed for tumor recurrences. The key variables are:
+
+-   `id`: Patient identifier
+-   `stop`: Time of event or censoring
+-   `status`: Event type (0 = censored, 1 = recurrence, 2 = death from bladder disease, 3 = death from other cause)
+-   `treatment`: Treatment group (placebo, pyridoxine, or thiotepa)
+
+## Data Preparation
+
+For MCC analysis, we need to ensure our competing event variable has the proper coding:
+
+-   0 = censoring
+-   1 = event of interest (recurrence)
+-   2 = competing event (death from any cause)
+
+```{r data-prep}
+# Prepare data for MCC analysis
+bladder_mcc <- bladder1 |>
+  # Combine death causes into a single competing event indicator
+  mutate(status = if_else(status >= 2, 2, status))
+```
+
+## Basic MCC Analysis
+
+Let's calculate the MCC of bladder cancer recurrences for the entire cohort:
+
+```{r basic-mcc}
+# Calculate MCC using the Dong-Yasui equation method
+mcc_overall <- mcc(
+  data = bladder_mcc,
+  id_var = "id",
+  time_var = "stop",
+  cause_var = "status",
+  method = "equation"
+)
+```
+
+Notice that `mcc()` will warn the user if there are participants whose data end do not explicitly have a censoring event (`0`) of competing event (`2`) on their final row. The function provides this warning to ensure the user is aware of this and also aware of how this is implicitly interpreted by the package. The function also lets the user know that the MCC estimate will be incorrect if the `mccount`'s implicit assumption is incorrect.
+
+### Understanding the Output
+
+Just calling the `mcc` object we've created will print the method used, a preview of the MCC estimates at each time point, and the exact `mcc()` call used to generate the output:
+
+```{r}
+mcc_overall
+```
+
+The package also includes an S3 method for the `summary()` function that will output more useful details:
+
+```{r output}
+# Get summary statistics
+summary(mcc_overall)
+```
+
+We can also extract the MCC estimate at the end of study follow-up using `mcc_final_values(mcc_overall)` and/or extract the MCC values at specific time points (not only the MCC at the end of follow-up). For example:
+
+```{r}
+# Extract key timepoints
+key_times <- c(6, 12, 24, 36, 48, 60)  # months
+mcc_at_times <- mcc_overall$mcc_table |>
+  filter(time %in% key_times) |>
+  mutate(
+    years = time / 12,
+    mcc = round(mcc, 3)
+  ) |>
+  select(years, time, mcc)
+
+mcc_at_times
+```
+
+### Visualization
+
+`mccount` provides flexible plotting capabilities that can be combined with `ggplot2` functions/syntax:
+
+```{r basic-plot}
+# Basic plot
+plot(mcc_overall) +
+  labs(
+    title = "Bladder Cancer Recurrence Burden",
+    subtitle = "Mean cumulative count over time",
+    x = "Time (Months)"
+  ) +
+  scale_x_continuous(
+    breaks = c(seq(
+      0, max(mcc_overall$mcc_table$time), 
+      by = 12
+      )
+    )) +
+    geom_line_mcc(mcc_overall)
+```
+
+The step function shows how the expected number of bladder cancer recurrences accumulates over the entire study follow-up period.
+
+## MCC Interpretation
+
+The estimated MCC at the end of follow-up can be interpreted as the mean number of events we expect in the target population by that time. Looking at the print out from `summary(mcc_overall)`, the MCC is `r round(mcc_final_values(mcc_overall), 2)` - on average, each bladder cancer survivor experiences `r round(mcc_final_values(mcc_overall), 2)` recurrences by `r max(mcc_overall$mcc_table$time)` months.
+
+In a population of 100 similar patients, we expect approximately ``r round(mcc_final_values(mcc_overall), 2)` * 100 = `r round(mcc_final_values(mcc_overall), 2) * 100`` total recurrences by `r max(mcc_overall$mcc_table$time)` months. This accounts for the fact that some patients die and cannot experience further recurrences.
+
+## Stratifying by Treatment Groups
+
+It's common that we may want to estimate the MCC stratified by a specific characteristic, like `"treatment"` group. `mcc()` provides a simple `by` argument to assist with this:
+
+```{r}
+# Calculate MCC by treatment group
+mcc_by_treatment <- mcc(
+  data = bladder_mcc,
+  id_var = "id",
+  time_var = "stop",
+  cause_var = "status",
+  by = "treatment",
+  method = "equation"
+)
+
+# Summary by group
+summary(mcc_by_treatment)
+```
+
+### Visualizing Treatment Differences
+
+The other functions in `mccount` automatically recognize the `mcc_grouped` S3 class and adjust their behavior accordingly. For example, we can feed `mcc_by_treatment` into `plot()`, and it automatically knows to plot an MCC curve by the stratification variable.
+
+```{r}
+# Plot with treatment groups
+plot(mcc_by_treatment) +
+  labs(
+    title = "Bladder Cancer Recurrence Burden by Treatment",
+    subtitle = "Mean cumulative count over time",
+    x = "Time (Months)",
+    color = "Treatment"
+  ) +
+  scale_x_continuous(
+    breaks = seq(
+      0, max(mcc_by_treatment$original_data$time), 
+      by = 12
+      )
+    ) +
+    geom_line_mcc(mcc_by_treatment)
+```
+
+
+Confidence intervals for the MCC can be generated via bootstrapping.
