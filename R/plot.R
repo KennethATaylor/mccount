@@ -18,28 +18,6 @@
 #' @param ... Additional arguments passed to ggplot2 functions
 #'
 #' @returns A ggplot2 object
-#'
-#' @examples
-#' \dontrun{
-#' # Create sample data
-#' df <- data.frame(
-#'   id = c(1, 2, 3, 4, 4, 4, 5, 5),
-#'   time = c(8, 1, 5, 2, 6, 7, 3, 3),
-#'   cause = c(0, 0, 2, 1, 1, 1, 1, 2),
-#'   group = c("A", "A", "B", "B", "B", "B", "A", "A")
-#' )
-#'
-#' # Calculate MCC
-#' mcc_result <- mcc(df, "id", "time", "cause")
-#'
-#' # Plot MCC over time
-#' plot(mcc_result)
-#'
-#' # SCI method with components plot
-#' mcc_sci <- mcc(df, "id", "time", "cause", method = "sci")
-#' plot(mcc_sci, type = "components")
-#' }
-#'
 #' @export
 #'
 #' @examples
@@ -131,11 +109,17 @@ plot_mcc_estimates <- function(
   # Get MCC column name based on method
   mcc_col <- if (x$method == "equation") "mcc" else "SumCIs"
 
-  # Prepare data for plotting
-  plot_data <- x$mcc_final
+  # Get the appropriate data table based on method
+  # Use the detailed data tables that contain all time points, not just mcc_final
+  if (x$method == "equation") {
+    plot_data <- x$mcc_table
+  } else {
+    # For SCI method, use sci_table which contains all time points
+    plot_data <- x$sci_table
+  }
 
   # Filter groups if specified
-  if (!is.null(groups) && inherits(x, "mcc_grouped")) {
+  if (!is.null(groups) && is_grouped(x)) {
     if (!all(groups %in% plot_data[[x$by_group]])) {
       missing_groups <- setdiff(groups, plot_data[[x$by_group]])
       cli::cli_warn("Groups not found in data: {missing_groups}")
@@ -150,7 +134,7 @@ plot_mcc_estimates <- function(
   )
 
   # Add lines/points based on grouping
-  if (inherits(x, "mcc_grouped")) {
+  if (is_grouped(x)) {
     p <- p +
       ggplot2::geom_step(
         ggplot2::aes(color = .data[[x$by_group]]),
@@ -180,7 +164,7 @@ plot_mcc_estimates <- function(
       upper_col <- grep("(upper|ci_upper|ci_high)", ci_cols, value = TRUE)[1]
 
       if (!is.na(lower_col) && !is.na(upper_col)) {
-        if (inherits(x, "mcc_grouped")) {
+        if (is_grouped(x)) {
           p <- p +
             ggplot2::geom_ribbon(
               ggplot2::aes(
@@ -250,7 +234,7 @@ plot_mcc_components <- function(x, groups, colors, title, subtitle, ...) {
   plot_data <- x$sci_table
 
   # Filter groups if specified
-  if (!is.null(groups) && inherits(x, "mcc_grouped")) {
+  if (!is.null(groups) && is_grouped(x)) {
     plot_data <- plot_data[plot_data[[x$by_group]] %in% groups, ]
   }
 
@@ -278,7 +262,7 @@ plot_mcc_components <- function(x, groups, colors, title, subtitle, ...) {
     )
 
   # Create plot showing individual cumulative incidences
-  if (inherits(x, "mcc_grouped")) {
+  if (is_grouped(x)) {
     p <- ggplot2::ggplot(
       plot_data_long,
       ggplot2::aes(x = .data$time, y = .data$cumulative_incidence)
@@ -309,7 +293,7 @@ plot_mcc_components <- function(x, groups, colors, title, subtitle, ...) {
   }
 
   # Add the sum of CIs
-  if (inherits(x, "mcc_grouped")) {
+  if (is_grouped(x)) {
     p <- p +
       ggplot2::geom_step(
         data = plot_data,
@@ -368,12 +352,288 @@ create_subtitle <- function(x) {
     subtitle_parts <- paste(subtitle_parts, "(Weighted)")
   }
 
-  if (inherits(x, "mcc_grouped")) {
+  if (is_grouped(x)) {
     n_groups <- length(unique(x$mcc_final[[x$by_group]]))
     subtitle_parts <- paste0(subtitle_parts, " - ", n_groups, " groups")
   }
 
   return(subtitle_parts)
+}
+
+
+#' Add Reference Lines at an MCC Threshold to ggplot2 Objects
+#'
+#' @description
+#' Adds horizontal and vertical reference lines to mark when the Mean Cumulative
+#' Count (MCC) reaches the `threshold`. This function returns a list of `ggplot2`
+#' geoms that can be added to existing plots using the `+` operator. For
+#' grouped analyses, it creates separate reference lines for each group.
+#'
+#' @param mcc_object An object of class `mcc` containing MCC estimates.
+#' @param threshold numeric;determines MCC value threshold to use (default =
+#'     `1.0`)
+#' @param linetype Line type for the reference lines. Default is `2` (dashed).
+#'   Can be numeric (1-6) or character ("solid", "dashed", "dotted", etc.).
+#' @param color Color for the reference lines. If `NULL` (default), uses gray.
+#' @param alpha Transparency level for the reference lines. Default is `0.7`.
+#' @param linewidth Width of the reference lines. Default is `0.5`.
+#' @param show_labels Logical indicating whether to add text labels at the
+#'   intersection points. Default is `FALSE`.
+#' @param label_size Size of the text labels if `show_labels = TRUE`. Default is `3`.
+#' @param label_nudge_x Horizontal offset for labels. Default is `0`.
+#' @param label_nudge_y Vertical offset for labels. Default is `0.05`.
+#'
+#' @returns A `ggplot2` layer object that can be added to a ggplot using the `+`
+#'     operator.
+#'
+#' @details
+#' This function identifies the time when MCC first reaches or exceeds the
+#' specified MCC `threshold`. It then creates:
+#'
+#' - A horizontal line from x = 0 to the time when MCC = `threshold`
+#' - A vertical line from y = 0 to MCC = `threshold` at that time point
+#'
+#' For grouped analyses, separate reference lines are created for each group
+#' that reaches MCC = `threshold`. Groups that never reach MCC = `threshold`
+#' will not have reference lines added.
+#'
+#' The function is designed to work seamlessly with the existing `plot.mcc()`
+#' method and can be chained using ggplot2's `+` syntax.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # Create sample data
+#' library(dplyr)
+#' df <- data.frame(
+#'   id = c(1, 2, 3, 4, 4, 4, 5, 5),
+#'   time = c(8, 1, 5, 2, 6, 7, 3, 3),
+#'   cause = c(0, 0, 2, 1, 1, 1, 1, 2),
+#'   group = c("A", "A", "B", "B", "B", "B", "A", "A")
+#' ) |>
+#'   arrange(id, time)
+#'
+#' # Ungrouped analysis
+#' mcc_overall <- mcc(df, "id", "time", "cause")
+#'
+#' # Basic plot with reference lines
+#' plot(mcc_overall) +
+#'   geom_line_mcc(mcc_overall) +
+#'   labs(title = "MCC with Reference Lines at 1.0")
+#'
+#' # Grouped analysis
+#' mcc_grouped <- mcc(df, "id", "time", "cause", by = "group")
+#'
+#' # Plot with group-specific reference lines
+#' plot(mcc_grouped) +
+#'   geom_line_mcc(mcc_grouped, linetype = "dotted", alpha = 0.8) +
+#'   labs(title = "Grouped MCC with Reference Lines")
+#'
+#' # With labels
+#' plot(mcc_overall) +
+#'   geom_line_mcc(mcc_overall, show_labels = TRUE, color = "red") +
+#'   labs(title = "MCC with Labeled Reference Lines")
+#'
+#' # Clean up
+#' rm(df, mcc_overall, mcc_grouped)
+#' }
+#'
+geom_line_mcc <- function(
+  mcc_object,
+  threshold = 1.0,
+  linetype = 2,
+  color = NULL,
+  alpha = 0.7,
+  linewidth = 0.5,
+  show_labels = FALSE,
+  label_size = 3,
+  label_nudge_x = 0,
+  label_nudge_y = 0.05
+) {
+  # Input validation
+  if (!is_mcc(mcc_object)) {
+    cli::cli_abort("{.arg mcc_object} must be an {.cls mcc} object")
+  }
+
+  # Check if ggplot2 is available
+  rlang::check_installed(
+    "ggplot2",
+    reason = "for adding reference lines to plots"
+  )
+
+  # Set default color if not provided
+  if (is.null(color)) {
+    color <- "gray50"
+  }
+
+  # Get MCC column name based on method
+  mcc_col <- if (mcc_object$method == "equation") "mcc" else "SumCIs"
+
+  # Create a custom layer function that returns multiple geoms
+  layer_function <- function() {
+    # Initialize list to store annotation data
+    segments_data <- data.frame()
+    labels_data <- data.frame()
+
+    if (is_grouped(mcc_object)) {
+      # Handle grouped analysis
+      group_var <- mcc_object$by_group
+      groups <- unique(mcc_object$mcc_final[[group_var]])
+
+      for (i in seq_along(groups)) {
+        group_data <- mcc_object$mcc_final[
+          mcc_object$mcc_final[[group_var]] == groups[i],
+        ]
+
+        # Get time when MCC reaches 1.0 for this group
+        mcc_1_time <- get_time_to_mcc(
+          group_data,
+          mcc_col,
+          threshold = threshold
+        )
+
+        # Only add lines if MCC reaches 1.0
+        if (!is.na(mcc_1_time)) {
+          # Add vertical line data
+          segments_data <- rbind(
+            segments_data,
+            data.frame(
+              x = mcc_1_time,
+              y = 0,
+              xend = mcc_1_time,
+              yend = threshold,
+              group = groups[i]
+            )
+          )
+
+          # Add horizontal line data
+          segments_data <- rbind(
+            segments_data,
+            data.frame(
+              x = 0,
+              y = threshold,
+              xend = mcc_1_time,
+              yend = threshold,
+              group = groups[i]
+            )
+          )
+
+          # Add label data if requested
+          if (show_labels) {
+            labels_data <- rbind(
+              labels_data,
+              data.frame(
+                x = mcc_1_time + label_nudge_x,
+                y = threshold + label_nudge_y,
+                label = glue::glue("{groups[i]}: t = {round(mcc_1_time, 1)}"),
+                group = groups[i]
+              )
+            )
+          }
+        }
+      }
+    } else {
+      # Handle ungrouped analysis
+      mcc_1_time <- get_time_to_mcc(
+        mcc_object$mcc_final,
+        mcc_col,
+        threshold = threshold
+      )
+
+      # Only add lines if MCC reaches 1.0
+      if (!is.na(mcc_1_time)) {
+        # Add vertical line data
+        segments_data <- rbind(
+          segments_data,
+          data.frame(
+            x = mcc_1_time,
+            y = 0,
+            xend = mcc_1_time,
+            yend = threshold
+          )
+        )
+
+        # Add horizontal line data
+        segments_data <- rbind(
+          segments_data,
+          data.frame(
+            x = 0,
+            y = threshold,
+            xend = mcc_1_time,
+            yend = threshold
+          )
+        )
+
+        # Add label data if requested
+        if (show_labels) {
+          labels_data <- rbind(
+            labels_data,
+            data.frame(
+              x = mcc_1_time + label_nudge_x,
+              y = threshold + label_nudge_y,
+              label = glue::glue(
+                "MCC = {threshold} at t = {round(mcc_1_time, 1)}"
+              )
+            )
+          )
+        }
+      } else {
+        # Warn user if MCC never reaches threshold
+        cli::cli_inform(c(
+          "i" = "MCC never reaches {threshold} in the observed follow-up period",
+          "i" = "No reference lines added"
+        ))
+      }
+    }
+
+    # Create the layers
+    layers <- list()
+
+    # Add segments if we have data
+    if (nrow(segments_data) > 0) {
+      layers <- append(
+        layers,
+        list(
+          ggplot2::geom_segment(
+            data = segments_data,
+            ggplot2::aes(
+              x = .data$x,
+              y = .data$y,
+              xend = .data$xend,
+              yend = .data$yend
+            ),
+            linetype = linetype,
+            color = color,
+            alpha = alpha,
+            linewidth = linewidth,
+            inherit.aes = FALSE
+          )
+        )
+      )
+    }
+
+    # Add labels if we have data
+    if (show_labels && nrow(labels_data) > 0) {
+      layers <- append(
+        layers,
+        list(
+          ggplot2::geom_text(
+            data = labels_data,
+            ggplot2::aes(x = .data$x, y = .data$y, label = .data$label),
+            size = label_size,
+            color = color,
+            inherit.aes = FALSE
+          )
+        )
+      )
+    }
+
+    return(layers)
+  }
+
+  # Return the layers
+  return(layer_function())
 }
 
 #' Auto-plot method for `mcc` objects

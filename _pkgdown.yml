@@ -34,6 +34,7 @@ reference:
   - contents:
       - plot.mcc
       - autoplot.mcc
+      - geom_line_mcc
 
   - title: S3 Object Utilities
   - subtitle: Extract results

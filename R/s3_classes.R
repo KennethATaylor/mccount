@@ -78,7 +78,7 @@ validate_mcc <- function(x) {
   }
 
   # Validate mcc_final structure
-  if (!inherits(x$mcc_final, "data.frame")) {
+  if (!is.data.frame(x$mcc_final)) {
     cli::cli_abort("{.field mcc_final} must be a {.cls data.frame} or tibble")
   }
 
@@ -116,7 +116,7 @@ validate_mcc <- function(x) {
   }
 
   # Grouped-specific validation
-  if (inherits(x, "mcc_grouped")) {
+  if (is_grouped(x)) {
     if (is.null(x$by_group)) {
       cli::cli_abort(
         "Grouped {.cls mcc} objects must have a {.field by_group} component"
@@ -258,7 +258,7 @@ as_mcc.list <- function(
     ))
   }
 
-  if (!inherits(x$mcc_final, "data.frame")) {
+  if (!is.data.frame(x$mcc_final)) {
     cli::cli_abort("{.field mcc_final} must be a {.cls data.frame} or tibble")
   }
 
@@ -390,7 +390,7 @@ print.mcc <- function(x, ...) {
   }
 
   # Print grouping information if applicable
-  if (inherits(x, "mcc_grouped")) {
+  if (is_grouped(x)) {
     n_groups <- length(unique(x$mcc_final[[x$by_group]]))
     cli::cli_alert_info("Grouped by: {x$by_group} ({n_groups} groups)")
   }
@@ -398,7 +398,7 @@ print.mcc <- function(x, ...) {
   # Print sample of results
   cli::cli_h2("MCC Estimates")
 
-  if (inherits(x, "mcc_grouped")) {
+  if (is_grouped(x)) {
     # For grouped results, show a sample from each group
     groups <- unique(x$mcc_final[[x$by_group]])
     n_show <- min(3, length(groups))
@@ -436,6 +436,54 @@ print.mcc <- function(x, ...) {
   }
 
   invisible(x)
+}
+
+#' Get Time When MCC Reaches a Specific Threshold
+#'
+#' @description
+#' Helper function that identifies the first time point when the Mean Cumulative
+#' Count (MCC) reaches or exceeds the threshold. An MCC value of the threshold
+#' represents the time when the population experiences an average of
+#' `<threshold>` event(s).
+#'
+#' @param mcc_data A data frame containing MCC estimates over time. This is
+#'   typically the `mcc_final` component from an `mcc` object.
+#' @param mcc_column A string specifying the name of the column containing
+#'   MCC values. For `method = "equation"`, this is typically `"mcc"`. For
+#'   `method = "sci"`, this is typically `"SumCIs"`.
+#' @param threshold numeric;determines MCC value threshold to use (default =
+#'      `1.0`)
+#'
+#' @returns A numeric value representing the time when MCC first reaches or
+#'   exceeds the `threshold`, or `NA_real_` if MCC never reaches `threshold`
+#'   during the observed follow-up period.
+#'
+#' @details
+#' The MCC represents the expected cumulative number of events per person
+#' in the population initially at risk. When MCC = `threshold`, this indicates
+#' that the population has experienced an average of 1 event per person. This
+#' milestone can be useful for:
+#'
+#' - Identifying when the event burden reaches clinical or epidemiological
+#'   significance
+#' - Comparing event timing across different exposure groups or populations
+#' - Setting thresholds for intervention planning
+#'
+#' Note that MCC values can exceed `threshold`, indicating more than `threshold`
+#' number of events per person on average, which distinguishes it from
+#' probability-based measures like cumulative incidence that are bounded
+#' between 0 and 1.
+#'
+#' @keywords internal
+#'
+get_time_to_mcc <- function(mcc_data, mcc_column, threshold = 1.0) {
+  # Find first time when MCC >= threshold
+  mcc_one_rows <- which(mcc_data[[mcc_column]] >= threshold)
+  if (length(mcc_one_rows) > 0) {
+    return(mcc_data$time[min(mcc_one_rows)])
+  } else {
+    return(NA_real_)
+  }
 }
 
 #' Summary method for `mcc` objects
@@ -480,24 +528,158 @@ summary.mcc <- function(object, ...) {
   # Extract key information
   mcc_col <- if (object$method == "equation") "mcc" else "SumCIs"
 
-  if (inherits(object, "mcc_grouped")) {
-    # Grouped summary
+  # Helper function to get max follow-up time from original data
+  get_max_followup_time <- function(obj) {
+    if ("original_data" %in% names(obj) && !is.null(obj$original_data)) {
+      # Get maximum time from original data (includes all censoring/competing risk times)
+      return(max(obj$original_data$time, na.rm = TRUE))
+    } else {
+      # Fallback to max time in mcc_table if original_data not available
+      return(max(obj$mcc_table$time, na.rm = TRUE))
+    }
+  }
+
+  # Helper function to get event counts from original data
+  get_event_counts <- function(obj) {
+    if ("original_data" %in% names(obj) && !is.null(obj$original_data)) {
+      data_to_use <- obj$original_data
+    } else {
+      # Fallback: try to get from other available data sources
+      if ("mcc_table" %in% names(obj) && !is.null(obj$mcc_table)) {
+        # For equation method, we don't have individual-level data in mcc_table
+        # but we can try to reconstruct from the aggregated data
+        return(list(
+          n_participants = NA_integer_,
+          n_events = NA_integer_,
+          n_competing = NA_integer_,
+          n_censoring = NA_integer_
+        ))
+      } else {
+        return(list(
+          n_participants = NA_integer_,
+          n_events = NA_integer_,
+          n_competing = NA_integer_,
+          n_censoring = NA_integer_
+        ))
+      }
+    }
+
+    # Count unique participants
+    n_participants <- length(unique(data_to_use$id))
+
+    # Count events by cause type
+    event_counts <- data_to_use |>
+      dplyr::count(.data$cause, name = "n") |>
+      dplyr::mutate(
+        cause = factor(
+          .data$cause,
+          levels = c(0, 1, 2),
+          labels = c("censoring", "events", "competing")
+        )
+      )
+
+    # Create a complete summary with all event types (even if count is 0)
+    complete_counts <- data.frame(
+      cause = factor(
+        c("censoring", "events", "competing"),
+        levels = c("censoring", "events", "competing")
+      ),
+      n = 0L
+    ) |>
+      dplyr::left_join(event_counts, by = "cause") |>
+      dplyr::mutate(n = dplyr::coalesce(.data$n.y, .data$n.x)) |>
+      dplyr::select("cause", "n")
+
+    return(list(
+      n_participants = n_participants,
+      n_events = complete_counts$n[complete_counts$cause == "events"],
+      n_competing = complete_counts$n[complete_counts$cause == "competing"],
+      n_censoring = complete_counts$n[complete_counts$cause == "censoring"]
+    ))
+  }
+
+  # Helper function to get MCC at end of follow-up
+  get_mcc_at_end_followup <- function(mcc_data, mcc_column, max_followup) {
+    # Find the MCC value at the time closest to (but not exceeding) max follow-up
+    valid_times <- mcc_data$time[mcc_data$time <= max_followup]
+    if (length(valid_times) > 0) {
+      max_valid_time <- max(valid_times)
+      return(mcc_data[[mcc_column]][mcc_data$time == max_valid_time])
+    } else {
+      return(0) # If no events by end of follow-up
+    }
+  }
+
+  if (is_grouped(object)) {
+    # Grouped summary - calculate counts per group
+    overall_max_followup_time <- get_max_followup_time(object)
+
+    # Get group-specific event counts AND group-specific max follow-up times
+    if ("original_data" %in% names(object) && !is.null(object$original_data)) {
+      group_event_counts <- object$original_data |>
+        dplyr::group_by(!!rlang::sym(object$by_group)) |>
+        dplyr::summarise(
+          n_participants = dplyr::n_distinct(.data$id),
+          n_events = sum(.data$cause == 1, na.rm = TRUE),
+          n_competing = sum(.data$cause == 2, na.rm = TRUE),
+          n_censoring = sum(.data$cause == 0, na.rm = TRUE),
+          group_max_followup = max(.data$time, na.rm = TRUE),
+          .groups = "drop"
+        )
+    } else {
+      # Fallback when original_data not available
+      group_event_counts <- object$mcc_final |>
+        dplyr::group_by(!!rlang::sym(object$by_group)) |>
+        dplyr::summarise(
+          n_participants = NA_integer_,
+          n_events = NA_integer_,
+          n_competing = NA_integer_,
+          n_censoring = NA_integer_,
+          group_max_followup = max(.data$time, na.rm = TRUE),
+          .groups = "drop"
+        )
+    }
+
     summary_stats <- object$mcc_final |>
       dplyr::group_by(!!rlang::sym(object$by_group)) |>
       dplyr::summarise(
-        n_timepoints = dplyr::n(),
         min_time = min(.data$time, na.rm = TRUE),
-        max_time = max(.data$time, na.rm = TRUE),
-        final_mcc = .data[[mcc_col]][which.max(.data$time)],
+        time_of_max_mcc = .data$time[which.max(.data[[mcc_col]])],
+        time_to_mcc_one = get_time_to_mcc(
+          dplyr::pick(dplyr::everything()),
+          mcc_col
+        ),
+        mcc_at_end_followup = get_mcc_at_end_followup(
+          dplyr::pick(dplyr::everything()),
+          mcc_col,
+          overall_max_followup_time
+        ),
         .groups = "drop"
+      ) |>
+      dplyr::left_join(group_event_counts, by = object$by_group) |>
+      dplyr::mutate(
+        overall_max_followup = overall_max_followup_time
       )
   } else {
     # Ungrouped summary
+    max_followup_time <- get_max_followup_time(object)
+    event_counts <- get_event_counts(object)
+    max_mcc_idx <- which.max(object$mcc_final[[mcc_col]])
+
     summary_stats <- list(
-      n_timepoints = nrow(object$mcc_final),
       min_time = min(object$mcc_final$time, na.rm = TRUE),
-      max_time = max(object$mcc_final$time, na.rm = TRUE),
-      final_mcc = object$mcc_final[[mcc_col]][nrow(object$mcc_final)]
+      time_of_max_mcc = object$mcc_final$time[max_mcc_idx],
+      max_followup_time = max_followup_time,
+      time_to_mcc_one = get_time_to_mcc(object$mcc_final, mcc_col),
+      mcc_at_end_followup = get_mcc_at_end_followup(
+        object$mcc_final,
+        mcc_col,
+        max_followup_time
+      ),
+      n_participants = event_counts$n_participants,
+      n_events = event_counts$n_events,
+      n_competing = event_counts$n_competing,
+      n_censoring = event_counts$n_censoring
     )
   }
 
@@ -507,7 +689,7 @@ summary.mcc <- function(object, ...) {
     summary_stats = summary_stats,
     method = object$method,
     weighted = object$weighted,
-    grouped = inherits(object, "mcc_grouped"),
+    grouped = is_grouped(object),
     by_group = object$by_group
   )
 
@@ -537,17 +719,102 @@ print.summary.mcc <- function(x, ...) {
     cli::cli_alert_info("Weighted estimation: Yes")
   }
 
+  # Total number of participants and overall observation period
+  if (x$grouped) {
+    if (!is.na(x$summary_stats$n_participants[1])) {
+      total_n <- sum(x$summary_stats$n_participants, na.rm = TRUE)
+      cli::cli_alert_info("Total participants: {.val {total_n}}")
+      # Show overall observation period for the entire study
+      overall_min <- min(x$summary_stats$min_time, na.rm = TRUE)
+      overall_max <- x$summary_stats$overall_max_followup[1] # Should be the same for all groups
+      cli::cli_alert_info(
+        "Overall observation period: {.val [{overall_min}, {overall_max}]}"
+      )
+    }
+  } else {
+    if (!is.na(x$summary_stats$n_participants)) {
+      cli::cli_alert_info(
+        "Total participants: {.val {x$summary_stats$n_participants}}"
+      )
+    }
+  }
+
   # Summary statistics
   if (x$grouped) {
     cli::cli_h2("Summary by Group ({x$by_group})")
-    print(x$summary_stats)
+
+    # Iterate through each group and print individual summaries
+    for (i in seq_len(nrow(x$summary_stats))) {
+      group_name <- x$summary_stats[[x$by_group]][i]
+      group_stats <- x$summary_stats[i, ]
+
+      cli::cli_h3("Group: {.val {group_name}}")
+
+      # Group-specific participant count
+      if (!is.na(group_stats$n_participants)) {
+        cli::cli_text(
+          "Participants in group: {.val {group_stats$n_participants}}"
+        )
+      }
+
+      # Group-specific observation period
+      cli::cli_text(
+        "Group observation period: {.val [{group_stats$min_time}, {group_stats$group_max_followup}]}"
+      )
+
+      if (!is.na(group_stats$time_to_mcc_one)) {
+        cli::cli_text("Time to MCC = 1.0: {.val {group_stats$time_to_mcc_one}}")
+      } else {
+        cli::cli_text("Time to MCC = 1.0: {.val Never reached}")
+      }
+
+      cli::cli_text("Time to maximum MCC: {.val {group_stats$time_of_max_mcc}}")
+      cli::cli_text(
+        "MCC at end of follow-up: {.val {round(group_stats$mcc_at_end_followup, 4)}}"
+      )
+
+      # Add event counts if available (excluding participant count since it's shown above)
+      if (!is.na(group_stats$n_events)) {
+        cli::cli_text("Events of interest: {.val {group_stats$n_events}}")
+        cli::cli_text("Competing risk events: {.val {group_stats$n_competing}}")
+        cli::cli_text("Censoring events: {.val {group_stats$n_censoring}}")
+      }
+
+      # Add spacing between groups (except for the last one)
+      if (i < nrow(x$summary_stats)) {
+        cli::cli_text("")
+      }
+    }
   } else {
     cli::cli_h2("Summary Statistics")
-    cli::cli_text("Number of time points: {x$summary_stats$n_timepoints}")
     cli::cli_text(
-      "Time range: [{x$summary_stats$min_time}, {x$summary_stats$max_time}]"
+      "Observation period: {.val [{x$summary_stats$min_time}, {x$summary_stats$max_followup_time}]}"
     )
-    cli::cli_text("Final MCC: {round(x$summary_stats$final_mcc, 4)}")
+
+    if (!is.na(x$summary_stats$time_to_mcc_one)) {
+      cli::cli_text(
+        "Time to MCC = 1.0: {.val {x$summary_stats$time_to_mcc_one}}"
+      )
+    } else {
+      cli::cli_text("Time to MCC = 1.0: {.val Never reached}")
+    }
+
+    cli::cli_text(
+      "Time to maximum MCC: {.val {x$summary_stats$time_of_max_mcc}}"
+    )
+    cli::cli_text(
+      "MCC at end of follow-up: {.val {round(x$summary_stats$mcc_at_end_followup, 4)}}"
+    )
+
+    # Add event counts if available (participant count already shown at top)
+    if (!is.na(x$summary_stats$n_events)) {
+      cli::cli_h3("Event Count Composition")
+      cli::cli_text("Events of interest: {.val {x$summary_stats$n_events}}")
+      cli::cli_text(
+        "Competing risk events: {.val {x$summary_stats$n_competing}}"
+      )
+      cli::cli_text("Censoring events: {.val {x$summary_stats$n_censoring}}")
+    }
   }
 
   invisible(x)
