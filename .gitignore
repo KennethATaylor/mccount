@@ -6,3 +6,6 @@
 .quarto
 dev/
 docs
+inst/doc
+/doc/
+/Meta/

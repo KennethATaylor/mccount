@@ -9,3 +9,5 @@ dev/
 ^pkgdown$
 ^\.github$
 ^vignettes/articles$
+^doc$
+^Meta$
