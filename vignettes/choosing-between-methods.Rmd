@@ -18,418 +18,104 @@ library(dplyr)
 library(mccount)
 ```
 
-## Quick Decision Guide
+## Two Approaches, Same Goal
 
-The `mccount` package offers two methods for calculating Mean Cumulative Count (MCC):
+`mccount` implements two methods for calculating mean cumulative count (MCC):
 
-- **Equation method** (default): Direct calculation using the Dong-Yasui estimator
-- **SCI method**: Sum of Cumulative Incidences estimator
+- **Equation method**: Direct calculation using the Dong-Yasui estimator
+- **SCI method**: Sum of cumulative incidences approach
 
-**🚀 TL;DR**: Use the default equation method unless you specifically need the features unique to the SCI method.
+Both estimate the same parameter and are **mathematically equivalent** under specific conditions. Under conditions where the two estimators will differ, the choice between the two estimators should be made based on the research question at hand, specifically the characteristics of the outcome.
 
-## Decision Flowchart
+## When Methods Are Equivalent
 
-```
-Do you need event-specific breakdowns (1st, 2nd, 3rd events)?
-├─ YES → Use SCI method
-└─ NO
-   ├─ Do you have left truncation (delayed study entry)?
-   │  ├─ YES → Use SCI method  
-   │  └─ NO
-   │     ├─ Do you need inverse probability weighting?
-   │     │  ├─ YES → Use equation method
-   │     │  └─ NO → Use equation method (default)
-```
+Both MCC estimators yield **identical results** under specific conditions:
 
-## Method Comparison at a Glance
+### Administrative Censoring Only
+The methods are mathematically equivalent when there is no censoring except for at the end of study follow-up (i.e. *administrative censoring only*) - that is, when you observe all participants until they either experience a competing risk or reach the end of study follow-up.
 
-| Feature | Equation Method | SCI Method |
-|---------|----------------|------------|
-| **Speed** | ⚡ Fast | 🐌 Slower |
-| **Memory usage** | 💾 Efficient | 📚 Higher |
-| **Weighting support** | ✅ Yes | ❌ No |
-| **Left truncation** | ❌ No | ✅ Yes |
-| **Event-specific details** | ❌ No | ✅ Yes |
-| **Component plots** | ❌ No | ✅ Yes |
-| **Small samples** | ✅ Stable | ⚠️ May be unstable |
-| **Large datasets** | ✅ Excellent | ⚠️ May struggle |
+### Synchronized Event-Interval Censoring
+Even with censoring before the end of follow-up, the two methods yield identical results when censoring follows a very specific pattern. Censoring must occur after *everyone* remaining at risk has experienced their *p*th event, but before *anyone* has had a (*p*+1)th. This censoring pattern is observed when non-administrative censoring is *only* observed during time intervals where the event count sequence is synchronized at the cohort level. I like to call this pattern *synchronized event-interval censoring*.
 
-## When to Choose Each Method
+Take the applied example given by Dong, *et al*.[^1] - assume 5 participants enrolled in hypothetical study:
 
-### Use Equation Method When:
+[^1]: Dong H, Robison LL, Leisenring WM, Martin LJ, Armstrong GT, Yasui Y. Estimating the burden of recurrent events in the presence of competing risks: the method of mean cumulative count. *Am J Epidemiol*. 2015 Apr 1;181(7):532-40. doi: [10.1093/aje/kwu289](https://doi.org/10.1093/aje/kwu289)
 
-✅ **Standard MCC analysis** - Most common use case  
-✅ **Large datasets** - Better performance and memory efficiency  
-✅ **Causal inference** - Need inverse probability weighting  
-✅ **Small samples** - More stable with limited data  
-✅ **Production environments** - Faster execution for repeated analyses  
-✅ **Events are "exchangeable"** - Order doesn't matter clinically (all hospitalizations have similar meaning)
+* Subject 1: alive at the end of follow-up and administratively censored at that time (`t8`)
+* Subject 2: Lost to follow-up and censored at `t1`
+* Subject 3: Died (competing-risk event) at `t5`
+* Subject 4: Experience the event of interest at `t2`, `t6`, and `t7` and was alive at the end of follow-up (administratively censored at `t8`)
+* Subject 5: Experienced event of interest once at `t3` and died (competing risk event) at the same time point
 
-```{r equation-example}
-# Standard analysis - equation method (default)
-data <- data.frame(
-  id = c(1, 1, 2, 2, 3, 3, 3, 3, 4, 4, 5),
-  time = c(10, 25, 15, 30, 4, 20, 30, 40, 35, 40, 40),
-  cause = c(1, 0, 1, 2, 1, 1, 1, 2, 1, 0, 0)
+```{r dong-example}
+df <- data.frame(
+  id = c(1, 2, 3, 4, 4, 4, 4, 5, 5),
+  time = c(8, 1, 5, 2, 6, 7, 8, 3, 3),
+  cause = c(0, 0, 2, 1, 1, 1, 0, 1, 2)
+ )
+
+# Calculating MCC using both estimators
+mcc_eq <- mcc(
+  df,
+  id_var = "id",
+  time_var = "time",
+  cause_var = "cause",
+  method = "equation"
 )
 
-mcc_eq <- mcc(data, "id", "time", "cause", method = "equation")
-summary(mcc_eq)
-```
-
-### Use SCI Method When:
-
-✅ **Event order matters clinically** - 1st, 2nd, 3rd events have different meanings  
-✅ **Delayed study entry** - Have left truncation (`tstart_var`)  
-✅ **Diagnostic purposes** - Want to understand event composition  
-✅ **Educational/presentation** - Component plots help explain results  
-✅ **Sequential events may have different risk factors** - As in Dong et al.'s cancer example
-
-```{r sci-example}
-# When you need event-specific breakdowns
-mcc_sci <- mcc(data, "id", "time", "cause", method = "sci")
-
-# See the breakdown by event number
-mcc_sci$sci_table
-```
-
-```{r sci-plot}
-# Component plot shows contribution of each event order
-plot(mcc_sci, type = "components", 
-     title = "MCC Components: 1st, 2nd, and 3rd Events")
-```
-
-## Practical Examples
-
-### Healthcare: Hospital Readmissions
-
-```{r healthcare-example}
-# Simulate hospital readmission data
-set.seed(123)
-hospital_data <- data.frame(
-  patient_id = rep(1:100, each = 3)[1:250],
-  days = sort(sample(1:365, 250, replace = TRUE)),
-  event_type = sample(c(0, 1, 2), 250, replace = TRUE, prob = c(0.3, 0.6, 0.1)),
-  hospital_type = sample(c("Academic", "Community"), 250, replace = TRUE)
+mcc_sci <- mcc(
+  df,
+  id_var = "id",
+  time_var = "time",
+  cause_var = "cause",
+  method = "sci"
 )
-
-# Remove some rows to create realistic pattern
-hospital_data <- hospital_data %>%
-  group_by(patient_id) %>%
-  arrange(days) %>%
-  slice_head(n = sample(1:4, 1)) %>%
-  ungroup() %>%
-  arrange(patient_id, days)
-
-# Standard analysis: Which hospital type has higher readmission burden?
-mcc_readmit <- mcc(hospital_data, "patient_id", "days", "event_type", 
-                   by = "hospital_type", method = "equation")
-
-plot(mcc_readmit, by_group = TRUE, 
-     title = "Hospital Readmission Burden by Hospital Type")
 ```
 
-**Interpretation**: Academic hospitals show higher average readmissions per patient over time.
+In this example, both methods are equivalent because the only non-administrative censoring that happens is before *everyone's* first event (i.e., synchronized event-interval censoring):
 
-### Research: Understanding Event Patterns
+```{r}
+# Dong-Yasui estimator
+mcc_details(mcc_eq)
 
-```{r research-example}
-# When you need to understand HOW events accumulate
-mcc_detailed <- mcc(hospital_data %>% filter(hospital_type == "Academic"), 
-                    "patient_id", "days", "event_type", method = "sci")
-
-# Show event composition
-plot(mcc_detailed, type = "components",
-     title = "Academic Hospital: Readmission Patterns",
-     subtitle = "Breakdown by 1st, 2nd, 3rd+ readmissions")
+# Sum of cumulative incidences estimator
+mcc_details(mcc_sci)
 ```
 
-**Research insight**: Most burden comes from first readmissions, but multiple readmissions contribute meaningfully after day 200.
+## When Methods Differ and Why
 
-## Performance Comparison
+When results from the two estimators differ, it reflects how they handle a fundamental question about the outcome: **Does event order matter for your outcome?** The Dong-Yasui estimator treats all events as exchangeable - when someone is censored after their 2nd event, it affects the calculation of *all* future events regardless of whether they are the 1st, 2nd, or 3rd for other people. The SCI method takes an event-specific approach - when someone is censored after their 2nd event, it only affects calculations for 3rd+ events, not 1st/2nd events for others.
 
-```{r performance-demo, eval=FALSE}
-# Simulate larger dataset for performance testing
-large_data <- data.frame(
-  id = rep(1:1000, each = 5),
-  time = sort(sample(1:730, 5000, replace = TRUE)),
-  cause = sample(c(0, 1, 2), 5000, replace = TRUE, prob = c(0.2, 0.7, 0.1))
-)
+### When Events Are Exchangeable
+Recurrent events in a healthcare context might be reasonably considered exchangeable if their ordering is irrelevant clinically or biologically because all events represent the same underlying process or a routine, maintenance-type activities where clinical meaning is unrelated to the order of the recurrent event count. Consider the following examples:
 
-# Time both methods
-system.time({
-  mcc_eq_large <- mcc(large_data, "id", "time", "cause", method = "equation")
-})
-#   user  system elapsed 
-#  0.045   0.002   0.047 
+- **Routine medication refills**: Each refill of chronic medications (blood pressure pills, diabetes medications) might represent identical adherence behavior
+- **Preventive care visits**: Annual physicals or routine dental cleanings represent the same preventive behavior whether it's the 3rd or 10th visit
+- **Routine lab monitoring**: Quarterly hemoglobin A1c tests for stable diabetes may represent identical surveillance activity
+- **Routine imaging surveillance**: Follow-up mammograms or CT scans for stable conditions represent the same monitoring process
 
-system.time({
-  mcc_sci_large <- mcc(large_data, "id", "time", "cause", method = "sci")  
-})
-#   user  system elapsed 
-#  0.234   0.008   0.243
+### When Event Order Matters
+Exchangeability is unreasonable (or naive) for some recurrent outcomes in health research. With some outcomes, the occurrence of each event may impact the probability of subsequent events (i.e. the events have different clinical meaning or biological mechanisms depending on where they fall in the count sequence). Consider the following examples:
 
-# Equation method ~5x faster for this dataset
-```
+- **Cancer recurrences**: First vs second recurrence may have different biology and prognosis
+- **Hospital readmissions**: Early readmissions may indicate discharge planning issues, while multiple readmissions suggest complex care needs
+- **Medication adverse events**: Early vs late adverse events may have different mechanisms and clinical significance
+- **Seizures**: Early vs late seizures may indicate different disease progression patterns (depending on the underlying cause)
 
-## When Methods Give Different Results
+## Documenting Your Choice
 
-Methods should give identical results under ideal conditions, but may differ when:
+If you are in the position where the censoring pattern will result in equivalent results from the two estimators, then you can make the decision of which MCC estimator to use based on computational efficiency and pick the Dong-Yasui estimator. For the rest of us who are dealing with scenarios where the estimators are expected to differ, the choice between estimators should align with the outcome of interest in the research question. Regardless of which group you fall into, I recommend explicitly documenting which estimator was used (and how the choice was made).
 
-### 1. Strong Dependence Between Competing Risks and Events
+## Special Case - Delayed Study Entry
 
-```{r dependent-risks}
-# Simulate data where sicker patients have both more events AND higher death risk
-set.seed(456)
-dependent_data <- data.frame(
-  id = 1:50,
-  # High-risk patients (id 1-25) get more events AND more competing risks
-  time_1 = c(sample(10:50, 25), sample(100:200, 25)),
-  cause_1 = c(rep(1, 25), sample(c(0,1), 25, replace = TRUE)),
-  time_2 = c(sample(60:100, 25), sample(250:300, 25)),
-  cause_2 = c(sample(c(1,2), 25, replace = TRUE, prob = c(0.3, 0.7)),
-              sample(c(0,1), 25, replace = TRUE))
-) %>%
-  tidyr::pivot_longer(cols = -id, 
-                      names_to = c(".value", "event_num"), 
-                      names_pattern = "(.+)_(.+)") %>%
-  arrange(id, time) %>%
-  filter(!is.na(time))
-
-# Compare methods
-mcc_eq_dep <- mcc(dependent_data, "id", "time", "cause", method = "equation")
-mcc_sci_dep <- mcc(dependent_data, "id", "time", "cause", method = "sci")
-
-# Check for differences at final timepoint
-eq_final <- tail(mcc_estimates(mcc_eq_dep)$mcc, 1)
-sci_final <- tail(mcc_estimates(mcc_sci_dep)$SumCIs, 1)
-
-cat("Equation method final MCC:", round(eq_final, 3), "\n")
-cat("SCI method final MCC:", round(sci_final, 3), "\n") 
-cat("Difference:", round(abs(eq_final - sci_final), 3), "\n")
-```
-
-### 2. What to Do When Results Differ
-
-When methods give different results, here's your action plan:
-
-### 2. What to Do When Results Differ
-
-The Dong et al. paper notes that methods are **mathematically equivalent** under ideal conditions but may differ due to censoring patterns and data characteristics. Here's how to respond:
-
-#### Step 1: Understand Why Methods Differ
-
-**Primary reason from Dong et al.**: Different handling of censoring events
-
-**Equation method (MCC)**: Treats all events as "exchangeable" - when someone is censored after their 2nd event, it affects the calculation of ALL future events (whether those future events are 1st, 2nd, 3rd+ events for other people) because the at-risk denominator is reduced.
-
-**SCI method**: Event-specific - when someone is censored after their 2nd event, it only affects the calculation of 3rd, 4th, 5th+ events for others, but NOT the calculation of 1st and 2nd events for other people.
-
-```{r censoring-difference-example}
-# Example: Patient A is censored after their 2nd hospitalization
-# 
-# Equation method: ALL future hospitalizations (whether 1st, 2nd, or 3rd for others) 
-#                  will have higher estimates due to smaller denominator
-#
-# SCI method: Only affects CumI calculations for 3rd+ hospitalizations
-#             CumI for 1st and 2nd hospitalizations remain unaffected
-#
-# This reflects the "exchangeable" vs "event-specific" philosophy
-```
-
-#### Step 2: Determine If the Difference Matters
-
-**From Dong et al.**: Methods differ when censoring occurs in specific patterns. The choice depends on your research question:
-
-```{r research-question-guide, eval=FALSE}
-# Ask yourself: Are my events "exchangeable" or does ORDER matter?
-
-# If events are EXCHANGEABLE (order doesn't matter clinically):
-# → Use equation method
-# → Example: "All hospitalizations represent similar healthcare burden"
-# → Censoring will affect all future event estimates equally
-
-# If event ORDER matters (1st vs 2nd vs 3rd are clinically different):
-# → Use SCI method  
-# → Example: "First cancer may be different from second cancer biologically"
-# → Censoring will only affect estimates for higher-order events
-```
-
-#### Step 3: Apply Dong et al.'s Guidance
-
-**Use SCI Method When:**
-- **Event order matters clinically/biologically**
-- **Sequential events may have different risk factors** 
-- **You want event-specific cumulative incidences**
-
-*Example from the paper*: Childhood cancer survivors, where "second cancer treatment may affect the risk of third and subsequent cancers" - they used SCI method.
-
-**Use Equation Method When:**
-- **Events are "exchangeable" (order doesn't matter biologically)**
-- **You want computational efficiency**
-- **Total burden is more important than event sequence**
-
-#### Step 4: Practical Decision Making
-
-```{r practical-decision-dong}
-# Following Dong et al.'s logic:
-
-check_if_order_matters <- function(your_research_context) {
-  
-  questions <- c(
-    "Are 1st and 2nd events clinically/biologically equivalent?",
-    "Does experiencing one event change the nature of subsequent events?", 
-    "Do I need event-specific cumulative incidences?"
-  )
-  
-  cat("Ask yourself these questions:\n")
-  for(i in seq_along(questions)) {
-    cat(i, ". ", questions[i], "\n")
-  }
-  
-  cat("\nIf events are EQUIVALENT → Use equation method (treats all events as exchangeable)\n")
-  cat("If events are DIFFERENT → Use SCI method (preserves event order distinctions)\n")
-}
-
-check_if_order_matters()
-```
-
-#### Step 5: Document Your Choice
-
-**Following the Paper's Approach:**
-
-```{r documentation-dong-style, eval=FALSE}
-# If using SCI method (when order matters):
-"We calculated MCC using the sum of cumulative incidences method 
-because first, second, and subsequent events may have different 
-clinical significance, making event order distinction important 
-for interpretation."
-
-# If using equation method (when events are exchangeable):
-"We calculated MCC using the equation method as we were interested 
-in the total burden of events, treating all occurrences as equivalent 
-regardless of their sequential order within individuals."
-```
-
-#### When Both Methods Give Different Results:
-
-**Dong et al.'s guidance**: The difference reflects how censoring affects the estimates. Choose based on your research question, not on which gives "better" results.
-
-```{r dong-decision-tree}
-# Decision tree based on Dong et al. paper
-make_method_decision <- function(event_type, research_question) {
-  
-  # Key question from Dong et al.: Does event order matter?
-  cat("Method Selection Based on Dong et al. (2015):\n")
-  cat("=" %>% rep(50) %>% paste0(collapse = ""), "\n\n")
-  
-  cat("Primary consideration: Does the ORDER of events matter for your research?\n\n")
-  
-  cat("Use SCI METHOD if:\n")
-  cat("- 1st, 2nd, 3rd events have different clinical significance\n")
-  cat("- Previous events change the risk of future events\n") 
-  cat("- You need event-specific cumulative incidences\n")
-  cat("- You want to distinguish event patterns\n\n")
-  
-  cat("Use EQUATION METHOD if:\n")
-  cat("- Events are 'exchangeable' (order doesn't matter)\n")
-  cat("- You want total burden regardless of sequence\n")
-  cat("- You need computational efficiency\n")
-  cat("- Standard MCC interpretation is sufficient\n\n")
-  
-  cat("NOTE: Both methods are mathematically equivalent under ideal conditions.\n")
-  cat("Differences arise from censoring patterns, not method superiority.\n")
-}
-
-make_method_decision()
-```
-
-#### Real Example Using Paper's Logic:
-
-```{r real-example-dong-logic}
-# Hospital readmissions: Are repeat admissions "exchangeable"?
-
-# Option 1 - Events are exchangeable:
-# All readmissions represent similar healthcare burden/quality issues
-# → Use equation method
-
-# Option 2 - Event order matters:  
-# - 1st readmission: May indicate discharge too early
-# - 2nd readmission: May indicate chronic condition  
-# - 3rd+ readmissions: May indicate complex comorbidities
-# → Use SCI method
-
-# For our hospital example, let's assume events are exchangeable:
-hospital_decision <- "equation"
-
-cat("Hospital readmission decision:", hospital_decision, "\n")
-cat("Reasoning: We're treating all readmissions as equivalent indicators")
-cat(" of healthcare burden, regardless of whether they are the 1st, 2nd, or 3rd")
-cat(" readmission for each patient.\n")
-```
-
-#### Summary of Dong et al.'s Guidance:
-
-1. **Both methods are mathematically equivalent** under ideal conditions
-2. **Differences arise from censoring patterns**, not method flaws
-3. **Choose based on research question**: Does event order matter?
-4. **SCI method**: When events are not exchangeable (order/sequence matters)
-5. **Equation method**: When events are exchangeable (order doesn't matter)  
-6. **Document your reasoning** based on the clinical/biological significance of event order
-
-The key insight from Dong et al. is that method choice should be **driven by your research question** rather than by which method gives different (or "better") numerical results.
-
-## Advanced: Left Truncation Example
-
-The SCI method's unique ability to handle left truncation (delayed study entry):
-
-```{r left-truncation}
-# Electronic health records: patients enter study at different times
-ehr_data <- data.frame(
-  patient_id = rep(1:30, each = 2),
-  study_entry = rep(sample(0:100, 30, replace = TRUE), each = 2),  # Delayed entry
-  time = rep(sample(0:100, 30, replace = TRUE), each = 2) + 
-         rep(sample(50:200, 30, replace = TRUE), each = 2),        # Event times after entry
-  event_type = sample(c(0, 1, 2), 60, replace = TRUE, prob = c(0.3, 0.6, 0.1))
-) %>%
-  filter(time > study_entry) %>%  # Events must occur after study entry
-  arrange(patient_id, time)
-
-# Only SCI method can handle delayed entry
-mcc_truncated <- mcc(ehr_data, "patient_id", "time", "event_type", 
-                     tstart_var = "study_entry", method = "sci")
-
-plot(mcc_truncated, 
-     title = "MCC with Delayed Study Entry",
-     subtitle = "Accounts for patients entering study at different times")
-```
-
-## Recommendations by Use Case
-
-### Clinical Trials
-- **Standard efficacy analysis**: Equation method
-- **Safety monitoring with event details**: SCI method  
-- **Causal inference with confounding**: Equation method with weights
-
-### Healthcare Operations  
-- **Resource planning**: Equation method (faster for large datasets)
-- **Quality improvement (understanding patterns)**: SCI method
-- **Cost analysis**: Either method, choose based on other needs
-
-### Epidemiological Studies
-- **Descriptive burden assessment**: Equation method
-- **Causal analysis of interventions**: Equation method with weights
-- **Life course research with delayed entry**: SCI method
+If patients enter your study at different times (i.e., left-truncated follow-up time), only the SCI method supports this through the `tstart_var` parameter. See the `mcc()` documentation for more details.
 
 ## Summary
 
-**Default recommendation**: Use the equation method unless you specifically need:
-- Event-specific breakdowns → SCI method
-- Left truncation support → SCI method  
-- Component visualization → SCI method
+1. **Both methods estimate the same parameter** and are mathematically equivalent under certain conditions
 
-**Key principle**: Both methods are mathematically equivalent under ideal conditions. Choose based on your specific analytical needs, computational constraints, and output requirements.
+2. **Choose based on your research question**:
+   - Events exchangeable → Equation method
+   - Event order matters → SCI method
 
-**When in doubt**: Start with equation method. You can always re-run with SCI method if you need its specialized features.
-
-For theoretical background on why these methods are equivalent, see Dong et al. (2015) doi:10.1093/aje/kwu289.
+3. **Special requirements**: Use SCI method if you need left truncation support
