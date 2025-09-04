@@ -41,6 +41,12 @@
       <ul class="navbar-nav me-auto">
 <li class="active nav-item"><a class="nav-link" href="../articles/mccount.html">Get started</a></li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item dropdown">
+  <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
+<li><a class="dropdown-item" href="../articles/choosing-between-methods.html">Choosing Between Methods</a></li>
+  </ul>
+</li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
@@ -123,9 +129,12 @@ thiotepa)</li>
 <p>For MCC analysis, we need to ensure our competing event variable has
 the proper coding:</p>
 <ul>
-<li>0 = censoring</li>
-<li>1 = event of interest (recurrence)</li>
-<li>2 = competing event (death from any cause)</li>
+<li>
+<code>0</code> = censoring</li>
+<li>
+<code>1</code> = event of interest (recurrence)</li>
+<li>
+<code>2</code> = competing event (death from any cause)</li>
 </ul>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Prepare data for MCC analysis</span></span>
@@ -264,15 +273,28 @@ recurrences accumulates over the entire study follow-up period.</p>
 <div class="section level2">
 <h2 id="mcc-interpretation">MCC Interpretation<a class="anchor" aria-label="anchor" href="#mcc-interpretation"></a>
 </h2>
-<p>The estimated MCC at the end of follow-up can be interpreted as the
-mean number of events we expect in the target population by that time.
-Looking at the print out from <code>summary(mcc_overall)</code>, the MCC
-is 2.27 - on average, each bladder cancer survivor experiences 2.27
+<p>The estimated MCC can be interpreted as the number of events per
+person we expect among individuals who have not experienced a competing
+risk event by a given time. Looking at the print out from
+<code>summary(mcc_overall)</code>, the MCC at the end of follow-up is
+2.27 - on average, each bladder cancer survivor experiences 2.27
 recurrences by 64 months.</p>
 <p>In a population of 100 similar patients, we expect approximately
 <code>2.27 * 100 = 227</code> total recurrences by 64 months. This
 accounts for the fact that some patients die and cannot experience
 further recurrences.</p>
+<p>Dong, <em>et al</em>.<a class="footnote-ref" tabindex="0" data-bs-toggle="popover" data-bs-content='&lt;p&gt;Dong H, Robison LL, Leisenring WM, Martin LJ, Armstrong
+GT, Yasui Y. Estimating the burden of recurrent events in the presence
+of competing risks: the method of mean cumulative count. &lt;em&gt;Am J
+Epidemiol&lt;/em&gt;. 2015 Apr 1;181(7):532-40. doi: &lt;a href="https://doi.org/10.1093/aje/kwu289" class="external-link"&gt;10.1093/aje/kwu289&lt;/a&gt;&lt;/p&gt;'><sup>1</sup></a> provide additional guidance for
+interpreting the MCC (emphasis added):</p>
+<blockquote>
+<p>Note that MCC is a marginal measure (as opposed to a conditional
+measure) of disease burden, similar to [cumulative incidence], and its
+interpretation is <em>not</em> conditional on survival free of competing
+risk events. Also, MCC does <em>not</em> assume independence between the
+event of interest and the competing-risk event.</p>
+</blockquote>
 </div>
 <div class="section level2">
 <h2 id="stratifying-by-treatment-groups">Stratifying by Treatment Groups<a class="anchor" aria-label="anchor" href="#stratifying-by-treatment-groups"></a>
@@ -379,6 +401,7 @@ the stratification variable.</p>
 bootstrapping.</p>
 </div>
 </div>
+
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
 </div>
