@@ -51,9 +51,9 @@ The `bladder1` dataset contains `r length(unique(bladder1$id))` patients followe
 
 For MCC analysis, we need to ensure our competing event variable has the proper coding:
 
--   0 = censoring
--   1 = event of interest (recurrence)
--   2 = competing event (death from any cause)
+-   `0` = censoring
+-   `1` = event of interest (recurrence)
+-   `2` = competing event (death from any cause)
 
 ```{r data-prep}
 # Prepare data for MCC analysis
@@ -135,9 +135,15 @@ The step function shows how the expected number of bladder cancer recurrences ac
 
 ## MCC Interpretation
 
-The estimated MCC at the end of follow-up can be interpreted as the mean number of events we expect in the target population by that time. Looking at the print out from `summary(mcc_overall)`, the MCC is `r round(mcc_final_values(mcc_overall), 2)` - on average, each bladder cancer survivor experiences `r round(mcc_final_values(mcc_overall), 2)` recurrences by `r max(mcc_overall$mcc_table$time)` months.
+The estimated MCC can be interpreted as the number of events per person we expect among individuals who have not experienced a competing risk event by a given time. Looking at the print out from `summary(mcc_overall)`, the MCC at the end of follow-up is `r round(mcc_final_values(mcc_overall), 2)` - on average, each bladder cancer survivor experiences `r round(mcc_final_values(mcc_overall), 2)` recurrences by `r max(mcc_overall$mcc_table$time)` months.
 
 In a population of 100 similar patients, we expect approximately ``r round(mcc_final_values(mcc_overall), 2)` * 100 = `r round(mcc_final_values(mcc_overall), 2) * 100`` total recurrences by `r max(mcc_overall$mcc_table$time)` months. This accounts for the fact that some patients die and cannot experience further recurrences.
+
+Dong, *et al*.[^1] provide additional guidance for interpreting the MCC (emphasis added):
+
+>Note that MCC is a marginal measure (as opposed to a conditional measure) of disease burden, similar to [cumulative incidence], and its interpretation is *not* conditional on survival free of competing risk events. Also, MCC does *not* assume independence between the event of interest and the competing-risk event.
+
+[^1]: Dong H, Robison LL, Leisenring WM, Martin LJ, Armstrong GT, Yasui Y. Estimating the burden of recurrent events in the presence of competing risks: the method of mean cumulative count. *Am J Epidemiol*. 2015 Apr 1;181(7):532-40. doi: [10.1093/aje/kwu289](https://doi.org/10.1093/aje/kwu289)
 
 ## Stratifying by Treatment Groups
 
