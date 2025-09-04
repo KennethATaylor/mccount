@@ -113,9 +113,7 @@ If patients enter your study at different times (i.e., left-truncated follow-up 
 ## Summary
 
 1. **Both methods estimate the same parameter** and are mathematically equivalent under certain conditions
-
 2. **Choose based on your research question**:
    - Events exchangeable → Equation method
    - Event order matters → SCI method
-
 3. **Special requirements**: Use SCI method if you need left truncation support
