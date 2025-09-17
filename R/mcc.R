@@ -294,6 +294,45 @@ mcc <- function(
   return(mcc_obj)
 }
 
+#' Ensure grouping variable is appropriately typed for analysis
+#'
+#' @description
+#' Converts numeric grouping variables to factors to ensure proper handling
+#' in both analysis and plotting. Character variables are left as-is since
+#' they will be automatically converted to factors when needed.
+#'
+#' @param data Input data
+#' @param by_var String name of grouping variable
+#'
+#' @returns Data with potentially modified grouping variable
+#' @keywords internal
+#' @noRd
+prepare_group_variable <- function(data, by_var) {
+  if (is.null(by_var)) {
+    return(data)
+  }
+
+  # Get the grouping column
+  group_col <- data[[by_var]]
+
+  # Check if it's numeric (integer or double)
+  if (is.numeric(group_col)) {
+    # Convert numeric to factor with informative message
+    unique_values <- sort(unique(group_col[!is.na(group_col)]))
+    n_unique <- length(unique_values)
+
+    cli::cli_inform(c(
+      "i" = "Converting numeric grouping variable {.val by_var} to {.cls factor}",
+      "i" = "Found {n_unique} unique group{?s}: {.val {noquote(unique_values)}}"
+    ))
+
+    # Convert to factor, preserving order of unique values
+    data[[by_var]] <- factor(group_col, levels = unique_values)
+  }
+
+  return(data)
+}
+
 #' Calculate MCC by group (internal function)
 #'
 #' @inheritParams mcc
@@ -324,6 +363,8 @@ mcc_by_group <- function(
     tstart_var_sym <- NULL
   }
 
+  data <- prepare_group_variable(data, by)
+
   # Get unique groups efficiently
   unique_groups <- unique(data[[by]])
   unique_groups <- unique_groups[!is.na(unique_groups)] # Remove NA values
@@ -331,7 +372,7 @@ mcc_by_group <- function(
   if (length(unique_groups) == 0) {
     cli::cli_abort(c(
       "No valid groups found in {.arg by} variable",
-      "x" = "All values in column '{by}' are NA"
+      "x" = "All values in column {.val {by}} are {.val {noquote(NA_real_)}}"
     ))
   }
 
