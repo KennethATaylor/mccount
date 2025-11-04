@@ -45,6 +45,7 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/choosing-between-methods.html">Choosing Between Methods</a></li>
+    <li><a class="dropdown-item" href="../articles/estimating-mcc-after-matching-or-weighting.html">Estimating MCC After Matching or Weighting</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -86,8 +87,8 @@ important information about the total disease burden.</p>
 <p>Many patients experience events that can occur multiple times—like
 hospital readmissions, infections, or tumor recurrences. Traditional
 survival analysis is only concerned with the first event and does not
-account for competing risks like death. Alternatively, the Mean
-Cumulative Count (MCC) provides a more complete picture by estimating
+account for competing risks like death. Alternatively, the mean
+cumulative count (MCC) provides a more complete picture by estimating
 the expected number of events per person by a given time, properly
 accounting for:</p>
 <ul>
@@ -104,10 +105,11 @@ death)</li>
 <div class="section level2">
 <h2 id="clinical-example-bladder-cancer-recurrences">Clinical Example: Bladder Cancer Recurrences<a class="anchor" aria-label="anchor" href="#clinical-example-bladder-cancer-recurrences"></a>
 </h2>
-<p>We’ll use the <code>bladder1</code> dataset from the <a href="https://github.com/therneau/survival" class="external-link"><code>survival</code></a>
-package, which contains data on bladder cancer recurrences from a
-randomized trial comparing three treatments: placebo, pyridoxine, and
-thiotepa.</p>
+<p>We’ll use the <code><a href="https://rdrr.io/pkg/survival/man/bladder.html" class="external-link">survival::bladder1</a></code> dataset from the
+<a href="https://github.com/therneau/survival" class="external-link">survival</a> package, which contains data on bladder cancer
+recurrences from a randomized trial comparing three treatments:
+<code>placebo</code>, <code>pyridoxine</code>, and
+<code>thiotepa</code>.</p>
 <p>The <code>bladder1</code> dataset contains 118 patients followed for
 tumor recurrences. The key variables are:</p>
 <ul>
@@ -153,8 +155,7 @@ cohort:</p>
 <span>  data <span class="op">=</span> <span class="va">bladder_mcc</span>,</span>
 <span>  id_var <span class="op">=</span> <span class="st">"id"</span>,</span>
 <span>  time_var <span class="op">=</span> <span class="st">"stop"</span>,</span>
-<span>  cause_var <span class="op">=</span> <span class="st">"status"</span>,</span>
-<span>  method <span class="op">=</span> <span class="st">"equation"</span></span>
+<span>  cause_var <span class="op">=</span> <span class="st">"status"</span></span>
 <span><span class="op">)</span></span>
 <span><span class="co">#&gt; Warning: Found 13 participants where last observation is an event of interest</span></span>
 <span><span class="co">#&gt; (`cause_var` = 1)</span></span>
@@ -171,6 +172,16 @@ and also aware of how this is implicitly interpreted by the package. The
 function also lets the user know that the MCC estimate will be incorrect
 if the <code>mccount</code>’s implicit assumption is incorrect.</p>
 <div class="section level3">
+<h3 id="available-estimators">Available Estimators<a class="anchor" aria-label="anchor" href="#available-estimators"></a>
+</h3>
+<p>The <code><a href="../reference/mcc.html">mcc()</a></code> function can be used to calculate the MCC
+using either the Dong-Yasui estimator (<code>method = "equation"</code>,
+the default) or the sum of cumulative incidence estimator
+(<code>method = "sci"</code>). See
+<code><a href="../articles/choosing-between-methods.html">vignette("choosing-between-methods")</a></code> and <code><a href="../reference/mcc.html">?mcc</a></code>
+for more details.</p>
+</div>
+<div class="section level3">
 <h3 id="understanding-the-output">Understanding the Output<a class="anchor" aria-label="anchor" href="#understanding-the-output"></a>
 </h3>
 <p>Just calling the <code>mcc</code> object we’ve created will print the
@@ -180,7 +191,7 @@ exact <code><a href="../reference/mcc.html">mcc()</a></code> call used to genera
 <code class="sourceCode R"><span><span class="va">mcc_overall</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">──</span> <span style="font-weight: bold;">Mean Cumulative Count Results</span> <span style="color: #00BBBB;">───────────────────────────────────────────────</span></span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Method: Dong-Yasui Equation Method</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Method: <span style="color: #0000BB;">Dong-Yasui Equation Method</span></span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">MCC Estimates</span> ──</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -193,11 +204,10 @@ exact <code><a href="../reference/mcc.html">mcc()</a></code> call used to genera
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">4</span>     3 0.241 </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">5</span>     4 0.276 </span></span>
 <span><span class="co">#&gt; <span style="color: #BCBCBC;">6</span>     5 0.320</span></span>
-<span><span class="co">#&gt; # ... with 45 more rows</span></span>
+<span><span class="co">#&gt; # ... with <span style="color: #0000BB;">45</span> more rows</span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Call</span> ──</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; <span style="font-weight: bold;">mcc</span><span style="color: #D7AF00;">(</span>data = bladder_mcc, id_var = <span style="color: #00AFAF;">"id"</span>, time_var = <span style="color: #00AFAF;">"stop"</span>, cause_var = <span style="color: #00AFAF;">"status"</span>, </span></span>
-<span><span class="co">#&gt;     method = <span style="color: #00AFAF;">"equation"</span><span style="color: #D7AF00;">)</span></span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="font-weight: bold;">mcc</span><span style="color: #D7AF00;">(</span>data = bladder_mcc, id_var = <span style="color: #00AFAF;">"id"</span>, time_var = <span style="color: #00AFAF;">"stop"</span>, cause_var = <span style="color: #00AFAF;">"status"</span><span style="color: #D7AF00;">)</span></span></span></code></pre></div>
 <p>The package also includes an S3 method for the <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code>
 function that will output more useful details:</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
@@ -205,12 +215,12 @@ function that will output more useful details:</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">mcc_overall</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">──</span> <span style="font-weight: bold;">Summary of Mean Cumulative Count Results</span> <span style="color: #00BBBB;">────────────────────────────────────</span></span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Method: Dong-Yasui Equation Method</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Method: <span style="color: #0000BB;">Dong-Yasui Equation Method</span></span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Total participants: <span style="color: #0000BB;">118</span></span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── <span style="font-weight: bold;">Summary Statistics</span> ──</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Observation period: <span style="color: #0000BB;">"[0, 64]"</span></span></span>
+<span><span class="co">#&gt; Observation period: [<span style="color: #0000BB;">0</span>, <span style="color: #0000BB;">64</span>]</span></span>
 <span><span class="co">#&gt; Time to MCC = 1.0: <span style="color: #0000BB;">22</span></span></span>
 <span><span class="co">#&gt; Time to maximum MCC: <span style="color: #0000BB;">53</span></span></span>
 <span><span class="co">#&gt; MCC at end of follow-up: <span style="color: #0000BB;">2.2672</span></span></span>
@@ -337,15 +347,15 @@ with this:</p>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">mcc_by_treatment</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">──</span> <span style="font-weight: bold;">Summary of Mean Cumulative Count Results</span> <span style="color: #00BBBB;">────────────────────────────────────</span></span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Method: Dong-Yasui Equation Method</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Method: <span style="color: #0000BB;">Dong-Yasui Equation Method</span></span></span>
 <span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Total participants: <span style="color: #0000BB;">118</span></span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Overall observation period: <span style="color: #0000BB;">"[0, 64]"</span></span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB;">ℹ</span> Overall observation period: [<span style="color: #0000BB;">0</span>, <span style="color: #0000BB;">64</span>]</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; ── <span style="font-weight: bold;">Summary by Group (treatment)</span> ──</span></span>
+<span><span class="co">#&gt; ── <span style="font-weight: bold;">Summary by Group (</span><span style="color: #0000BB; font-weight: bold;">treatment</span><span style="font-weight: bold;">)</span> ──</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Group: <span style="color: #0000BB;">placebo</span></span></span>
 <span><span class="co">#&gt; Participants in group: <span style="color: #0000BB;">48</span></span></span>
-<span><span class="co">#&gt; Group observation period: <span style="color: #0000BB;">"[0, 64]"</span></span></span>
+<span><span class="co">#&gt; Group observation period: [<span style="color: #0000BB;">0</span>, <span style="color: #0000BB;">64</span>]</span></span>
 <span><span class="co">#&gt; Time to MCC = 1.0: <span style="color: #0000BB;">17</span></span></span>
 <span><span class="co">#&gt; Time to maximum MCC: <span style="color: #0000BB;">53</span></span></span>
 <span><span class="co">#&gt; MCC at end of follow-up: <span style="color: #0000BB;">2.6137</span></span></span>
@@ -355,7 +365,7 @@ with this:</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Group: <span style="color: #0000BB;">pyridoxine</span></span></span>
 <span><span class="co">#&gt; Participants in group: <span style="color: #0000BB;">32</span></span></span>
-<span><span class="co">#&gt; Group observation period: <span style="color: #0000BB;">"[0, 60]"</span></span></span>
+<span><span class="co">#&gt; Group observation period: [<span style="color: #0000BB;">0</span>, <span style="color: #0000BB;">60</span>]</span></span>
 <span><span class="co">#&gt; Time to MCC = 1.0: <span style="color: #0000BB;">19</span></span></span>
 <span><span class="co">#&gt; Time to maximum MCC: <span style="color: #0000BB;">49</span></span></span>
 <span><span class="co">#&gt; MCC at end of follow-up: <span style="color: #0000BB;">2.5831</span></span></span>
@@ -365,7 +375,7 @@ with this:</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; ── Group: <span style="color: #0000BB;">thiotepa</span></span></span>
 <span><span class="co">#&gt; Participants in group: <span style="color: #0000BB;">38</span></span></span>
-<span><span class="co">#&gt; Group observation period: <span style="color: #0000BB;">"[0, 59]"</span></span></span>
+<span><span class="co">#&gt; Group observation period: [<span style="color: #0000BB;">0</span>, <span style="color: #0000BB;">59</span>]</span></span>
 <span><span class="co">#&gt; Time to MCC = 1.0: <span style="color: #0000BB;">27</span></span></span>
 <span><span class="co">#&gt; Time to maximum MCC: <span style="color: #0000BB;">47</span></span></span>
 <span><span class="co">#&gt; MCC at end of follow-up: <span style="color: #0000BB;">1.5463</span></span></span>
@@ -400,6 +410,15 @@ the stratification variable.</p>
 <p>Confidence intervals for the MCC can be generated via
 bootstrapping.</p>
 </div>
+</div>
+<div class="section level2">
+<h2 id="weighted-mcc-analysis">Weighted MCC Analysis<a class="anchor" aria-label="anchor" href="#weighted-mcc-analysis"></a>
+</h2>
+<p><code>mccount</code> also allows estimation of weighted MCC in the
+setting of observational studies that want to account for measured
+confounding and/or other types of bias via matching or weighting. See
+the <code><a href="../articles/estimating-mcc-after-matching-or-weighting.html">vignette("estimating-mcc-after-matching-or-weighting")</a></code>
+for more details.</p>
 </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
