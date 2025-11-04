@@ -20,6 +20,7 @@ BugReports: https://github.com/KennethATaylor/mccount/issues
 Depends: 
     R (>= 4.1.0)
 Imports: 
+    cards,
     cli,
     cmprsk,
     data.table,
@@ -34,11 +35,15 @@ Suggests:
     boot,
     ggplot2 (>= 3.5.0),
     knitr,
+    MatchIt,
     mstate,
+    optmatch,
+    patchwork,
     rmarkdown,
     spelling,
     survival,
     testthat (>= 3.0.0),
+    WeightIt,
     withr
 Config/testthat/edition: 3
 Encoding: UTF-8

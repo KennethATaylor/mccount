@@ -526,7 +526,7 @@ geom_line_mcc <- function(
               data.frame(
                 x = mcc_1_time + label_nudge_x,
                 y = threshold + label_nudge_y,
-                label = glue::glue("{groups[i]}: t = {round(mcc_1_time, 1)}"),
+                label = glue::glue("{groups[i]}: t = {round5(mcc_1_time, 1)}"),
                 group = groups[i]
               )
             )
@@ -573,7 +573,7 @@ geom_line_mcc <- function(
               x = mcc_1_time + label_nudge_x,
               y = threshold + label_nudge_y,
               label = glue::glue(
-                "MCC = {threshold} at t = {round(mcc_1_time, 1)}"
+                "MCC = {threshold} at t = {round5(mcc_1_time, 1)}"
               )
             )
           )

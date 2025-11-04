@@ -2,10 +2,11 @@
 "_PACKAGE"
 
 ## usethis namespace: start
+#' @importFrom cards round5
 #' @importFrom data.table :=
-#' @importFrom rlang .data is_true is_logical set_names as_function global_env inject "%||%"
 #' @importFrom glue glue
 #' @importFrom lifecycle deprecated
+#' @importFrom rlang .data is_true is_logical set_names as_function global_env inject "%||%"
 ## usethis namespace: end
 NULL
 
