@@ -16,8 +16,8 @@
 <script src="deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Estimate Recurrent Event Burden with Competing Risks">
-<meta name="description" content="Calculates mean cumulative count (MCC) to estimate the expected cumulative number of recurrent events per person over time in the presence of competing risks and censoring. Implements both the Dong-Yasui equation method and sum of cumulative incidence method described in Dong et al. (2015) &lt;doi:10.1093/aje/kwu289&gt;. Supports inverse probability weighting for causal inference as outlined in Gaber et al. (2023) &lt;doi:10.1093/aje/kwad031&gt;. Provides S3 classes with methods for printing, summarizing, plotting, and extracting results. Handles grouped analyses and integrates with ggplot2 for visualization.">
-<meta property="og:description" content="Calculates mean cumulative count (MCC) to estimate the expected cumulative number of recurrent events per person over time in the presence of competing risks and censoring. Implements both the Dong-Yasui equation method and sum of cumulative incidence method described in Dong et al. (2015) &lt;doi:10.1093/aje/kwu289&gt;. Supports inverse probability weighting for causal inference as outlined in Gaber et al. (2023) &lt;doi:10.1093/aje/kwad031&gt;. Provides S3 classes with methods for printing, summarizing, plotting, and extracting results. Handles grouped analyses and integrates with ggplot2 for visualization.">
+<meta name="description" content="Calculates mean cumulative count (MCC) to estimate the expected cumulative number of recurrent events per person over time in the presence of competing risks and censoring. Implements both the Dong-Yasui equation method and sum of cumulative incidence method described in Dong, et al. (2015) &lt;doi:10.1093/aje/kwu289&gt;. Supports inverse probability weighting for causal inference as outlined in Gaber, et al. (2023) &lt;doi:10.1093/aje/kwad031&gt;. Provides S3 methods for printing, summarizing, plotting, and extracting results. Handles grouped analyses and integrates with ggplot2 &lt;https://ggplot2.tidyverse.org/&gt; for visualization.">
+<meta property="og:description" content="Calculates mean cumulative count (MCC) to estimate the expected cumulative number of recurrent events per person over time in the presence of competing risks and censoring. Implements both the Dong-Yasui equation method and sum of cumulative incidence method described in Dong, et al. (2015) &lt;doi:10.1093/aje/kwu289&gt;. Supports inverse probability weighting for causal inference as outlined in Gaber, et al. (2023) &lt;doi:10.1093/aje/kwad031&gt;. Provides S3 methods for printing, summarizing, plotting, and extracting results. Handles grouped analyses and integrates with ggplot2 &lt;https://ggplot2.tidyverse.org/&gt; for visualization.">
 <meta property="og:image" content="https://kennethataylor.github.io/mccount/logo.svg">
 </head>
 <body>
@@ -71,15 +71,22 @@
 <h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a>
 </h2>
 <p><code>mccount</code> provides tools to estimate the mean cumulative count (MCC) of recurrent events in the presence of competing risks. Unlike traditional cumulative incidence methods that only consider the first occurrence of an event, MCC accounts for multiple occurrences of the same event type per individual, providing a more informative measure of the total burden of recurrent events in a population.</p>
-<p>Available MCC methods in this package include the Dong-Yasui or the sum of cumulative incidences estimators, based on the work of Dong, <em>et al</em>.<a class="footnote-ref" tabindex="0" data-bs-toggle="popover" data-bs-content='&lt;p&gt;Dong H, Robison LL, Leisenring WM, Martin LJ, Armstrong GT, Yasui Y. Estimating the burden of recurrent events in the presence of competing risks: the method of mean cumulative count. &lt;em&gt;Am J Epidemiol&lt;/em&gt;. 2015 Apr 1;181(7):532-40. doi: &lt;a href="https://doi.org/10.1093/aje/kwu289" class="external-link"&gt;10.1093/aje/kwu289&lt;/a&gt;&lt;/p&gt;'><sup>1</sup></a> Users can also estimate the MCC using the weighted Dong-Yasui estimator.<a class="footnote-ref" tabindex="0" data-bs-toggle="popover" data-bs-content='&lt;p&gt;Gaber CE, Edwards JK, Lund JL, Peery AF, Richardson DB, Kinlaw AC. Inverse Probability Weighting to Estimate Exposure Effects on the Burden of Recurrent Outcomes in the Presence of Competing Events. &lt;em&gt;Am J Epidemiol&lt;/em&gt;. 2023;192(5):830-839. doi: &lt;a href="https://doi.org/10.1093/aje/kwad031" class="external-link"&gt;10.1093/aje/kwad031&lt;/a&gt;&lt;/p&gt;'><sup>2</sup></a></p>
+<p>Available MCC methods in this package include the Dong-Yasui or the sum of cumulative incidences estimators, based on the work of Dong, <em>et al</em>.<a class="footnote-ref" tabindex="0" data-bs-toggle="popover" data-bs-content='&lt;p&gt;Dong H, Robison LL, Leisenring WM, Martin LJ, Armstrong GT, Yasui Y. Estimating the burden of recurrent events in the presence of competing risks: the method of mean cumulative count. &lt;em&gt;Am J Epidemiol&lt;/em&gt;. 2015 Apr 1;181(7):532-40. doi: &lt;a href="https://www.doi.org/10.1093/aje/kwu289" class="external-link"&gt;10.1093/aje/kwu289&lt;/a&gt;&lt;/p&gt;'><sup>1</sup></a> Users can also estimate the MCC using the weighted Dong-Yasui estimator.<a class="footnote-ref" tabindex="0" data-bs-toggle="popover" data-bs-content='&lt;p&gt;Gaber CE, Edwards JK, Lund JL, Peery AF, Richardson DB, Kinlaw AC. Inverse Probability Weighting to Estimate Exposure Effects on the Burden of Recurrent Outcomes in the Presence of Competing Events. &lt;em&gt;Am J Epidemiol&lt;/em&gt;. 2023;192(5):830-839. doi: &lt;a href="https://www.doi.org/10.1093/aje/kwad031" class="external-link"&gt;10.1093/aje/kwad031&lt;/a&gt;&lt;/p&gt;'><sup>2</sup></a></p>
 </div>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
-<p>You can install the development version of <code>mccount</code> like so:</p>
+<p>You can install <code>mccount</code> from CRAN using the following code:</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/install.packages.html" class="external-link">install.packages</a></span><span class="op">(</span><span class="st">"mccount"</span><span class="op">)</span></span></code></pre></div>
+<div class="section level3">
+<h3 id="development-version">Development version<a class="anchor" aria-label="anchor" href="#development-version"></a>
+</h3>
+<p>You can install the development version of <code>mccount</code> like so:</p>
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># install.packages("pak")</span></span>
 <span><span class="fu">pak</span><span class="fu">::</span><span class="fu"><a href="https://pak.r-lib.org/reference/pkg_install.html" class="external-link">pkg_install</a></span><span class="op">(</span><span class="st">"KennethATaylor/mccount"</span><span class="op">)</span></span></code></pre></div>
+</div>
 </div>
 <div class="section level2">
 <h2 id="why-mean-cumulative-count">Why Mean Cumulative Count?<a class="anchor" aria-label="anchor" href="#why-mean-cumulative-count"></a>
@@ -97,7 +104,7 @@
 <h2 id="citation">Citation<a class="anchor" aria-label="anchor" href="#citation"></a>
 </h2>
 <p>If you use <code>mccount</code> in your research, please cite the package in addition to the relevant original methodology paper(s).</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/citation.html" class="external-link">citation</a></span><span class="op">(</span><span class="st">"mccount"</span><span class="op">)</span></span></code></pre></div>
 </div>
 </div>
