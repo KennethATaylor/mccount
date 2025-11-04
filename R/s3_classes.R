@@ -383,16 +383,18 @@ print.mcc <- function(x, ...) {
     "equation" = "Dong-Yasui Equation Method",
     "sci" = "Sum of Cumulative Incidence Method"
   )
-  cli::cli_alert_info("Method: {method_label}")
+  cli::cli_alert_info("Method: {.val {noquote(method_label)}}")
 
   if (x$weighted) {
-    cli::cli_alert_info("Weighted estimation: Yes")
+    cli::cli_alert_info("Weighted estimation: {.val {noquote('Yes')}}")
   }
 
   # Print grouping information if applicable
   if (is_grouped(x)) {
     n_groups <- length(unique(x$mcc_final[[x$by_group]]))
-    cli::cli_alert_info("Grouped by: {x$by_group} ({n_groups} groups)")
+    cli::cli_alert_info(
+      "Grouped by: {.val {noquote(x$by_group)}} ({.val {as.numeric(n_groups)}} groups)"
+    )
   }
 
   # Print sample of results
@@ -412,12 +414,16 @@ print.mcc <- function(x, ...) {
         print(group_data)
       } else {
         print(utils::head(group_data, 3))
-        cli::cli_text("# ... with {nrow(group_data) - 3} more rows")
+        cli::cli_text(
+          "# ... with {.val {as.numeric(nrow(group_data) - 3)}} more rows"
+        )
       }
     }
 
     if (length(groups) > n_show) {
-      cli::cli_text("# ... with {length(groups) - n_show} more groups")
+      cli::cli_text(
+        "# ... with {.val {as.numeric(length(groups) - n_show)}} more groups"
+      )
     }
   } else {
     # For ungrouped results
@@ -425,7 +431,9 @@ print.mcc <- function(x, ...) {
       print(x$mcc_final)
     } else {
       print(utils::head(x$mcc_final, 6))
-      cli::cli_text("# ... with {nrow(x$mcc_final) - 6} more rows")
+      cli::cli_text(
+        "# ... with {.val {as.numeric(nrow(x$mcc_final) - 6})} more rows"
+      )
     }
   }
 
@@ -713,10 +721,10 @@ print.summary.mcc <- function(x, ...) {
     "equation" = "Dong-Yasui Equation Method",
     "sci" = "Sum of Cumulative Incidence Method"
   )
-  cli::cli_alert_info("Method: {method_label}")
+  cli::cli_alert_info("Method: {.val {noquote(method_label)}}")
 
   if (x$weighted) {
-    cli::cli_alert_info("Weighted estimation: Yes")
+    cli::cli_alert_info("Weighted estimation: {.val {noquote('Yes')}}")
   }
 
   # Total number of participants and overall observation period
@@ -728,7 +736,7 @@ print.summary.mcc <- function(x, ...) {
       overall_min <- min(x$summary_stats$min_time, na.rm = TRUE)
       overall_max <- x$summary_stats$overall_max_followup[1] # Should be the same for all groups
       cli::cli_alert_info(
-        "Overall observation period: {.val [{overall_min}, {overall_max}]}"
+        "Overall observation period: [{.val {overall_min}}, {.val {overall_max}}]"
       )
     }
   } else {
@@ -741,7 +749,7 @@ print.summary.mcc <- function(x, ...) {
 
   # Summary statistics
   if (x$grouped) {
-    cli::cli_h2("Summary by Group ({x$by_group})")
+    cli::cli_h2("Summary by Group ({.val {noquote(x$by_group)}})")
 
     # Iterate through each group and print individual summaries
     for (i in seq_len(nrow(x$summary_stats))) {
@@ -759,18 +767,18 @@ print.summary.mcc <- function(x, ...) {
 
       # Group-specific observation period
       cli::cli_text(
-        "Group observation period: {.val [{group_stats$min_time}, {group_stats$group_max_followup}]}"
+        "Group observation period: [{.val {group_stats$min_time}}, {.val {group_stats$group_max_followup}}]"
       )
 
       if (!is.na(group_stats$time_to_mcc_one)) {
         cli::cli_text("Time to MCC = 1.0: {.val {group_stats$time_to_mcc_one}}")
       } else {
-        cli::cli_text("Time to MCC = 1.0: {.val Never reached}")
+        cli::cli_text("Time to MCC = 1.0: {.val {NA_real_}}")
       }
 
       cli::cli_text("Time to maximum MCC: {.val {group_stats$time_of_max_mcc}}")
       cli::cli_text(
-        "MCC at end of follow-up: {.val {round(group_stats$mcc_at_end_followup, 4)}}"
+        "MCC at end of follow-up: {.val {round5(group_stats$mcc_at_end_followup, 4)}}"
       )
 
       # Add event counts if available (excluding participant count since it's shown above)
@@ -788,7 +796,7 @@ print.summary.mcc <- function(x, ...) {
   } else {
     cli::cli_h2("Summary Statistics")
     cli::cli_text(
-      "Observation period: {.val [{x$summary_stats$min_time}, {x$summary_stats$max_followup_time}]}"
+      "Observation period: [{.val {x$summary_stats$min_time}}, {.val {x$summary_stats$max_followup_time}}]"
     )
 
     if (!is.na(x$summary_stats$time_to_mcc_one)) {
@@ -796,14 +804,14 @@ print.summary.mcc <- function(x, ...) {
         "Time to MCC = 1.0: {.val {x$summary_stats$time_to_mcc_one}}"
       )
     } else {
-      cli::cli_text("Time to MCC = 1.0: {.val Never reached}")
+      cli::cli_text("Time to MCC = 1.0: {.val {NA_real_}}")
     }
 
     cli::cli_text(
       "Time to maximum MCC: {.val {x$summary_stats$time_of_max_mcc}}"
     )
     cli::cli_text(
-      "MCC at end of follow-up: {.val {round(x$summary_stats$mcc_at_end_followup, 4)}}"
+      "MCC at end of follow-up: {.val {round5(x$summary_stats$mcc_at_end_followup, 4)}}"
     )
 
     # Add event counts if available (participant count already shown at top)
