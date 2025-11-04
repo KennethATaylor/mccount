@@ -1,0 +1,282 @@
+---
+title: "Estimating MCC After Matching or Weighting"
+description: >
+  Learn how to estimate mean cumulative count after propensity score matching 
+  or inverse probability weighting for causal inference.
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Estimating MCC After Matching or Weighting}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 5
+)
+
+# Check if suggested packages are available
+has_matchit <- requireNamespace("MatchIt", quietly = TRUE)
+has_weightit <- requireNamespace("WeightIt", quietly = TRUE)
+has_survival <- requireNamespace("survival", quietly = TRUE)
+has_ggplot2 <- requireNamespace("ggplot2", quietly = TRUE)
+
+# Set evaluation based on package availability
+eval_matching <- has_matchit && has_survival
+eval_weighting <- has_weightit && has_survival
+eval_plots <- has_ggplot2
+```
+
+## Introduction
+
+Treatment assignment is not randomized in observational studies of recurrent events, which can lead to confounding bias when estimating causal effects. The mean cumulative count (MCC) can be estimated after applying propensity score methods to address confounding, following the approach described by Gaber, *et al*.[^1]
+
+[^1]:Gaber CE, Edwards JK, Lund JL, Peery AF, Richardson DB, Kinlaw AC. Inverse Probability Weighting to Estimate Exposure Effects on the Burden of Recurrent Outcomes in the Presence of Competing Events. *Am J Epidemiol*. 2023;192(5):830-839. doi: [10.1093/aje/kwad031](https://doi.org/10.1093/aje/kwad031)
+
+This vignette demonstrates how to:
+
+- Use inverse probability of treatment weighting (IPTW) with MCC estimation
+- Apply MCC estimation after various propensity score matching methods
+- Interpret weighted and matched results appropriately
+
+## When to Use Weights with MCC
+
+The standard (unweighted) Dong-Yasui estimator provides unbiased estimates of the MCC in randomized trials or when there is no confounding bias. However, in observational studies, we need to account for measured confounders that affect both treatment assignment and the recurrent outcome.
+
+**Key principle**: Use weights when you want to estimate the causal effect of treatment on recurrent event burden, not just describe the observed association.
+
+## Inverse Probability of Treatment Weighting (IPTW)
+
+### Step 1: Estimate Propensity Scores and Create Weights
+
+We'll use the `survival::bladder1` dataset and create a binary treatment variable for demonstration:
+
+```{r setup, message = FALSE, warning = FALSE}
+library(mccount)
+library(dplyr)
+library(WeightIt)
+library(MatchIt)
+library(patchwork)
+
+# Create example data with binary treatment
+bladder_nested <- survival::bladder1 |>
+  mutate(status = if_else(status > 2, 2, status)) |> 
+  filter(treatment %in% c("placebo", "thiotepa")) |>
+  tidyr::nest(.by = c(id, treatment, number, size)) |> 
+  mutate(treatment_binary = if_else(treatment == "thiotepa", 1, 0))
+```
+
+```{r iptw}
+# Estimate propensity scores and create IPTW weights using WeightIt
+weight_obj <- weightit(
+  treatment_binary ~ number + size, 
+  data = bladder_nested,
+)
+
+# Extract weights
+bladder_nested$iptw_weights <- weight_obj$weights
+
+bladder_example <- bladder_nested |> 
+  tidyr::unnest(data)
+```
+
+### Step 2: Estimate Weighted MCC
+
+```{r weighted_mcc}
+# Estimate MCC with IPTW weights
+mcc_weighted <- mcc(
+  data = bladder_example,
+  id_var = "id",
+  time_var = "stop",
+  cause_var = "status",
+  by = "treatment",
+  weights = "iptw_weights",
+  method = "equation"
+)
+
+# Display results
+summary(mcc_weighted)
+```
+
+### Step 3: Compare Weighted vs Unweighted Results
+
+```{r comparison}
+# Estimate unweighted MCC for comparison
+mcc_unweighted <- mcc(
+  data = bladder_example,
+  id_var = "id",
+  time_var = "stop",
+  cause_var = "status",
+  by = "treatment",
+  method = "equation"
+)
+
+# Extract final MCC values for comparison
+weighted_final <- mcc_final_values(mcc_weighted)
+unweighted_final <- mcc_final_values(mcc_unweighted)
+
+# Create comparison table
+comparison_table <- data.frame(
+  Method = c("Unweighted", "IPTW Weighted"),
+  Control_MCC = c(
+    cards::round5(unweighted_final[1], digits = 2),
+    cards::round5(weighted_final[1], digits = 2)
+  ),
+  Treated_MCC = c(
+    cards::round5(unweighted_final[2], digits = 2),
+    cards::round5(weighted_final[2], digits = 2)
+  )
+)
+
+knitr::kable(comparison_table)
+```
+
+The weighted estimates represent the causal effect of treatment on recurrent event burden, adjusted for measured confounding.
+
+## Propensity Score Matching
+
+### Important Note on Matching Weights
+
+For propensity score matching:
+
+- **Simple 1:1 nearest neighbor matching without replacement**: No additional weighting is necessary when using the matched dataset (because the matching weights for all untrimmed treated and control units equal 1)
+- **Complex matching methods** (e.g., optimal matching, full matching, subclassification): Use the matching weights provided by the matching procedure in the same way as IPTW weights
+
+### Example: 1:1 Nearest Neighbor Matching (No Weights Needed)
+
+```{r nn_matching}
+# Perform 1:1 nearest neighbor matching
+match_nn <- matchit(
+  treatment_binary ~ size + number,
+  data = bladder_nested
+)
+```
+
+If you run `match_nn` in the console, you'll see that only 76 out of the original 86 patients were matched using the nearest neighbor approach, which can change the estimand we can estimate with nearest neighbor matching from the average treatment effect among the treated (ATT) to the average treatment among the remaining matched sample (ATM). See `{MatchIt}` for more details regarding matching methods and causal estimands. 
+
+```{r nn_matching cont}
+# Extract matched data (no additional weights needed)
+matched_nn_data <- match.data(match_nn) |> 
+  tidyr::unnest(data)
+
+# Estimate MCC on matched data without additional weights
+mcc_nn_matched <- mcc(
+  data = matched_nn_data,
+  id_var = "id",
+  time_var = "stop", 
+  cause_var = "status",
+  by = "treatment_binary",
+  method = "equation"
+  # No weights argument needed for simple 1:1 matching (all weights are 1)
+)
+
+summary(mcc_nn_matched)
+```
+
+### Example: Full Matching with Weights
+
+```{r full_matching}
+# Perform full matching (creates matching weights)
+match_obj <- matchit(
+  treatment_binary ~ size + number,
+  data = bladder_nested,
+  method = "full",      # Full matching creates weights
+  estimand = "ATE"
+)
+
+# Check matching balance
+summary(match_obj)
+
+# Extract matched data with weights
+matched_data <- match_data(match_obj) |> 
+  tidyr::unnest(data)
+
+# The 'weights' column contains the matching weights
+head(matched_data[c("id", "treatment", "weights")])
+```
+
+```{r matched_mcc}
+# Estimate MCC using matching weights
+mcc_matched <- mcc(
+  data = matched_data,
+  id_var = "id",
+  time_var = "stop",
+  cause_var = "status",
+  by = "treatment",
+  weights = "weights",  # Use matching weights from MatchIt
+  method = "equation"
+)
+
+summary(mcc_matched)
+```
+
+## Visualization of Weighted/Matched Results
+
+```{r plotting_comparison}
+p_unwt <- plot(mcc_unweighted) +
+  geom_line_mcc(mcc_unweighted) +
+  labs(subtitle = element_blank(), color = "Treatment") +
+  scale_y_continuous(limits = c(0, 2.75)) +
+  ggtitle("Unweighted")
+
+p_wt <- plot(mcc_weighted) +
+  geom_line_mcc(mcc_weighted) +
+  ggtitle("IPTW") +
+  labs(subtitle = "Estimand: ATE", color = "Treatment") +
+  scale_y_continuous(limits = c(0, 2.75)) +
+  theme(axis.title.y = element_blank())
+
+p_mwt <- plot(mcc_matched) +
+  geom_line_mcc(mcc_matched) +
+  ggtitle("Full Matching") +
+  labs(subtitle = "Estimand: ATE", color = "Treatment") +
+  scale_y_continuous(limits = c(0, 2.75)) +
+  theme(axis.title.y = element_blank())
+
+combined <- p_unwt | p_wt | p_mwt
+
+combined + 
+  plot_layout(guides = "collect") &
+  theme(legend.position = "bottom")
+```
+
+## Key Interpretation Points
+
+### Causal vs Descriptive Interpretation
+
+- **Unweighted MCC**: Describes the observed recurrent event burden in each treatment group
+- **Weighted/Matched MCC**: Estimates the causal effect of treatment on recurrent event burden, adjusting for (measured) confounding
+
+### Assumptions
+
+Weighted MCC estimation assumes the standard causal inference assumptions:
+
+1. **Consistency**: The potential outcome under treatment $A = a$ is the same as the observed outcome for those who actually received treatment $a$
+2. **Positivity**: All individuals have a non-zero probability of receiving each treatment level ($0 < P(A = a|L) < 1$)
+3. **Conditional exchangeability (no unmeasured confounding)**: Given measured covariates *L*, treatment assignment is independent of potential outcomes
+4. **Correct model specification**: The propensity score model correctly captures the relationship between covariates and treatment assignment
+
+### Stabilized vs Unstabilized Weights
+
+The Gaber, *et al*. paper[^1] uses stabilized weights, which have the form:
+
+$$
+W_i = P(A = a) / P(A = a | L_i) 
+$$
+
+Stabilized weights typically have better finite sample properties than unstabilized weights ($1 / P(A = a | L_i)$) because they tend to be less extreme and more stable.
+
+## Not Covered
+
+This vignette covers how to use weights from IPTW or matching to get an adjusted MCC point estimate. To get associated confidence intervals, you will need to perform bootstrapping (which isn't covered in this vignette).
+
+## Summary
+
+- Use IPTW *or* matching weights when estimating causal effects of treatment on recurrent event burden using observational data
+  - Simple 1:1 nearest neighbor matching without replacement does not require use of matching weights during analysis (because all weights are 1 [if matched] or 0 [if unmatched])
+  - Complex matching methods, like full matching, optimal matching, matching with replacement, or 1:*k* ratio (where k >1), require using the matching weights
+- Always compare weighted/matched results to unweighted results to assess the impact of confounding adjustment
+- Interpret weighted estimates as causal effects under standard causal inference assumptions
