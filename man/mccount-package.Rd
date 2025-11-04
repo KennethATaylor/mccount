@@ -8,7 +8,7 @@
 \description{
 \if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
 
-Calculates mean cumulative count (MCC) to estimate the expected cumulative number of recurrent events per person over time in the presence of competing risks and censoring. Implements both the Dong-Yasui equation method and sum of cumulative incidence method described in Dong et al. (2015) \doi{10.1093/aje/kwu289}. Supports inverse probability weighting for causal inference as outlined in Gaber et al. (2023) \doi{10.1093/aje/kwad031}. Provides S3 classes with methods for printing, summarizing, plotting, and extracting results. Handles grouped analyses and integrates with 'ggplot2' for visualization.
+Calculates mean cumulative count (MCC) to estimate the expected cumulative number of recurrent events per person over time in the presence of competing risks and censoring. Implements both the Dong-Yasui equation method and sum of cumulative incidence method described in Dong, et al. (2015) \doi{10.1093/aje/kwu289}. Supports inverse probability weighting for causal inference as outlined in Gaber, et al. (2023) \doi{10.1093/aje/kwad031}. Provides S3 methods for printing, summarizing, plotting, and extracting results. Handles grouped analyses and integrates with 'ggplot2' \url{https://ggplot2.tidyverse.org/} for visualization.
 }
 \section{Main Function}{
 
@@ -139,7 +139,7 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Kenneth A. Taylor \email{kenneth.taylor.dpt@gmail.com} (\href{https://orcid.org/0000-0002-3205-9280}{ORCID})
+\strong{Maintainer}: Kenneth A. Taylor \email{kenneth.taylor.dpt@gmail.com} (\href{https://orcid.org/0000-0002-3205-9280}{ORCID}) [copyright holder]
 
 }
 \keyword{internal}

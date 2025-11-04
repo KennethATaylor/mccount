@@ -10,7 +10,7 @@ experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](h
 [![CRAN
 status](https://www.r-pkg.org/badges/version/mccount)](https://CRAN.R-project.org/package=mccount)
 [![CRAN RStudio mirror
-downloads](https://cranlogs.r-pkg.org/badges/grand-total/mccount)](https://r-pkg.org/pkg/mccount)
+downloads](https://cranlogs.r-pkg.org/badges/grand-total/mccount)](https://r-pkg.org/pkg/mccount)”
 [![R-CMD-check](https://github.com/KennethATaylor/mccount/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/KennethATaylor/mccount/actions/workflows/R-CMD-check.yaml)
 [![Codecov test
 coverage](https://codecov.io/gh/KennethATaylor/mccount/graph/badge.svg)](https://app.codecov.io/gh/KennethATaylor/mccount)
@@ -31,6 +31,14 @@ al*.[^1] Users can also estimate the MCC using the weighted Dong-Yasui
 estimator.[^2]
 
 ## Installation
+
+You can install `mccount` from CRAN using the following code:
+
+``` r
+install.packages("mccount")
+```
+
+### Development version
 
 You can install the development version of `mccount` like so:
 
@@ -69,10 +77,10 @@ citation("mccount")
     Y. Estimating the burden of recurrent events in the presence of
     competing risks: the method of mean cumulative count. *Am J
     Epidemiol*. 2015 Apr 1;181(7):532-40. doi:
-    [10.1093/aje/kwu289](https://doi.org/10.1093/aje/kwu289)
+    [10.1093/aje/kwu289](https://www.doi.org/10.1093/aje/kwu289)
 
 [^2]: Gaber CE, Edwards JK, Lund JL, Peery AF, Richardson DB, Kinlaw AC.
     Inverse Probability Weighting to Estimate Exposure Effects on the
     Burden of Recurrent Outcomes in the Presence of Competing Events.
     *Am J Epidemiol*. 2023;192(5):830-839. doi:
-    [10.1093/aje/kwad031](https://doi.org/10.1093/aje/kwad031)
+    [10.1093/aje/kwad031](https://www.doi.org/10.1093/aje/kwad031)

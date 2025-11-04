@@ -55,12 +55,12 @@
 #' Dong H, Robison LL, Leisenring WM, Martin LJ, Armstrong GT, Yasui Y.
 #'     Estimating the burden of recurrent events in the presence of competing
 #'     risks: the method of mean cumulative count. *Am J Epidemiol*. 2015 Apr
-#'     1;181(7):532-40. doi: [10.1093/aje/kwu289](https://doi.org/10.1093/aje/kwu289)
+#'     1;181(7):532-40. doi: [10.1093/aje/kwu289](https://www.doi.org/10.1093/aje/kwad031)
 #'
 #' Gaber CE, Edwards JK, Lund JL, Peery AF, Richardson DB, Kinlaw AC.
 #'     Inverse Probability Weighting to Estimate Exposure Effects on the Burden of
 #'     Recurrent Outcomes in the Presence of Competing Events. *Am J Epidemiol*.
-#'     2023;192(5):830-839. doi: [10.1093/aje/kwad031](https://doi.org/10.1093/aje/kwad031)
+#'     2023;192(5):830-839. doi: [10.1093/aje/kwad031](https://www.doi.org/10.1093/aje/kwad031)
 #'
 #' @returns
 #' An S3 object of class `"mcc"` with method-specific subclasses. The object contains:
