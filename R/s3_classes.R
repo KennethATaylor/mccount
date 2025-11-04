@@ -855,7 +855,7 @@ print.summary.mcc <- function(x, ...) {
 #'
 #' # For grouped analysis
 #' df_grouped <- df |>
-#'   mutate(group = c("A", "A", "B", "B", "B", "B", "A", "A"))
+#'   mutate(group = c("A", "A", "B", "B", "B", "B", "B", "A", "A"))
 #'
 #' mcc_grouped <- mcc(df_grouped, "id", "time", "cause", by = "group")
 #' estimates_grouped <- mcc_estimates(mcc_grouped)
