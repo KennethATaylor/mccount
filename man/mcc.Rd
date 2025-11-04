@@ -106,39 +106,27 @@ When \code{by} is specified, all tibbles contain an additional column with the
 grouping variable values, and the object has the additional class \code{"mcc_grouped"}.
 }
 \description{
-Calculates the Mean Cumulative Count (MCC), which estimates the expected
+Calculates the mean cumulative count (MCC), which estimates the expected
 cumulative number of events per person over time, while accounting for
 potential competing risks and censoring. This function provides a unified
-interface to two different estimation approaches: the \code{"equation"} method and
-the sum of cumulative incidence (\code{"sci"}) method.
-
-The \code{"equation"} method calculates MCC directly through probability
-calculations, while the \code{"sci"} method derives MCC by summing the cumulative
-incidence functions for each recurrent event. The two approaches yield
-equivalent results in certain circumstances. When they do not, the choice
-between methods depe#' Calculate Mean Cumulative Count (MCC)
-
-Calculates the Mean Cumulative Count (MCC), which estimates the expected
-cumulative number of events per person over time, while accounting for
-potential competing risks and censoring. This function provides a unified
-interface to two different estimation approaches: the \code{"equation"} method and
-the sum of cumulative incidence (\code{"sci"}) method.
+interface to two different estimation approaches: the Dong-Yasui
+(\code{"equation"}) method and the sum of cumulative incidence (\code{"sci"}) method.
 
 The \code{"equation"} method calculates MCC directly through probability
 calculations, while the \code{"sci"} method derives MCC by summing the cumulative
 incidence functions for each recurrent event. The two approaches yield
 equivalent results in certain circumstances. When they do not, the choice
 between methods depends on the specific outcome, analysis needs, and data
-structure.
+structure. See \code{vignette("choosing-between-methods")} for more details.
 }
 \examples{
 # Attach dplyr
 library(dplyr)
 # Create sample data with recurrent events
 df <- data.frame(
-  id = c(1, 2, 3, 4, 4, 4, 5, 5),
-  time = c(8, 1, 5, 2, 6, 7, 3, 3), # Times will be adjusted for id = 5
-  cause = c(0, 0, 2, 1, 1, 1, 1, 2)
+  id = c(1, 2, 3, 4, 4, 4, 4, 5, 5),
+  time = c(8, 1, 5, 2, 6, 7, 8, 3, 3), # Times will be adjusted for id = 5
+  cause = c(0, 0, 2, 1, 1, 1, 0, 1, 2)
  ) |>
   arrange(id, time)  # Sort the data by id and time
 

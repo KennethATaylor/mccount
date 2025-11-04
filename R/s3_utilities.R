@@ -15,9 +15,9 @@
 #' # Create sample data
 #' library(dplyr)
 #' df <- data.frame(
-#'   id = c(1, 2, 3, 4, 4, 4, 5, 5),
-#'   time = c(8, 1, 5, 2, 6, 7, 3, 3),
-#'   cause = c(0, 0, 2, 1, 1, 1, 1, 2)
+#'   id = c(1, 2, 3, 4, 4, 4, 4, 5, 5),
+#'   time = c(8, 1, 5, 2, 6, 7, 8, 3, 3),
+#'   cause = c(0, 0, 2, 1, 1, 1, 0, 1, 2)
 #' ) |>
 #'   arrange(id, time)
 #'
@@ -58,10 +58,10 @@ as.data.frame.mcc <- function(x, ...) {
 #' # Create sample data
 #' library(dplyr)
 #' df <- data.frame(
-#'   id = c(1, 2, 3, 4, 4, 4, 5, 5),
-#'   time = c(8, 1, 5, 2, 6, 7, 3, 3),
-#'   cause = c(0, 0, 2, 1, 1, 1, 1, 2),
-#'   group = c("A", "A", "B", "B", "B", "B", "A", "A")
+#'   id = c(1, 2, 3, 4, 4, 4, 4, 5, 5),
+#'   time = c(8, 1, 5, 2, 6, 7, 8, 3, 3),
+#'   cause = c(0, 0, 2, 1, 1, 1, 0, 1, 2),
+#'   group = c("A", "A", "B", "B", "B", "B", "B", "A", "A")
 #' ) |>
 #'   arrange(id, time)
 #'
@@ -92,9 +92,9 @@ mcc_method <- function(x) {
 #' # Create sample data
 #' library(dplyr)
 #' df <- data.frame(
-#'   id = c(1, 2, 3, 4, 4, 4, 5, 5),
-#'   time = c(8, 1, 5, 2, 6, 7, 3, 3),
-#'   cause = c(0, 0, 2, 1, 1, 1, 1, 2)
+#'   id = c(1, 2, 3, 4, 4, 4, 4, 5, 5),
+#'   time = c(8, 1, 5, 2, 6, 7, 8, 3, 3),
+#'   cause = c(0, 0, 2, 1, 1, 1, 0, 1, 2)
 #' ) |>
 #'   arrange(id, time)
 #'
@@ -137,10 +137,10 @@ is_weighted <- function(x) {
 #' # Create sample data
 #' library(dplyr)
 #' df <- data.frame(
-#'   id = c(1, 2, 3, 4, 4, 4, 5, 5),
-#'   time = c(8, 1, 5, 2, 6, 7, 3, 3),
-#'   cause = c(0, 0, 2, 1, 1, 1, 1, 2),
-#'   group = c("A", "A", "B", "B", "B", "B", "A", "A")
+#'   id = c(1, 2, 3, 4, 4, 4, 4, 5, 5),
+#'   time = c(8, 1, 5, 2, 6, 7, 8, 3, 3),
+#'   cause = c(0, 0, 2, 1, 1, 1, 0, 1, 2),
+#'   group = c("A", "A", "B", "B", "B", "B", "B", "A", "A")
 #' ) |>
 #'   arrange(id, time)
 #'
@@ -174,11 +174,12 @@ is_grouped <- function(x) {
 #' # Create sample data with groups
 #' library(dplyr)
 #' df <- data.frame(
-#'   id = c(1, 2, 3, 4, 4, 4, 5, 5),
-#'   time = c(8, 1, 5, 2, 6, 7, 3, 3),
-#'   cause = c(0, 0, 2, 1, 1, 1, 1, 2),
+#'   id = c(1, 2, 3, 4, 4, 4, 4, 5, 5),
+#'   time = c(8, 1, 5, 2, 6, 7, 8, 3, 3),
+#'   cause = c(0, 0, 2, 1, 1, 1, 0, 1, 2),
 #'   treatment = c("Control", "Control", "Treatment", "Treatment",
-#'                 "Treatment", "Treatment", "Control", "Control")
+#'                 "Treatment", "Treatment", "Treatment", "Control",
+#'                 "Control")
 #' ) |>
 #'   arrange(id, time)
 #'
@@ -424,9 +425,9 @@ mcc_final_values <- function(x) {
 #' # Create sample data
 #' library(dplyr)
 #' df <- data.frame(
-#'   id = c(1, 2, 3, 4, 4, 4, 5, 5),
-#'   time = c(8, 1, 5, 2, 6, 7, 3, 3),
-#'   cause = c(0, 0, 2, 1, 1, 1, 1, 2)
+#'   id = c(1, 2, 3, 4, 4, 4, 4, 5, 5),
+#'   time = c(8, 1, 5, 2, 6, 7, 8, 3, 3),
+#'   cause = c(0, 0, 2, 1, 1, 1, 0, 1, 2)
 #' ) |>
 #'   arrange(id, time)
 #'

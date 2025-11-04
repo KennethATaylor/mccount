@@ -315,10 +315,10 @@ as_mcc.data.frame <- function(
 #' # Create sample data
 #' library(dplyr)
 #' df <- data.frame(
-#'   id = c(1, 2, 3, 4, 4, 4, 5, 5),
-#'   time = c(8, 1, 5, 2, 6, 7, 3, 3),
-#'   cause = c(0, 0, 2, 1, 1, 1, 1, 2)
-#' ) |>
+#'   id = c(1, 2, 3, 4, 4, 4, 4, 5, 5),
+#'   time = c(8, 1, 5, 2, 6, 7, 8, 3, 3),
+#'   cause = c(0, 0, 2, 1, 1, 1, 0, 1, 2)
+#'  ) |>
 #'   arrange(id, time)
 #'
 #' # Calculate MCC
@@ -347,9 +347,9 @@ is_mcc <- function(x) {
 #' library(dplyr)
 #' # Create sample data with recurrent events
 #' df <- data.frame(
-#'   id = c(1, 2, 3, 4, 4, 4, 5, 5),
-#'   time = c(8, 1, 5, 2, 6, 7, 3, 3), # Times will be adjusted for id = 5
-#'   cause = c(0, 0, 2, 1, 1, 1, 1, 2)
+#'   id = c(1, 2, 3, 4, 4, 4, 4, 5, 5),
+#'   time = c(8, 1, 5, 2, 6, 7, 8, 3, 3),
+#'   cause = c(0, 0, 2, 1, 1, 1, 0, 1, 2)
 #'  ) |>
 #'   arrange(id, time)  # Sort the data by id and time
 #'
@@ -432,7 +432,7 @@ print.mcc <- function(x, ...) {
     } else {
       print(utils::head(x$mcc_final, 6))
       cli::cli_text(
-        "# ... with {.val {as.numeric(nrow(x$mcc_final) - 6})} more rows"
+        "# ... with {.val {as.numeric(nrow(x$mcc_final) - 6)}} more rows"
       )
     }
   }
@@ -507,9 +507,9 @@ get_time_to_mcc <- function(mcc_data, mcc_column, threshold = 1.0) {
 #' library(dplyr)
 #' # Create sample data with recurrent events
 #' df <- data.frame(
-#'   id = c(1, 2, 3, 4, 4, 4, 5, 5),
-#'   time = c(8, 1, 5, 2, 6, 7, 3, 3), # Times will be adjusted for id = 5
-#'   cause = c(0, 0, 2, 1, 1, 1, 1, 2)
+#'   id = c(1, 2, 3, 4, 4, 4, 4, 5, 5),
+#'   time = c(8, 1, 5, 2, 6, 7, 8, 3, 3),
+#'   cause = c(0, 0, 2, 1, 1, 1, 0, 1, 2)
 #'  ) |>
 #'   arrange(id, time)  # Sort the data by id and time
 #'
@@ -840,10 +840,10 @@ print.summary.mcc <- function(x, ...) {
 #' # Create sample data
 #' library(dplyr)
 #' df <- data.frame(
-#'   id = c(1, 2, 3, 4, 4, 4, 5, 5),
-#'   time = c(8, 1, 5, 2, 6, 7, 3, 3),
-#'   cause = c(0, 0, 2, 1, 1, 1, 1, 2)
-#' ) |>
+#'   id = c(1, 2, 3, 4, 4, 4, 4, 5, 5),
+#'   time = c(8, 1, 5, 2, 6, 7, 8, 3, 3),
+#'   cause = c(0, 0, 2, 1, 1, 1, 0, 1, 2)
+#'  ) |>
 #'   arrange(id, time)
 #'
 #' # Calculate MCC
@@ -884,10 +884,10 @@ mcc_estimates <- function(x, ...) {
 #' # Create sample data
 #' library(dplyr)
 #' df <- data.frame(
-#'   id = c(1, 2, 3, 4, 4, 4, 5, 5),
-#'   time = c(8, 1, 5, 2, 6, 7, 3, 3),
-#'   cause = c(0, 0, 2, 1, 1, 1, 1, 2)
-#' ) |>
+#'   id = c(1, 2, 3, 4, 4, 4, 4, 5, 5),
+#'   time = c(8, 1, 5, 2, 6, 7, 8, 3, 3),
+#'   cause = c(0, 0, 2, 1, 1, 1, 0, 1, 2)
+#'  ) |>
 #'   arrange(id, time)
 #'
 #' # Calculate MCC with details
