@@ -14,23 +14,19 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
-
-library(mccount)
-library(dplyr)
-library(survival)
 ```
 
 ## Introduction
 
 When studying diseases and medical interventions, patients often experience events that can occur multiple times (e.g., hospitalizations, infections, or tumor recurrences). Traditional survival analysis methods typically focus on time to the *first* event, potentially missing important information about the total disease burden.
 
-Many patients experience events that can occur multiple times—like hospital readmissions, infections, or tumor recurrences. Traditional survival analysis is only concerned with the first event and does not account for competing risks like death. Alternatively, the Mean Cumulative Count (MCC) provides a more complete picture by estimating the expected number of events per person by a given time, properly accounting for:
+Many patients experience events that can occur multiple times—like hospital readmissions, infections, or tumor recurrences. Traditional survival analysis is only concerned with the first event and does not account for competing risks like death. Alternatively, the mean cumulative count (MCC) provides a more complete picture by estimating the expected number of events per person by a given time, properly accounting for:
 
 -   Multiple occurrences of the same event (recurrent events)
 -   Events that prevent future occurrences (competing risks like death)
 -   Incomplete follow-up (censoring)
 
-```{r setup, eval = FALSE}
+```{r setup, message = FALSE, warning = FALSE}
 library(mccount)
 library(dplyr)
 library(survival)
@@ -38,7 +34,7 @@ library(survival)
 
 ## Clinical Example: Bladder Cancer Recurrences
 
-We'll use the `bladder1` dataset from the [`survival`](https://github.com/therneau/survival) package, which contains data on bladder cancer recurrences from a randomized trial comparing three treatments: placebo, pyridoxine, and thiotepa.
+We'll use the `survival::bladder1` dataset from the `{survival}` package, which contains data on bladder cancer recurrences from a randomized trial comparing three treatments: `placebo`, `pyridoxine`, and `thiotepa`.
 
 The `bladder1` dataset contains `r length(unique(bladder1$id))` patients followed for tumor recurrences. The key variables are:
 
@@ -72,12 +68,15 @@ mcc_overall <- mcc(
   data = bladder_mcc,
   id_var = "id",
   time_var = "stop",
-  cause_var = "status",
-  method = "equation"
+  cause_var = "status"
 )
 ```
 
 Notice that `mcc()` will warn the user if there are participants whose data end do not explicitly have a censoring event (`0`) of competing event (`2`) on their final row. The function provides this warning to ensure the user is aware of this and also aware of how this is implicitly interpreted by the package. The function also lets the user know that the MCC estimate will be incorrect if the `mccount`'s implicit assumption is incorrect.
+
+### Available Estimators
+
+The `mcc()` function can be used to calculate the MCC using either the Dong-Yasui estimator (`method = "equation"`, the default) or the sum of cumulative incidence estimator (`method = "sci"`). See `vignette("choosing-between-methods")` and `?mcc` for more details.
 
 ### Understanding the Output
 
@@ -188,3 +187,7 @@ plot(mcc_by_treatment) +
 
 
 Confidence intervals for the MCC can be generated via bootstrapping.
+
+## Weighted MCC Analysis
+
+`mccount` also allows estimation of weighted MCC in the setting of observational studies that want to account for measured confounding and/or other types of bias via matching or weighting. See the `vignette("estimating-mcc-after-matching-or-weighting")` for more details.

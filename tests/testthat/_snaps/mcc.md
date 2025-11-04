@@ -353,3 +353,21 @@
       i Found 25 unique groups in 'group'
       i Consider whether this many groups is intended
 
+# mcc() converts numeric grouping variables to factors
+
+    Code
+      mcc_numeric <- mcc(df_numeric_groups, "id", "time", "cause", by = "group_numeric")
+    Message
+      i Converting numeric grouping variable "by_var" to <factor>
+      i Found 2 unique groups: 1 and 2
+      i Adjusted time points for events occurring simultaneously for the same subject.
+
+# plotting works correctly with converted numeric groups
+
+    Code
+      mcc_for_plot <- mcc(df_plot_test, "id", "time", "cause", by = "treatment")
+    Message
+      i Converting numeric grouping variable "by_var" to <factor>
+      i Found 2 unique groups: 1 and 2
+      i Adjusted time points for events occurring simultaneously for the same subject.
+

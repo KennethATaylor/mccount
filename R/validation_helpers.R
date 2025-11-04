@@ -260,7 +260,7 @@ validate_weights_variable <- function(data, weights_var) {
   if (weight_ratio > 100) {
     cli::cli_warn(c(
       "Large variation in weights detected",
-      "!" = "Maximum to minimum weight ratio: {.val {round(weight_ratio, 2)}}",
+      "!" = "Maximum to minimum weight ratio: {.val {round5(weight_ratio, 2)}}",
       "i" = "Consider checking for potential outliers in weights"
     ))
   }

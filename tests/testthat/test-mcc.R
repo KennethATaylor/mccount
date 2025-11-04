@@ -1382,3 +1382,150 @@ test_that("mcc() output structure is consistent between single and grouped analy
   expect_true("treatment" %in% names(result_grouped$mcc_final))
   expect_false("treatment" %in% names(result_single$mcc_final))
 })
+
+
+test_that("mcc() converts numeric grouping variables to factors", {
+  # Create test data with numeric group variable
+  df_numeric_groups <- data.frame(
+    id = c(1, 2, 3, 4, 4, 4, 4, 5, 5),
+    time = c(8, 1, 5, 2, 6, 7, 8, 3, 3),
+    cause = c(0, 0, 2, 1, 1, 1, 0, 1, 2),
+    group_numeric = c(1, 1, 2, 2, 2, 2, 2, 1, 1) # Numeric groups
+  ) |>
+    dplyr::arrange(id, time)
+
+  # Test with numeric grouping variable
+  expect_snapshot(
+    mcc_numeric <- mcc(
+      df_numeric_groups,
+      "id",
+      "time",
+      "cause",
+      by = "group_numeric"
+    )
+  )
+
+  # Check that the group variable in results is now a factor
+  expect_true(is.factor(mcc_numeric$mcc_final$group_numeric))
+
+  # Check that factor levels are correct
+  expect_equal(levels(mcc_numeric$mcc_final$group_numeric), c("1", "2"))
+
+  # Test with character grouping variable (should not convert)
+  df_char_groups <- df_numeric_groups |>
+    dplyr::mutate(group_char = c("A", "A", "B", "B", "B", "B", "B", "A", "A"))
+
+  expect_no_error(
+    mcc_char <- mcc(df_char_groups, "id", "time", "cause", by = "group_char")
+  )
+
+  # Character groups should still be character in the results
+  expect_true(is.character(mcc_char$mcc_table$group_char))
+
+  # Test with factor grouping variable (should not convert)
+  df_factor_groups <- df_numeric_groups |>
+    dplyr::mutate(
+      group_factor = factor(c("A", "A", "B", "B", "B", "B", "B", "A", "A"))
+    )
+
+  expect_no_error(
+    mcc_factor <- mcc(
+      df_factor_groups,
+      "id",
+      "time",
+      "cause",
+      by = "group_factor"
+    )
+  )
+
+  # Factor groups should remain as factors
+  expect_true(is.factor(mcc_factor$mcc_table$group_factor))
+})
+
+test_that("plotting works correctly with converted numeric groups", {
+  # Create test data with numeric group variable
+  df_plot_test <- data.frame(
+    id = c(1, 2, 3, 4, 4, 4, 4, 5, 5),
+    time = c(8, 1, 5, 2, 6, 7, 8, 3, 3),
+    cause = c(0, 0, 2, 1, 1, 1, 0, 1, 2),
+    treatment = c(1, 1, 2, 2, 2, 2, 2, 1, 1) # Numeric treatment groups
+  ) |>
+    dplyr::arrange(id, time)
+
+  # Calculate MCC with numeric grouping
+  expect_snapshot(
+    mcc_for_plot <- mcc(df_plot_test, "id", "time", "cause", by = "treatment")
+  )
+
+  # Create plot (should work without issues)
+  expect_no_error(p <- plot(mcc_for_plot))
+
+  # Check that it's a ggplot object
+  expect_s3_class(p, "ggplot")
+
+  # The plot should use discrete colors, not a color gradient
+  # This is harder to test directly, but we can check that the data
+  # used in the plot has the group variable as a factor
+  plot_data <- if (mcc_for_plot$method == "equation") {
+    mcc_for_plot$mcc_table
+  } else {
+    mcc_for_plot$sci_table
+  }
+
+  expect_true(is.factor(plot_data$treatment))
+})
+
+test_that("prepare_group_variable helper function works correctly", {
+  # Test with numeric variable
+  test_data_numeric <- data.frame(
+    x = 1:5,
+    group = c(1, 2, 1, 3, 2)
+  )
+
+  expect_message(
+    result_numeric <- prepare_group_variable(test_data_numeric, "group"),
+    "Converting numeric grouping variable"
+  )
+  expect_true(is.factor(result_numeric$group))
+  expect_equal(levels(result_numeric$group), c("1", "2", "3"))
+
+  # Test with character variable (should not convert)
+  test_data_char <- data.frame(
+    x = 1:5,
+    group = c("A", "B", "A", "C", "B")
+  )
+
+  expect_no_message(
+    result_char <- prepare_group_variable(test_data_char, "group")
+  )
+  expect_true(is.character(result_char$group))
+
+  # Test with factor variable (should not convert)
+  test_data_factor <- data.frame(
+    x = 1:5,
+    group = factor(c("A", "B", "A", "C", "B"))
+  )
+
+  expect_no_message(
+    result_factor <- prepare_group_variable(test_data_factor, "group")
+  )
+  expect_true(is.factor(result_factor$group))
+
+  # Test with NULL by_var (should return data unchanged)
+  expect_identical(
+    prepare_group_variable(test_data_numeric, NULL),
+    test_data_numeric
+  )
+
+  # Test with NA values in numeric group
+  test_data_na <- data.frame(
+    x = 1:5,
+    group = c(1, NA, 2, 1, NA)
+  )
+
+  expect_message(
+    result_na <- prepare_group_variable(test_data_na, "group")
+  )
+  expect_true(is.factor(result_na$group))
+  expect_equal(levels(result_na$group), c("1", "2")) # Only non-NA values
+})

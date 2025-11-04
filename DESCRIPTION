@@ -2,7 +2,7 @@ Package: mccount
 Title: Estimate Recurrent Event Burden with Competing Risks
 Version: 0.0.0.9000
 Authors@R: 
-    person("Kenneth A.", "Taylor", , "kenneth.taylor.dpt@gmail.com", role = c("aut", "cre"),
+    person("Kenneth A.", "Taylor", , "kenneth.taylor.dpt@gmail.com", role = c("aut", "cre", "cph"),
            comment = c(ORCID = "0000-0002-3205-9280"))
 Description: Calculates mean cumulative count (MCC) to estimate the expected 
     cumulative number of recurrent events per person over time in the presence of 
@@ -20,6 +20,7 @@ BugReports: https://github.com/KennethATaylor/mccount/issues
 Depends: 
     R (>= 4.1.0)
 Imports: 
+    cards,
     cli,
     cmprsk,
     data.table,
@@ -34,11 +35,15 @@ Suggests:
     boot,
     ggplot2 (>= 3.5.0),
     knitr,
+    MatchIt,
     mstate,
+    optmatch,
+    patchwork,
     rmarkdown,
     spelling,
     survival,
     testthat (>= 3.0.0),
+    WeightIt,
     withr
 Config/testthat/edition: 3
 Encoding: UTF-8

@@ -21,10 +21,10 @@ Extract MCC estimates from \code{mcc} objects
 # Create sample data
 library(dplyr)
 df <- data.frame(
-  id = c(1, 2, 3, 4, 4, 4, 5, 5),
-  time = c(8, 1, 5, 2, 6, 7, 3, 3),
-  cause = c(0, 0, 2, 1, 1, 1, 1, 2)
-) |>
+  id = c(1, 2, 3, 4, 4, 4, 4, 5, 5),
+  time = c(8, 1, 5, 2, 6, 7, 8, 3, 3),
+  cause = c(0, 0, 2, 1, 1, 1, 0, 1, 2)
+ ) |>
   arrange(id, time)
 
 # Calculate MCC
@@ -36,7 +36,7 @@ print(estimates)
 
 # For grouped analysis
 df_grouped <- df |>
-  mutate(group = c("A", "A", "B", "B", "B", "B", "A", "A"))
+  mutate(group = c("A", "A", "B", "B", "B", "B", "B", "A", "A"))
 
 mcc_grouped <- mcc(df_grouped, "id", "time", "cause", by = "group")
 estimates_grouped <- mcc_estimates(mcc_grouped)

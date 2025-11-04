@@ -34,7 +34,7 @@
       
       -- Summary Statistics --
       
-      Observation period: "[0, 8]"
+      Observation period: [0, 8]
       Time to MCC = 1.0: 7
       Time to maximum MCC: 7
       MCC at end of follow-up: 1
@@ -88,14 +88,14 @@
       -- Summary of Mean Cumulative Count Results ------------------------------------
       i Method: Dong-Yasui Equation Method
       i Total participants: 5
-      i Overall observation period: "[0, 8]"
+      i Overall observation period: [0, 8]
       
       -- Summary by Group (group) --
       
       -- Group: "A" 
       Participants in group: 3
-      Group observation period: "[0, 8]"
-      Time to MCC = 1.0: "Never reached"
+      Group observation period: [0, 8]
+      Time to MCC = 1.0: NA
       Time to maximum MCC: 3
       MCC at end of follow-up: 0.5
       Events of interest: 1
@@ -105,7 +105,7 @@
       
       -- Group: "B" 
       Participants in group: 2
-      Group observation period: "[0, 8]"
+      Group observation period: [0, 8]
       Time to MCC = 1.0: 6
       Time to maximum MCC: 7
       MCC at end of follow-up: 1.5
@@ -224,8 +224,8 @@
       
       -- Summary Statistics --
       
-      Observation period: "[0, 1]"
-      Time to MCC = 1.0: "Never reached"
+      Observation period: [0, 1]
+      Time to MCC = 1.0: NA
       Time to maximum MCC: 0
       MCC at end of follow-up: 0
       

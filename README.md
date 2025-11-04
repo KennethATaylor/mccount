@@ -9,6 +9,8 @@
 experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 [![CRAN
 status](https://www.r-pkg.org/badges/version/mccount)](https://CRAN.R-project.org/package=mccount)
+[![CRAN RStudio mirror
+downloads](https://cranlogs.r-pkg.org/badges/grand-total/mccount)](https://r-pkg.org/pkg/mccount)
 [![R-CMD-check](https://github.com/KennethATaylor/mccount/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/KennethATaylor/mccount/actions/workflows/R-CMD-check.yaml)
 [![Codecov test
 coverage](https://codecov.io/gh/KennethATaylor/mccount/graph/badge.svg)](https://app.codecov.io/gh/KennethATaylor/mccount)

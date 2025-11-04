@@ -1,31 +1,18 @@
 #' Calculate Mean Cumulative Count (MCC)
 #'
 #' @description
-#' Calculates the Mean Cumulative Count (MCC), which estimates the expected
+#' Calculates the mean cumulative count (MCC), which estimates the expected
 #' cumulative number of events per person over time, while accounting for
 #' potential competing risks and censoring. This function provides a unified
-#' interface to two different estimation approaches: the `"equation"` method and
-#' the sum of cumulative incidence (`"sci"`) method.
-#'
-#' The `"equation"` method calculates MCC directly through probability
-#' calculations, while the `"sci"` method derives MCC by summing the cumulative
-#' incidence functions for each recurrent event. The two approaches yield
-#' equivalent results in certain circumstances. When they do not, the choice
-#' between methods depe#' Calculate Mean Cumulative Count (MCC)
-#'
-#' @description
-#' Calculates the Mean Cumulative Count (MCC), which estimates the expected
-#' cumulative number of events per person over time, while accounting for
-#' potential competing risks and censoring. This function provides a unified
-#' interface to two different estimation approaches: the `"equation"` method and
-#' the sum of cumulative incidence (`"sci"`) method.
+#' interface to two different estimation approaches: the Dong-Yasui
+#' (`"equation"`) method and the sum of cumulative incidence (`"sci"`) method.
 #'
 #' The `"equation"` method calculates MCC directly through probability
 #' calculations, while the `"sci"` method derives MCC by summing the cumulative
 #' incidence functions for each recurrent event. The two approaches yield
 #' equivalent results in certain circumstances. When they do not, the choice
 #' between methods depends on the specific outcome, analysis needs, and data
-#' structure.
+#' structure. See `vignette("choosing-between-methods")` for more details.
 #'
 #' @param data (`data.frame` or `tbl_df`)\cr
 #'     A `data.frame` or tibble containing the required variables
@@ -111,9 +98,9 @@
 #' library(dplyr)
 #' # Create sample data with recurrent events
 #' df <- data.frame(
-#'   id = c(1, 2, 3, 4, 4, 4, 5, 5),
-#'   time = c(8, 1, 5, 2, 6, 7, 3, 3), # Times will be adjusted for id = 5
-#'   cause = c(0, 0, 2, 1, 1, 1, 1, 2)
+#'   id = c(1, 2, 3, 4, 4, 4, 4, 5, 5),
+#'   time = c(8, 1, 5, 2, 6, 7, 8, 3, 3), # Times will be adjusted for id = 5
+#'   cause = c(0, 0, 2, 1, 1, 1, 0, 1, 2)
 #'  ) |>
 #'   arrange(id, time)  # Sort the data by id and time
 #'
@@ -294,6 +281,45 @@ mcc <- function(
   return(mcc_obj)
 }
 
+#' Ensure grouping variable is appropriately typed for analysis
+#'
+#' @description
+#' Converts numeric grouping variables to factors to ensure proper handling
+#' in both analysis and plotting. Character variables are left as-is since
+#' they will be automatically converted to factors when needed.
+#'
+#' @param data Input data
+#' @param by_var String name of grouping variable
+#'
+#' @returns Data with potentially modified grouping variable
+#' @keywords internal
+#' @noRd
+prepare_group_variable <- function(data, by_var) {
+  if (is.null(by_var)) {
+    return(data)
+  }
+
+  # Get the grouping column
+  group_col <- data[[by_var]]
+
+  # Check if it's numeric (integer or double)
+  if (is.numeric(group_col)) {
+    # Convert numeric to factor with informative message
+    unique_values <- sort(unique(group_col[!is.na(group_col)]))
+    n_unique <- length(unique_values)
+
+    cli::cli_inform(c(
+      "i" = "Converting numeric grouping variable {.val by_var} to {.cls factor}",
+      "i" = "Found {n_unique} unique group{?s}: {.val {noquote(unique_values)}}"
+    ))
+
+    # Convert to factor, preserving order of unique values
+    data[[by_var]] <- factor(group_col, levels = unique_values)
+  }
+
+  return(data)
+}
+
 #' Calculate MCC by group (internal function)
 #'
 #' @inheritParams mcc
@@ -324,6 +350,8 @@ mcc_by_group <- function(
     tstart_var_sym <- NULL
   }
 
+  data <- prepare_group_variable(data, by)
+
   # Get unique groups efficiently
   unique_groups <- unique(data[[by]])
   unique_groups <- unique_groups[!is.na(unique_groups)] # Remove NA values
@@ -331,7 +359,7 @@ mcc_by_group <- function(
   if (length(unique_groups) == 0) {
     cli::cli_abort(c(
       "No valid groups found in {.arg by} variable",
-      "x" = "All values in column '{by}' are NA"
+      "x" = "All values in column {.val {by}} are {.val {noquote(NA_real_)}}"
     ))
   }
 
