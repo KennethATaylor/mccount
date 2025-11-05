@@ -240,7 +240,7 @@ follow-up). For example:</p>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/filter.html" class="external-link">filter</a></span><span class="op">(</span><span class="va">time</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="va">key_times</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span></span>
 <span>    years <span class="op">=</span> <span class="va">time</span> <span class="op">/</span> <span class="fl">12</span>,</span>
-<span>    mcc <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Round.html" class="external-link">round</a></span><span class="op">(</span><span class="va">mcc</span>, <span class="fl">3</span><span class="op">)</span></span>
+<span>    mcc <span class="op">=</span> <span class="fu">cards</span><span class="fu">::</span><span class="fu"><a href="https://insightsengineering.github.io/cards/latest-tag/reference/round5.html" class="external-link">round5</a></span><span class="op">(</span><span class="va">mcc</span>, <span class="fl">3</span><span class="op">)</span></span>
 <span>  <span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/select.html" class="external-link">select</a></span><span class="op">(</span><span class="va">years</span>, <span class="va">time</span>, <span class="va">mcc</span><span class="op">)</span></span>
 <span></span>
