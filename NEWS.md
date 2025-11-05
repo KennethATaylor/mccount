@@ -1,3 +1,3 @@
-# mccount (development version)
+# mccount 0.1.0
 
 * Initial CRAN submission.
