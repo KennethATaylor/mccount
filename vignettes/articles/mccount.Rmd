@@ -102,7 +102,7 @@ mcc_at_times <- mcc_overall$mcc_table |>
   filter(time %in% key_times) |>
   mutate(
     years = time / 12,
-    mcc = round(mcc, 3)
+    mcc = cards::round5(mcc, 3)
   ) |>
   select(years, time, mcc)
 
@@ -134,9 +134,9 @@ The step function shows how the expected number of bladder cancer recurrences ac
 
 ## MCC Interpretation
 
-The estimated MCC can be interpreted as the number of events per person we expect among individuals who have not experienced a competing risk event by a given time. Looking at the print out from `summary(mcc_overall)`, the MCC at the end of follow-up is `r round(mcc_final_values(mcc_overall), 2)` - on average, each bladder cancer survivor experiences `r round(mcc_final_values(mcc_overall), 2)` recurrences by `r max(mcc_overall$mcc_table$time)` months.
+The estimated MCC can be interpreted as the number of events per person we expect among individuals who have not experienced a competing risk event by a given time. Looking at the print out from `summary(mcc_overall)`, the MCC at the end of follow-up is `r cards::round5(mcc_final_values(mcc_overall), 2)` - on average, each bladder cancer survivor experiences `r cards::round5(mcc_final_values(mcc_overall), 2)` recurrences by `r max(mcc_overall$mcc_table$time)` months.
 
-In a population of 100 similar patients, we expect approximately ``r round(mcc_final_values(mcc_overall), 2)` * 100 = `r round(mcc_final_values(mcc_overall), 2) * 100`` total recurrences by `r max(mcc_overall$mcc_table$time)` months. This accounts for the fact that some patients die and cannot experience further recurrences.
+In a population of 100 similar patients, we expect approximately ``r cards::round5(mcc_final_values(mcc_overall), 2)` * 100 = `r cards::round5(mcc_final_values(mcc_overall), 2) * 100`` total recurrences by `r max(mcc_overall$mcc_table$time)` months. This accounts for the fact that some patients die and cannot experience further recurrences.
 
 Dong, *et al*.[^1] provide additional guidance for interpreting the MCC (emphasis added):
 
