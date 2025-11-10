@@ -3,7 +3,7 @@
 ## mccount 0.1.1
 
 - Removed `\dontrun{}` from plot function examples in response to CRAN
-  review.
+  review and updated other documentation preemptively.
 
 ## mccount 0.1.0
 
