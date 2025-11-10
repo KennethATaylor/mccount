@@ -67,7 +67,6 @@ The function is designed to work seamlessly with the existing \code{plot.mcc()}
 method and can be chained using ggplot2's \code{+} syntax.
 }
 \examples{
-\dontrun{
 # Create sample data
 library(dplyr)
 df <- data.frame(
@@ -101,6 +100,4 @@ plot(mcc_overall) +
 
 # Clean up
 rm(df, mcc_overall, mcc_grouped)
-}
-
 }

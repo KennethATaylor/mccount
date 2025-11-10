@@ -1,3 +1,8 @@
+## Resubmission
+This is a resubmission. In this version I have:
+
+* Removed the call to `\dontrun{}` from `geom_line_mcc()`.
+
 ## R CMD check results
 
 0 errors | 0 warnings | 2 notes

@@ -403,7 +403,6 @@ create_subtitle <- function(x) {
 #' @export
 #'
 #' @examples
-#' \dontrun{
 #' # Create sample data
 #' library(dplyr)
 #' df <- data.frame(
@@ -437,8 +436,6 @@ create_subtitle <- function(x) {
 #'
 #' # Clean up
 #' rm(df, mcc_overall, mcc_grouped)
-#' }
-#'
 geom_line_mcc <- function(
   mcc_object,
   threshold = 1.0,
