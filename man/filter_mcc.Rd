@@ -23,12 +23,12 @@ custom visualizations.
 # Create sample data with groups
 library(dplyr)
 df <- data.frame(
-  id = c(1, 2, 3, 4, 4, 4, 5, 5, 6, 7, 8),
-  time = c(8, 1, 5, 2, 6, 7, 3, 3, 4, 9, 2),
-  cause = c(0, 0, 2, 1, 1, 1, 1, 2, 1, 0, 2),
+  id = c(1, 2, 3, 4, 4, 4, 4, 5, 5, 6, 6, 7, 8),
+  time = c(8, 1, 5, 2, 6, 7, 8, 3, 3, 4, 5, 9, 2),
+  cause = c(0, 0, 2, 1, 1, 1, 0, 1, 2, 1, 0, 0, 2),
   treatment = c("Control", "Control", "Treatment", "Treatment",
-                "Treatment", "Treatment", "Control", "Control",
-                "Placebo", "Placebo", "Placebo")
+                "Treatment", "Treatment", "Treatment", "Control", "Control",
+                "Placebo", "Placebo", "Placebo", "Placebo")
 ) |>
   arrange(id, time)
 
