@@ -3,6 +3,8 @@ This is a resubmission. In this version I have:
 
 * Removed the call to `\dontrun{}` from `geom_line_mcc()`.
 
+* Updated other documentation to ensure exported functions that were previously missing examples now have examples.
+
 ## R CMD check results
 
 0 errors | 0 warnings | 2 notes
