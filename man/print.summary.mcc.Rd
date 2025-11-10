@@ -12,7 +12,7 @@
 \item{...}{Additional arguments (currently unused)}
 }
 \value{
-x invisibly
+Invisibly returns \code{x}
 }
 \description{
 Print method for \code{mcc} summary objects

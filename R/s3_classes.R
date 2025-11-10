@@ -710,7 +710,7 @@ summary.mcc <- function(object, ...) {
 #' @param x A `summary.mcc` object
 #' @param ... Additional arguments (currently unused)
 #'
-#' @returns x invisibly
+#' @return Invisibly returns `x`
 #' @export
 #'
 #' @examples
