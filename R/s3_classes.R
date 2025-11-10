@@ -712,6 +712,37 @@ summary.mcc <- function(object, ...) {
 #'
 #' @returns x invisibly
 #' @export
+#'
+#' @examples
+#' # Attach dplyr
+#' library(dplyr)
+#' # Create sample data with recurrent events
+#' df <- data.frame(
+#'   id = c(1, 2, 3, 4, 4, 4, 4, 5, 5),
+#'   time = c(8, 1, 5, 2, 6, 7, 8, 3, 3),
+#'   cause = c(0, 0, 2, 1, 1, 1, 0, 1, 2)
+#'  ) |>
+#'   arrange(id, time)  # Sort the data by id and time
+#'
+#' # Calculate MCC using the equation method (default)
+#' mcc_eq <- mcc(df, id_var = "id", time_var = "time", cause_var = "cause")
+#'
+#' summary(mcc_eq)
+#'
+#' # Calculate MCC using the sum of cumulative incidence method
+#' mcc_sci <- mcc(
+#'   df,
+#'   id_var = "id",
+#'   time_var = "time",
+#'   cause_var = "cause",
+#'   method = "sci"
+#' )
+#'
+#' print(summary(mcc_sci))
+#'
+#' # Clean up
+#' rm(df, mcc_eq, mcc_sci)
+#'
 print.summary.mcc <- function(x, ...) {
   cli::cli_h1("Summary of Mean Cumulative Count Results")
 
