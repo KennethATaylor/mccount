@@ -11,3 +11,4 @@ dev/
 ^vignettes/articles$
 ^doc$
 ^Meta$
+^CRAN-SUBMISSION$
