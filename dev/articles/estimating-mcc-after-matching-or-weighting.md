@@ -187,9 +187,12 @@ For propensity score matching:
   additional weighting is necessary when using the matched dataset
   (because the matching weights for all untrimmed treated and control
   units equal 1)
-- **Complex matching methods** (e.g., optimal matching, full matching,
-  subclassification): Use the matching weights provided by the matching
-  procedure in the same way as IPTW weights
+- **Complex matching methods**: Use the matching weights provided by the
+  matching procedure in the same way as IPTW weights
+  - Examples of matching methods where weights are necessary include,
+    but are not limited to: optimal matching, full matching,
+    subclassification, matching with replacement, or using a 1:*k* ratio
+    (where *k* \> 1)
 
 ### Example: 1:1 Nearest Neighbor Matching (No Weights Needed)
 
@@ -441,12 +444,15 @@ assumptions:
     treatment $a$
 2.  **Positivity**: All individuals have a non-zero probability of
     receiving each treatment level ($0 < P\left( A = a|L \right) < 1$)
-3.  **Conditional exchangeability (no unmeasured confounding)**: Given
-    measured covariates *L*, treatment assignment is independent of
-    potential outcomes
+3.  **Conditional Exchangeability (no unmeasured confounding)**: Given
+    adjustment for measured covariates *L*, treatment groups are
+    sufficiently exchangeable at the start of follow-up - the risk of
+    the outcome in one group can reasonably be assumed to be the same in
+    the other group at the time of treatment assignment after
+    controlling for confounding bias
 4.  **Correct model specification**: The propensity score model
-    correctly captures the relationship between covariates and treatment
-    assignment
+    correctly (or at least sufficiently) captures the relationship
+    between covariates and treatment assignment
 
 ### Stabilized vs Unstabilized Weights
 
@@ -457,7 +463,7 @@ $$W_{i} = P(A = a)/P\left( A = a|L_{i} \right)$$
 
 Stabilized weights typically have better finite sample properties than
 unstabilized weights ($1/P\left( A = a|L_{i} \right)$) because they tend
-to be less extreme and more stable.
+to be less extreme and more stable (hence their name).
 
 ## Not Covered
 
@@ -474,7 +480,7 @@ vignette).
     require use of matching weights during analysis (because all weights
     are 1 \[if matched\] or 0 \[if unmatched\])
   - Complex matching methods, like full matching, optimal matching,
-    matching with replacement, or 1:*k* ratio (where k \>1), require
+    matching with replacement, or 1:*k* ratio (where *k* \> 1), require
     using the matching weights
 - Always compare weighted/matched results to unweighted results to
   assess the impact of confounding adjustment

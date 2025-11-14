@@ -284,9 +284,15 @@ replacement</strong>: No additional weighting is necessary when using
 the matched dataset (because the matching weights for all untrimmed
 treated and control units equal 1)</li>
 <li>
-<strong>Complex matching methods</strong> (e.g., optimal matching,
-full matching, subclassification): Use the matching weights provided by
-the matching procedure in the same way as IPTW weights</li>
+<strong>Complex matching methods</strong>: Use the matching weights
+provided by the matching procedure in the same way as IPTW weights
+<ul>
+<li>Examples of matching methods where weights are necessary include,
+but are not limited to: optimal matching, full matching,
+subclassification, matching with replacement, or using a 1:<em>k</em>
+ratio (where <em>k</em> &gt; 1)</li>
+</ul>
+</li>
 </ul>
 </div>
 <div class="section level3">
@@ -549,13 +555,16 @@ treatment
 probability of receiving each treatment level
 (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>0</mn><mo>&lt;</mo><mi>P</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>A</mi><mo>=</mo><mi>a</mi><mo stretchy="false" form="prefix">|</mo><mi>L</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>&lt;</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">0 &lt; P(A = a|L) &lt; 1</annotation></semantics></math>)</li>
 <li>
-<strong>Conditional exchangeability (no unmeasured
-confounding)</strong>: Given measured covariates <em>L</em>, treatment
-assignment is independent of potential outcomes</li>
+<strong>Conditional Exchangeability (no unmeasured
+confounding)</strong>: Given adjustment for measured covariates
+<em>L</em>, treatment groups are sufficiently exchangeable at the start
+of follow-up - the risk of the outcome in one group can reasonably be
+assumed to be the same in the other group at the time of treatment
+assignment after controlling for confounding bias</li>
 <li>
 <strong>Correct model specification</strong>: The propensity score
-model correctly captures the relationship between covariates and
-treatment assignment</li>
+model correctly (or at least sufficiently) captures the relationship
+between covariates and treatment assignment</li>
 </ol>
 </div>
 <div class="section level3">
@@ -572,7 +581,8 @@ W_i = P(A = a) / P(A = a | L_i)
 <p>Stabilized weights typically have better finite sample properties
 than unstabilized weights
 (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mi>/</mi><mi>P</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>A</mi><mo>=</mo><mi>a</mi><mo stretchy="false" form="prefix">|</mo><msub><mi>L</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">1 / P(A = a | L_i)</annotation></semantics></math>)
-because they tend to be less extreme and more stable.</p>
+because they tend to be less extreme and more stable (hence their
+name).</p>
 </div>
 </div>
 <div class="section level2">
@@ -594,8 +604,8 @@ of treatment on recurrent event burden using observational data
 require use of matching weights during analysis (because all weights are
 1 [if matched] or 0 [if unmatched])</li>
 <li>Complex matching methods, like full matching, optimal matching,
-matching with replacement, or 1:<em>k</em> ratio (where k &gt;1),
-require using the matching weights</li>
+matching with replacement, or 1:<em>k</em> ratio (where <em>k</em> &gt;
+1), require using the matching weights</li>
 </ul>
 </li>
 <li>Always compare weighted/matched results to unweighted results to
