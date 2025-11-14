@@ -143,7 +143,8 @@ The weighted estimates represent the causal effect of treatment on recurrent eve
 For propensity score matching:
 
 - **Simple 1:1 nearest neighbor matching without replacement**: No additional weighting is necessary when using the matched dataset (because the matching weights for all untrimmed treated and control units equal 1)
-- **Complex matching methods** (e.g., optimal matching, full matching, subclassification): Use the matching weights provided by the matching procedure in the same way as IPTW weights
+- **Complex matching methods**: Use the matching weights provided by the matching procedure in the same way as IPTW weights
+    - Examples of matching methods where weights are necessary include, but are not limited to: optimal matching, full matching, subclassification, matching with replacement, or using a 1:*k* ratio (where *k* > 1)
 
 ### Example: 1:1 Nearest Neighbor Matching (No Weights Needed)
 
@@ -256,8 +257,8 @@ Weighted MCC estimation assumes the standard causal inference assumptions:
 
 1. **Consistency**: The potential outcome under treatment $A = a$ is the same as the observed outcome for those who actually received treatment $a$
 2. **Positivity**: All individuals have a non-zero probability of receiving each treatment level ($0 < P(A = a|L) < 1$)
-3. **Conditional exchangeability (no unmeasured confounding)**: Given measured covariates *L*, treatment assignment is independent of potential outcomes
-4. **Correct model specification**: The propensity score model correctly captures the relationship between covariates and treatment assignment
+3. **Conditional Exchangeability (no unmeasured confounding)**: Given adjustment for measured covariates *L*, treatment groups are sufficiently exchangeable at the start of follow-up - the risk of the outcome in one group can reasonably be assumed to be the same in the other group at the time of treatment assignment after controlling for confounding bias
+4. **Correct model specification**: The propensity score model correctly (or at least sufficiently) captures the relationship between covariates and treatment assignment
 
 ### Stabilized vs Unstabilized Weights
 
@@ -267,7 +268,7 @@ $$
 W_i = P(A = a) / P(A = a | L_i) 
 $$
 
-Stabilized weights typically have better finite sample properties than unstabilized weights ($1 / P(A = a | L_i)$) because they tend to be less extreme and more stable.
+Stabilized weights typically have better finite sample properties than unstabilized weights ($1 / P(A = a | L_i)$) because they tend to be less extreme and more stable (hence their name).
 
 ## Not Covered
 
@@ -277,6 +278,6 @@ This vignette covers how to use weights from IPTW or matching to get an adjusted
 
 - Use IPTW *or* matching weights when estimating causal effects of treatment on recurrent event burden using observational data
   - Simple 1:1 nearest neighbor matching without replacement does not require use of matching weights during analysis (because all weights are 1 [if matched] or 0 [if unmatched])
-  - Complex matching methods, like full matching, optimal matching, matching with replacement, or 1:*k* ratio (where k >1), require using the matching weights
+  - Complex matching methods, like full matching, optimal matching, matching with replacement, or 1:*k* ratio (where *k* > 1), require using the matching weights
 - Always compare weighted/matched results to unweighted results to assess the impact of confounding adjustment
 - Interpret weighted estimates as causal effects under standard causal inference assumptions
