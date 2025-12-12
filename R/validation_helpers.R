@@ -375,3 +375,93 @@ validate_last_observation <- function(data_std) {
 
   return(TRUE)
 }
+
+
+#' Validate comparison inputs
+#' @keywords internal
+#' @noRd
+validate_comparison_inputs <- function(x, reference, pairwise) {
+  # Check x is an mcc object
+  if (!is_mcc(x)) {
+    cli::cli_abort("{.arg x} must be an {.cls mcc} object")
+  }
+
+  # Check x is grouped
+  if (!is_grouped(x)) {
+    cli::cli_abort(c(
+      "{.arg x} must be a grouped {.cls mcc} object",
+      "i" = "Use the {.arg by} argument in {.fn mcc} to create grouped analyses"
+    ))
+  }
+
+  # Get all groups
+  all_groups <- mcc_groups(x)
+
+  # Validate reference if provided
+  if (!is.null(reference)) {
+    if (!is.character(reference)) {
+      cli::cli_abort("{.arg reference} must be a {.cls character} vector")
+    }
+
+    if (!pairwise && length(reference) > 1) {
+      cli::cli_abort(c(
+        "{.arg reference} must be a single value when {.code pairwise = FALSE}",
+        "x" = "You provided {.val {length(reference)}} value{?s}",
+        "i" = "To use multiple reference preferences, set {.code pairwise = TRUE}"
+      ))
+    }
+
+    # Check if reference groups exist
+    invalid_refs <- reference[!reference %in% all_groups]
+    if (length(invalid_refs) > 0) {
+      if (pairwise) {
+        cli::cli_abort(c(
+          "Reference preference{?s} not found in {.arg x}: {.val {invalid_refs}}",
+          "i" = "Available groups: {.val {all_groups}}"
+        ))
+      } else {
+        cli::cli_abort(c(
+          "Reference group {.val {reference}} not found in {.arg x}",
+          "i" = "Available groups: {.val {all_groups}}"
+        ))
+      }
+    }
+  }
+
+  invisible(TRUE)
+}
+
+#' Validate reference group selection
+#' @keywords internal
+#' @noRd
+validate_reference_selection <- function(reference, all_groups, pairwise) {
+  # If reference is provided, return it
+  if (!is.null(reference)) {
+    return(list(reference = reference, default_used = FALSE))
+  }
+
+  # If reference is NULL, select default
+  if (!pairwise) {
+    # Select first group alphabetically
+    default_ref <- sort(all_groups)[1]
+
+    # Issue appropriate message
+    if (length(all_groups) == 2) {
+      cli::cli_inform(c(
+        "i" = "Using {.val {default_ref}} as reference group",
+        "i" = "To change: specify {.code reference = \"{setdiff(all_groups, default_ref)}\"}"
+      ))
+    } else {
+      cli::cli_warn(c(
+        "!" = "Multiple groups detected but no reference specified",
+        "i" = "Using {.val {default_ref}} as reference group",
+        "i" = "To change: specify {.arg reference} or set {.code pairwise = TRUE}"
+      ))
+    }
+
+    return(list(reference = default_ref, default_used = TRUE))
+  } else {
+    # For pairwise with NULL reference, will handle per-comparison
+    return(list(reference = NULL, default_used = FALSE))
+  }
+}
