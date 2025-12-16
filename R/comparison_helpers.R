@@ -63,52 +63,63 @@ get_mcc_column_name <- function(mcc_object) {
   }
 }
 
+#' LOCF with NA after a group's max follow-up time (when follow-up times differ)
+#' @keywords internal
+#' @noRd
+locf_with_na_after_max <- function(group_data, all_times, max_time, mcc_col) {
+  # For times <= max_time: use LOCF
+  # For times > max_time: set to NA
+
+  result <- rep(NA_real_, length(all_times))
+  within_followup <- all_times <= max_time
+
+  if (any(within_followup)) {
+    locf_fn <- stats::approxfun(
+      x = group_data$time,
+      y = group_data[[mcc_col]],
+      method = "constant",
+      rule = 2,
+      f = 0,
+      ties = "ordered"
+    )
+    result[within_followup] <- locf_fn(all_times[within_followup])
+  }
+
+  return(result)
+}
+
 #' Align MCC data to common time grid using LOCF
 #' @keywords internal
 #' @noRd
-align_mcc_times <- function(
-  group1_data,
-  group2_data,
-  truncate_at,
-  mcc_col
-) {
-  # Filter to truncation time
-  group1_data <- group1_data[group1_data$time <= truncate_at, ]
-  group2_data <- group2_data[group2_data$time <= truncate_at, ]
+align_mcc_times <- function(group1_data, group2_data, truncate_at, mcc_col) {
+  # Get max time for each group
+  max_time_1 <- max(group1_data$time)
+  max_time_2 <- max(group2_data$time)
 
-  # Get union of time points
+  # Get union of ALL time points (not just up to truncate_at)
   all_times <- sort(unique(c(group1_data$time, group2_data$time)))
 
-  # Create step functions for LOCF (right-continuous)
-  # Using approxfun with method="constant", rule=2, f=0
-  locf_group1 <- stats::approxfun(
-    x = group1_data$time,
-    y = group1_data[[mcc_col]],
-    method = "constant",
-    rule = 2,
-    f = 0, # Right-continuous
-    ties = "ordered"
+  # LOCF for group 1 (only up to its max time)
+  mcc_group1 <- locf_with_na_after_max(
+    group1_data,
+    all_times,
+    max_time_1,
+    mcc_col
   )
 
-  locf_group2 <- stats::approxfun(
-    x = group2_data$time,
-    y = group2_data[[mcc_col]],
-    method = "constant",
-    rule = 2,
-    f = 0, # Right-continuous
-    ties = "ordered"
+  # LOCF for group 2 (only up to its max time)
+  mcc_group2 <- locf_with_na_after_max(
+    group2_data,
+    all_times,
+    max_time_2,
+    mcc_col
   )
 
-  # Apply LOCF to get values at all time points
-  mcc_group1 <- locf_group1(all_times)
-  mcc_group2 <- locf_group2(all_times)
-
-  # Return aligned data
-  data.frame(
+  return(data.frame(
     time = all_times,
     mcc_group1 = mcc_group1,
     mcc_group2 = mcc_group2
-  )
+  ))
 }
 
 #' Calculate comparison measures
@@ -180,6 +191,7 @@ perform_comparisons <- function(x, comparison_pairs, measure) {
     comp_data <- x[[table_name]][x[[table_name]][[x$by_group]] == comp_group, ]
 
     # Determine truncation time
+    min_time <- min(ref_data$time)
     max_time_ref <- max(ref_data$time)
     max_time_comp <- max(comp_data$time)
     truncate_at <- min(max_time_ref, max_time_comp)
@@ -188,7 +200,8 @@ perform_comparisons <- function(x, comparison_pairs, measure) {
       # Issue message about truncation
       cli::cli_inform(c(
         "i" = "Max follow-up: {.val {noquote(comp_group)}} = {.val {max_time_comp}}, {.val {noquote(ref_group)}} = {.val {max_time_ref}}",
-        "i" = "Comparison of {.val {noquote(ref_group)}} and {.val {noquote(comp_group)}} truncated at time {.val {truncate_at}}"
+        "i" = "Valid comparison period: time {.val {min_time}} to {.val {truncate_at}}",
+        "i" = "Comparison of {.val {noquote(ref_group)}} and {.val {noquote(comp_group)}} limited to on or before time {.val {truncate_at}} and MCCD/MCCR will be {.val {NA}} beyond that time"
       ))
     }
 

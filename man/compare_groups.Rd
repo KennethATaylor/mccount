@@ -46,14 +46,17 @@ ratio (MCCR). This function only works with grouped \code{mcc} objects.
 }
 \details{
 The difference (MCCD) and/or ratio (MCCR) of MCC values are calculated
-between groups over time. When comparing groups with different maximum
-follow-up times, comparisons are automatically truncated at the minimum of
-the two maximum follow-up times (e.g., if one group has a year of follow-up
-and the other has 1.5 years, then comparisons will only be calculated up to
-1 year). For time points where groups have misaligned observation times,
-last observation carried forward (LOCF) is used within each group's own
-follow-up period, providing comparisons across all event times as long as
-they occur during the shared follow-up period.
+between groups over time. When groups have different maximum follow-up times,
+MCCD and MCCR are calculated only during the period where both groups have
+observed data. Beyond this shared period, MCCD and MCCR are set to \code{NA}
+For example, if one group has a year of follow-up and the other has 1.5
+years, then comparisons will only be calculated up to 1 year; since only one
+group has observed follow-up time beyond that point, comparisons are not
+possible and the comparison value is set to \code{NA} for those times. For time
+points where groups have misaligned observation times, last observation
+carried forward is used within each group's own follow-up period, providing
+comparisons across all event times as long as they occur during the shared
+follow-up period.
 
 \strong{Comparison Measures:}
 \itemize{

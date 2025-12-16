@@ -305,7 +305,7 @@ test_that("compare_groups handles different max follow-up times", {
   # Should inform about truncation
   expect_message(
     result <- compare_groups(mcc_grouped, reference = "A"),
-    "truncated at time"
+    "Valid comparison period"
   )
 
   # Check truncation time in metadata
@@ -314,7 +314,7 @@ test_that("compare_groups handles different max follow-up times", {
 
   # Check that no time points exceed truncation
   comparison_df <- result$comparisons[[1]]
-  expect_true(all(comparison_df$time <= 6))
+  expect_true(all(comparison_df$time <= 10))
 })
 
 test_that("compare_groups uses LOCF for misaligned times", {
