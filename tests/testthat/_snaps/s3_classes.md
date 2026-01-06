@@ -234,3 +234,114 @@
       Competing risk events: 0
       Censoring events: 1
 
+# print.mcc_group_comparison works for two-group comparison
+
+    Code
+      print(comparison)
+    Message
+      
+      -- MCC Group Comparison --
+      
+      Type: Single reference ("A")
+      Measure: "MCCD"
+      Method: "equation"
+      
+      
+      -- Comparison Pairs (1) 
+      * "B" vs "A" (valid period: 0 to 8)
+      
+      i Use `summary()` for detailed comparison statistics
+      i Access comparison data: `x$comparisons[[i]]`
+      i Access metadata: `x$metadata`
+
+# print.mcc_group_comparison works for pairwise comparisons
+
+    Code
+      print(comparison)
+    Message
+      
+      -- MCC Group Comparison --
+      
+      Type: Pairwise comparisons
+      Measure: "MCCD"
+      Method: "equation"
+      
+      
+      -- Comparison Pairs (3) 
+      * "B" vs "A" (valid period: 0 to 8)
+      * "C" vs "A" (valid period: 0 to 6)
+      * "C" vs "B" (valid period: 0 to 6)
+      
+      i Use `summary()` for detailed comparison statistics
+      i Access comparison data: `x$comparisons[[i]]`
+      i Access metadata: `x$metadata`
+
+# print.mcc_group_comparison shows weighted status
+
+    Code
+      print(comparison)
+    Message
+      
+      -- MCC Group Comparison --
+      
+      Type: Single reference ("A")
+      Measure: "MCCD"
+      Method: "equation"
+      Weighted: "Yes"
+      
+      
+      -- Comparison Pairs (1) 
+      * "B" vs "A" (valid period: 0 to 8)
+      
+      i Use `summary()` for detailed comparison statistics
+      i Access comparison data: `x$comparisons[[i]]`
+      i Access metadata: `x$metadata`
+
+# methods work with SCI method
+
+    Code
+      sum_obj <- summary(comparison)
+
+---
+
+    Code
+      print(sum_obj)
+    Message
+      
+      -- Summary of MCC Group Comparisons --------------------------------------------
+      i MCC calculation method: Sum of Cumulative Incidence Method
+      i Comparison type: Single reference
+      i Reference group: "A"
+      i Measures: Mean Cumulative Count Difference (MCCD)
+      i Number of comparisons: 1
+      
+      -- Individual Comparisons --
+      
+      -- B vs A 
+      Total observation period: [0, 8]
+      Valid comparison period: [0, 8]
+      Time points in valid period: 8
+      MCC for B at time 8: 1.5
+      MCC for A at time 8: 0.3333
+      MCCD at time 8: 1.1667
+
+---
+
+    Code
+      print(comparison)
+    Message
+      
+      -- MCC Group Comparison --
+      
+      Type: Single reference ("A")
+      Measure: "MCCD"
+      Method: "sci"
+      
+      
+      -- Comparison Pairs (1) 
+      * "B" vs "A" (valid period: 0 to 8)
+      
+      i Use `summary()` for detailed comparison statistics
+      i Access comparison data: `x$comparisons[[i]]`
+      i Access metadata: `x$metadata`
+

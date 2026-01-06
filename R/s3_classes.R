@@ -948,3 +948,385 @@ mcc_details <- function(x, ...) {
 
   return(NULL)
 }
+
+
+#' Summary method for `mcc_group_comparison` objects
+#'
+#' @description
+#' Provides a summary of group comparisons, including final comparison values,
+#' valid comparison periods, and measures calculated.
+#'
+#' @param object An `mcc_group_comparison` object
+#' @param ... Additional arguments (currently unused)
+#'
+#' @returns A summary object with class `summary.mcc_group_comparison`
+#' @export
+#'
+#' @examples
+#' library(dplyr)
+#'
+#' # Create sample data with 2 groups
+#' df <- data.frame(
+#'   id = c(1, 2, 3, 4, 4, 4, 4, 5, 5),
+#'   time = c(8, 7, 5, 2, 6, 7, 8, 3, 4),
+#'   cause = c(0, 0, 2, 1, 1, 1, 0, 1, 2),
+#'   group = c("A", "A", "B", "B", "B", "B", "B", "A", "A")
+#' ) |>
+#'   arrange(id, time)
+#'
+#' # Calculate grouped MCC
+#' mcc_grouped <- mcc(df, "id", "time", "cause", by = "group")
+#'
+#' # Compare groups
+#' comparison <- compare_groups(mcc_grouped, reference = "A")
+#'
+#' # Get summary
+#' summary(comparison)
+#'
+#' # Three group example
+#' df3 <- data.frame(
+#'   id = c(1, 2, 3, 4, 4, 5, 5, 6, 6, 7, 8, 8, 9),
+#'   time = c(8, 7, 5, 6, 7, 7, 8, 3, 4, 4, 5, 6, 6),
+#'   cause = c(0, 0, 2, 1, 0, 1, 0, 1, 2, 2, 1, 0, 0),
+#'   group = c("A", "A", "A", "B", "B", "B", "B", "B", "B", "C", "C", "C", "C")
+#' )
+#'
+#' mcc_3group <- mcc(df3, "id", "time", "cause", by = "group")
+#' comparison_pairwise <- compare_groups(mcc_3group, pairwise = TRUE)
+#' summary(comparison_pairwise)
+#'
+summary.mcc_group_comparison <- function(object, ...) {
+  # Extract metadata
+  meta <- object$metadata
+
+  # Helper function to get final values (at end of valid comparison period)
+  get_final_comparison_values <- function(comp_df, measure) {
+    # Find the last time point where comparison is valid (not NA)
+    if (measure == "difference" || measure == "both") {
+      valid_times <- comp_df$time[!is.na(comp_df$mccd)]
+    } else {
+      valid_times <- comp_df$time[!is.na(comp_df$mccr)]
+    }
+
+    if (length(valid_times) == 0) {
+      # No valid comparisons
+      return(list(
+        time = NA_real_,
+        mcc_comp = NA_real_,
+        mcc_ref = NA_real_,
+        mccd = NA_real_,
+        mccr = NA_real_,
+        has_valid_comparison = FALSE
+      ))
+    }
+
+    max_valid_time <- max(valid_times)
+    final_row <- comp_df[comp_df$time == max_valid_time, ]
+
+    # Get column names for MCC values
+    mcc_comp_col <- grep("^mcc_", names(final_row), value = TRUE)[1]
+    mcc_ref_col <- grep("^mcc_", names(final_row), value = TRUE)[2]
+
+    result <- list(
+      time = final_row$time,
+      mcc_comp = final_row[[mcc_comp_col]],
+      mcc_ref = final_row[[mcc_ref_col]],
+      has_valid_comparison = TRUE
+    )
+
+    # Add measure-specific values
+    if ("mccd" %in% names(final_row)) {
+      result$mccd <- final_row$mccd
+    }
+    if ("mccr" %in% names(final_row)) {
+      result$mccr <- final_row$mccr
+    }
+
+    return(result)
+  }
+
+  # Calculate summary statistics for each comparison
+  comparison_summaries <- vector("list", length(object$comparisons))
+
+  for (i in seq_along(object$comparisons)) {
+    comp_df <- object$comparisons[[i]]
+    pair_info <- meta$comparison_pairs[i, ]
+
+    # Get final values
+    final_values <- get_final_comparison_values(comp_df, meta$measure)
+
+    # Get total observation period (including beyond valid comparison)
+    min_time <- min(comp_df$time, na.rm = TRUE)
+    max_time <- max(comp_df$time, na.rm = TRUE)
+
+    # Count time points in valid comparison period
+    if (meta$measure %in% c("difference", "both")) {
+      n_valid_times <- sum(!is.na(comp_df$mccd))
+    } else {
+      n_valid_times <- sum(!is.na(comp_df$mccr))
+    }
+
+    # Count time points with extended follow-up (NA comparisons)
+    n_extended_times <- sum(is.na(comp_df$mccd) | is.na(comp_df$mccr))
+
+    comparison_summaries[[i]] <- list(
+      comparison = pair_info$comparison,
+      reference = pair_info$reference,
+      truncation_time = pair_info$truncation_time,
+      default_used = pair_info$default_used,
+      min_time = min_time,
+      max_time = max_time,
+      n_valid_times = n_valid_times,
+      n_extended_times = n_extended_times,
+      final_values = final_values
+    )
+  }
+
+  # Create summary object
+  result <- list(
+    object = object,
+    comparison_summaries = comparison_summaries,
+    metadata = meta,
+    method = meta$method,
+    weighted = meta$weighted,
+    measure = meta$measure,
+    pairwise = meta$pairwise,
+    n_comparisons = meta$n_comparisons
+  )
+
+  class(result) <- "summary.mcc_group_comparison"
+  return(result)
+}
+
+#' Print method for `mcc_group_comparison` summary objects
+#'
+#' @param x A `summary.mcc_group_comparison` object
+#' @param digits Number of digits to display for numeric values (default: 4)
+#' @param ... Additional arguments (currently unused)
+#'
+#' @return Invisibly returns `x`
+#' @export
+#'
+#' @examples
+#' library(dplyr)
+#'
+#' # Create sample data
+#' df <- data.frame(
+#'   id = c(1, 2, 3, 4, 4, 4, 4, 5, 5),
+#'   time = c(8, 7, 5, 2, 6, 7, 8, 3, 4),
+#'   cause = c(0, 0, 2, 1, 1, 1, 0, 1, 2),
+#'   group = c("A", "A", "B", "B", "B", "B", "B", "A", "A")
+#' ) |>
+#'   arrange(id, time)
+#'
+#' mcc_grouped <- mcc(df, "id", "time", "cause", by = "group")
+#' comparison <- compare_groups(mcc_grouped, reference = "A")
+#' print(summary(comparison))
+#'
+print.summary.mcc_group_comparison <- function(x, digits = 4, ...) {
+  cli::cli_h1("Summary of MCC Group Comparisons")
+
+  # Method information
+  method_label <- switch(
+    x$method,
+    "equation" = "Dong-Yasui Equation Method",
+    "sci" = "Sum of Cumulative Incidence Method"
+  )
+  cli::cli_alert_info("MCC calculation method: {.val {noquote(method_label)}}")
+
+  if (x$weighted) {
+    cli::cli_alert_info("Weighted estimation: {.val {noquote('Yes')}}")
+  }
+
+  # Comparison type
+  if (x$pairwise) {
+    cli::cli_alert_info(
+      "Comparison type: {.val {noquote('Pairwise comparisons')}}"
+    )
+    if (!is.null(x$metadata$reference_preferences)) {
+      ref_prefs <- paste(x$metadata$reference_preferences, collapse = ", ")
+      cli::cli_alert_info("Reference preferences: {.val {ref_prefs}}")
+    }
+  } else {
+    cli::cli_alert_info("Comparison type: {.val {noquote('Single reference')}}")
+    cli::cli_alert_info("Reference group: {.val {x$metadata$reference_group}}")
+  }
+
+  # Measures calculated
+  measure_label <- switch(
+    x$measure,
+    "difference" = "Mean Cumulative Count Difference (MCCD)",
+    "ratio" = "Mean Cumulative Count Ratio (MCCR)",
+    "both" = "MCCD and MCCR"
+  )
+  cli::cli_alert_info("Measures: {.val {noquote(measure_label)}}")
+  cli::cli_alert_info("Number of comparisons: {.val {x$n_comparisons}}")
+
+  # Summary for each comparison
+  cli::cli_h2("Individual Comparisons")
+
+  for (i in seq_along(x$comparison_summaries)) {
+    comp_sum <- x$comparison_summaries[[i]]
+
+    # Comparison header
+    comp_label <- paste0(comp_sum$comparison, " vs ", comp_sum$reference)
+    if (comp_sum$default_used) {
+      comp_label <- paste0(comp_label, " (default reference)")
+    }
+    cli::cli_h3("{comp_label}")
+
+    # Observation period
+    cli::cli_text(
+      "Total observation period: [{.val {comp_sum$min_time}}, {.val {comp_sum$max_time}}]"
+    )
+    cli::cli_text(
+      "Valid comparison period: [{.val {comp_sum$min_time}}, {.val {comp_sum$truncation_time}}]"
+    )
+    cli::cli_text(
+      "Time points in valid period: {.val {comp_sum$n_valid_times}}"
+    )
+
+    if (comp_sum$n_extended_times > 0) {
+      cli::cli_text(
+        "Time points beyond valid period: {.val {comp_sum$n_extended_times}} (comparison = NA)"
+      )
+    }
+
+    # Final values at end of valid comparison period
+    if (comp_sum$final_values$has_valid_comparison) {
+      cli::cli_text(
+        "MCC for {.val {noquote(comp_sum$comparison)}} at time {.val {comp_sum$final_values$time}}: {.val {round(comp_sum$final_values$mcc_comp, digits)}}"
+      )
+      cli::cli_text(
+        "MCC for {.val {noquote(comp_sum$reference)}} at time {.val {comp_sum$final_values$time}}: {.val {round(comp_sum$final_values$mcc_ref, digits)}}"
+      )
+
+      if (!is.null(comp_sum$final_values$mccd)) {
+        mccd_val <- round(comp_sum$final_values$mccd, digits)
+        cli::cli_text(
+          "MCCD at time {.val {comp_sum$final_values$time}}: {.val {mccd_val}}"
+        )
+      }
+
+      if (!is.null(comp_sum$final_values$mccr)) {
+        mccr_val <- round(comp_sum$final_values$mccr, digits)
+        cli::cli_text(
+          "MCCR at time {.val {comp_sum$final_values$time}}: {.val {mccr_val}}"
+        )
+      }
+    } else {
+      cli::cli_alert_warning("No valid comparison period found")
+    }
+
+    # Add spacing between comparisons (except for the last one)
+    if (i < length(x$comparison_summaries)) {
+      cli::cli_text("")
+    }
+  }
+
+  # Additional notes if there are extended follow-up periods
+  any_extended <- any(sapply(
+    x$comparison_summaries,
+    function(cs) cs$n_extended_times > 0
+  ))
+  if (any_extended) {
+    cli::cli_text("")
+    cli::cli_alert_info(
+      "Note: Some groups have longer follow-up than others. Comparison values (MCCD/MCCR) are {.val NA} beyond the valid comparison period, but individual MCC values are still reported."
+    )
+  }
+
+  invisible(x)
+}
+
+#' Print method for `mcc_group_comparison` objects
+#'
+#' @description
+#' Provides a concise display of group comparison results, showing comparison
+#' pairs and basic information. Use [summary.mcc_group_comparison()] for
+#' detailed statistics.
+#'
+#' @param x An `mcc_group_comparison` object
+#' @param ... Additional arguments (currently unused)
+#'
+#' @return Invisibly returns `x`
+#' @export
+#'
+#' @examples
+#' library(dplyr)
+#'
+#' df <- data.frame(
+#'   id = c(1, 2, 3, 4, 4, 4, 4, 5, 5),
+#'   time = c(8, 7, 5, 2, 6, 7, 8, 3, 4),
+#'   cause = c(0, 0, 2, 1, 1, 1, 0, 1, 2),
+#'   group = c("A", "A", "B", "B", "B", "B", "B", "A", "A")
+#' ) |>
+#'   arrange(id, time)
+#'
+#' mcc_grouped <- mcc(df, "id", "time", "cause", by = "group")
+#' comparison <- compare_groups(mcc_grouped, reference = "A")
+#'
+#' # Concise print
+#' comparison
+#'
+#' # Detailed summary
+#' summary(comparison)
+#'
+print.mcc_group_comparison <- function(x, ...) {
+  cli::cli_h2("MCC Group Comparison")
+
+  meta <- x$metadata
+
+  # Basic information
+  if (meta$pairwise) {
+    cli::cli_text("Type: {.emph Pairwise comparisons}")
+  } else {
+    cli::cli_text(
+      "Type: {.emph Single reference} ({.val {meta$reference_group}})"
+    )
+  }
+
+  measure_label <- switch(
+    meta$measure,
+    "difference" = "MCCD",
+    "ratio" = "MCCR",
+    "both" = "MCCD and MCCR"
+  )
+  cli::cli_text("Measure: {.val {measure_label}}")
+  cli::cli_text("Method: {.val {meta$method}}")
+
+  if (meta$weighted) {
+    cli::cli_text("Weighted: {.val Yes}")
+  }
+
+  # Comparison pairs
+  cli::cli_text("")
+  cli::cli_h3("Comparison Pairs ({.val {meta$n_comparisons}})")
+
+  pairs <- meta$comparison_pairs
+  for (i in seq_len(nrow(pairs))) {
+    pair <- pairs[i, ]
+    comp_label <- paste0(
+      "{.val ",
+      pair$comparison,
+      "} vs {.val ",
+      pair$reference,
+      "}"
+    )
+    trunc_label <- paste0(" (valid period: 0 to ", pair$truncation_time, ")")
+
+    if (pair$default_used) {
+      cli::cli_li(paste0(comp_label, trunc_label, " {.emph (default ref)}"))
+    } else {
+      cli::cli_li(paste0(comp_label, trunc_label))
+    }
+  }
+
+  # Usage hint
+  cli::cli_text("")
+  cli::cli_alert_info("Use {.fn summary} for detailed comparison statistics")
+  cli::cli_alert_info("Access comparison data: {.code x$comparisons[[i]]}")
+  cli::cli_alert_info("Access metadata: {.code x$metadata}")
+
+  invisible(x)
+}

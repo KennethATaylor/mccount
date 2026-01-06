@@ -28,6 +28,13 @@ reference:
       - print.mcc
       - summary.mcc
       - print.summary.mcc
+      - print.mcc_group_comparison
+      - summary.mcc_group_comparison
+      - print.summary.mcc_group_comparison
+
+  - title: Compare MCC Across Groups
+  - contents:
+      - compare_groups
 
   - title: Visualize Results
   - desc: Plot MCC curves and calculation components
