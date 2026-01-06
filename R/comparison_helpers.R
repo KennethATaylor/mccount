@@ -41,7 +41,7 @@ create_comparison_pairs <- function(all_groups, reference, pairwise) {
     })
   } else {
     # Create all pairwise combinations
-    group_combinations <- combn(all_groups, 2, simplify = FALSE)
+    group_combinations <- utils::combn(all_groups, 2, simplify = FALSE)
 
     # Determine reference for each pair
     pairs <- lapply(group_combinations, function(pair) {

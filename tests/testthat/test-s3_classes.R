@@ -779,3 +779,184 @@ test_that("create_subtitle function works correctly", {
   subtitle_grouped <- create_subtitle(mcc_grouped)
   expect_true(grepl("groups", subtitle_grouped))
 })
+
+
+# Helper function to create test comparison objects
+create_test_comparison <- function(n_groups = 2, pairwise = FALSE) {
+  if (n_groups == 2) {
+    df <- data.frame(
+      id = c(1, 2, 3, 4, 4, 4, 4, 5, 5),
+      time = c(8, 7, 5, 2, 6, 7, 8, 3, 4),
+      cause = c(0, 0, 2, 1, 1, 1, 0, 1, 2),
+      group = c("A", "A", "B", "B", "B", "B", "B", "A", "A")
+    ) |>
+      dplyr::arrange(id, time)
+  } else if (n_groups == 3) {
+    df <- data.frame(
+      id = c(1, 2, 3, 4, 4, 5, 5, 6, 6, 7, 8, 8, 9),
+      time = c(8, 7, 5, 6, 7, 7, 8, 3, 4, 4, 5, 6, 6),
+      cause = c(0, 0, 2, 1, 0, 1, 0, 1, 2, 2, 1, 0, 0),
+      group = c("A", "A", "A", "B", "B", "B", "B", "B", "B", "C", "C", "C", "C")
+    ) |>
+      dplyr::arrange(id, time)
+  }
+
+  mcc_grouped <- mcc(df, "id", "time", "cause", by = "group")
+
+  if (n_groups == 3) {
+    refs <- sort(unique(df$group))[1:2]
+  } else {
+    refs <- sort(unique(df$group))[1]
+  }
+
+  if (pairwise) {
+    comparison <- compare_groups(
+      mcc_grouped,
+      pairwise = TRUE,
+      reference = refs
+    )
+  } else {
+    comparison <- compare_groups(
+      mcc_grouped,
+      reference = sort(unique(df$group))[1]
+    )
+  }
+
+  return(comparison)
+}
+
+# Print Method Tests ------------------------------------------------------
+
+test_that("print.mcc_group_comparison works for two-group comparison", {
+  comparison <- create_test_comparison(n_groups = 2)
+
+  expect_snapshot(print(comparison))
+})
+
+test_that("print.mcc_group_comparison works for pairwise comparisons", {
+  comparison <- create_test_comparison(n_groups = 3, pairwise = TRUE)
+
+  expect_snapshot(print(comparison))
+})
+
+test_that("print.mcc_group_comparison shows weighted status", {
+  df <- data.frame(
+    id = c(1, 2, 3, 4, 4, 4, 4, 5, 5),
+    time = c(8, 7, 5, 2, 6, 7, 8, 3, 4),
+    cause = c(0, 0, 2, 1, 1, 1, 0, 1, 2),
+    group = c("A", "A", "B", "B", "B", "B", "B", "A", "A"),
+    weights = c(1.2, 0.8, 1.5, 1.0, 1.0, 1.0, 1.0, 1.3, 1.1)
+  ) |>
+    dplyr::arrange(id, time)
+
+  mcc_weighted <- mcc(
+    df,
+    "id",
+    "time",
+    "cause",
+    by = "group",
+    weights = "weights"
+  )
+  comparison <- compare_groups(mcc_weighted, reference = "A")
+
+  expect_snapshot(print(comparison))
+})
+
+test_that("print.mcc_group_comparison returns invisibly", {
+  comparison <- create_test_comparison(n_groups = 2)
+  result <- print(comparison)
+  expect_identical(result, comparison)
+})
+
+# Summary Method Tests ----------------------------------------------------
+
+test_that("summary.mcc_group_comparison creates correct object structure", {
+  comparison <- create_test_comparison(n_groups = 2)
+  sum_obj <- summary(comparison)
+
+  expect_s3_class(sum_obj, "summary.mcc_group_comparison")
+  expect_true("comparison_summaries" %in% names(sum_obj))
+  expect_true("metadata" %in% names(sum_obj))
+  expect_true("method" %in% names(sum_obj))
+  expect_true("weighted" %in% names(sum_obj))
+  expect_true("measure" %in% names(sum_obj))
+  expect_true("pairwise" %in% names(sum_obj))
+  expect_true("n_comparisons" %in% names(sum_obj))
+})
+
+test_that("summary.mcc_group_comparison calculates final values correctly", {
+  comparison <- create_test_comparison(n_groups = 2)
+  sum_obj <- summary(comparison)
+
+  comp_sum <- sum_obj$comparison_summaries[[1]]
+
+  expect_true("final_values" %in% names(comp_sum))
+  expect_true("time" %in% names(comp_sum$final_values))
+  expect_true("mcc_comp" %in% names(comp_sum$final_values))
+  expect_true("mcc_ref" %in% names(comp_sum$final_values))
+  expect_true("has_valid_comparison" %in% names(comp_sum$final_values))
+
+  # Should have valid comparison
+  expect_true(comp_sum$final_values$has_valid_comparison)
+  expect_false(is.na(comp_sum$final_values$time))
+})
+
+test_that("summary.mcc_group_comparison works with both measures", {
+  comparison <- create_test_comparison(n_groups = 2)
+  comparison_both <- compare_groups(
+    comparison$original_mcc,
+    reference = "B",
+    measure = "both"
+  )
+
+  sum_obj <- summary(comparison_both)
+  comp_sum <- sum_obj$comparison_summaries[[1]]
+
+  expect_true("mccd" %in% names(comp_sum$final_values))
+  expect_true("mccr" %in% names(comp_sum$final_values))
+})
+
+test_that("summary.mcc_group_comparison handles multiple comparisons", {
+  comparison <- create_test_comparison(n_groups = 3, pairwise = FALSE)
+  sum_obj <- summary(comparison)
+
+  # Should have 2 comparisons (B vs A, C vs A)
+  expect_equal(length(sum_obj$comparison_summaries), 2)
+
+  # Each should have the required fields
+  for (comp_sum in sum_obj$comparison_summaries) {
+    expect_true("comparison" %in% names(comp_sum))
+    expect_true("reference" %in% names(comp_sum))
+    expect_true("truncation_time" %in% names(comp_sum))
+    expect_true("n_valid_times" %in% names(comp_sum))
+  }
+})
+
+test_that("summary.mcc_group_comparison counts time points correctly", {
+  comparison <- create_test_comparison(n_groups = 2)
+  sum_obj <- summary(comparison)
+  comp_sum <- sum_obj$comparison_summaries[[1]]
+
+  # Check that time point counts make sense
+  expect_true(is.numeric(comp_sum$n_valid_times))
+  expect_true(comp_sum$n_valid_times > 0)
+  expect_true(is.numeric(comp_sum$n_extended_times))
+  expect_true(comp_sum$n_extended_times >= 0)
+})
+
+test_that("methods work with SCI method", {
+  df <- data.frame(
+    id = c(1, 2, 3, 4, 4, 4, 4, 5, 5),
+    time = c(8, 7, 5, 2, 6, 7, 8, 3, 4),
+    cause = c(0, 0, 2, 1, 1, 1, 0, 1, 2),
+    group = c("A", "A", "B", "B", "B", "B", "B", "A", "A")
+  ) |>
+    dplyr::arrange(id, time)
+
+  mcc_grouped <- mcc(df, "id", "time", "cause", by = "group", method = "sci")
+  comparison <- compare_groups(mcc_grouped, reference = "A")
+
+  expect_snapshot(sum_obj <- summary(comparison))
+  expect_snapshot(print(sum_obj))
+  expect_snapshot(print(comparison))
+})
